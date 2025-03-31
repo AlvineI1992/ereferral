@@ -15,6 +15,25 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
+      /**
+ * Display a paginated list of users.
+ */
+public function index(Request $request)
+{
+    $query = User::query();
+
+    if ($search = $request->input('search')) {
+        $query->where('name', 'LIKE', "%{$search}%")
+              ->orWhere('email', 'LIKE', "%{$search}%");
+    }
+
+    $users = $query->paginate(10); // Paginate results
+
+    return response()->json([
+        'data' => $users->items(),
+        'total' => $users->total(),
+    ]);
+}
     /**
      * Show the registration page.
      */

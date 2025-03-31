@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\RoleController;
-
+use App\Http\Controllers\Auth\RegisteredUserController;
 
 
 Route::get('/', function () {
@@ -16,10 +16,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
+Route::get('/users', function () {
+    return Inertia::render('users/Index');
+})->middleware(['auth', 'verified'])->name('users');
 
-Route::get('/roles', function () {
-    return Inertia::render('roles/Index');
-})->middleware(['auth', 'verified'])->name('roles');
+
+Route::middleware('auth')->get('/api/users', [RegisteredUserController::class, 'index']);
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
