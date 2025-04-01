@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
+import { Progress } from "@/components/ui/progress";
+
 
 const UserList = () => {
   const [data, setData] = useState([]);
@@ -86,30 +88,32 @@ const UserList = () => {
 
   return (
     <div>
-      <input
-        type="text"
-        placeholder="Search..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={{
-          marginBottom: "10px",
-          padding: "8px",
-          width: "300px",
-          borderRadius: "4px",
-          border: "1px solid #ccc",
-        }}
-      />
+       <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">User Lists</h2>
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-3 py-2 border rounded-sm w-60"
+        />
+      </div>
 
-      <DataTable
-        title="User List"
-        columns={columns}
-        data={data}
-        progressPending={loading}
-        pagination
-        paginationServer
-        paginationTotalRows={totalRows}
-        onChangePage={(page) => setPage(page)}
-      />
+{loading ? (
+        <div className="flex justify-center items-center py-4">
+          <Progress className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data}
+          pagination
+          paginationServer
+          paginationTotalRows={totalRows}
+          onChangePage={(page) => setPage(page)}
+       
+        />
+      )}
     </div>
   );
 };

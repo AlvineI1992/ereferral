@@ -103,14 +103,14 @@
     --chart-4: oklch(0.7 0.2 180);
     --chart-5: oklch(0.8 0.1 180);
     --radius: 0.625rem;
-    --sidebar: oklch(0.9 0.05 180);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.4 0.2 180);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.7 0.1 180);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar: #4CAF50; /* Green color for the sidebar background */
+    --sidebar-foreground: #fff; /* White text color for the sidebar */
+    --sidebar-primary: #388E3C; /* Darker green for primary accent */
+    --sidebar-primary-foreground: #fff; /* White text for primary accent */
+    --sidebar-accent: #66BB6A; /* Lighter green for accent */
+    --sidebar-accent-foreground: #fff; /* White text for accent */
+    --sidebar-border: #388E3C; /* Darker green for border */
+    --sidebar-ring: #66BB6A; /* Light green for ring */
 }
 
 .dark {
@@ -138,14 +138,14 @@
     --chart-3: oklch(0.6 0.1 180);
     --chart-4: oklch(0.7 0.2 180);
     --chart-5: oklch(0.8 0.1 180);
-    --sidebar: oklch(0.2 0.05 180);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.4 0.2 180);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.3 0.05 180);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.3 0.05 180);
-    --sidebar-ring: oklch(0.439 0 0);
+    --sidebar: #388E3C; /* Dark green for sidebar in dark mode */
+    --sidebar-foreground: #fff; /* White text for contrast */
+    --sidebar-primary: #4CAF50; /* Lighter green for primary accent */
+    --sidebar-primary-foreground: #fff; /* White text for primary accent */
+    --sidebar-accent: #66BB6A; /* Lighter green accent */
+    --sidebar-accent-foreground: #fff; /* White text for accent */
+    --sidebar-border: #388E3C; /* Darker green for border */
+    --sidebar-ring: #66BB6A; /* Lighter green for ring */
 }
 
 
