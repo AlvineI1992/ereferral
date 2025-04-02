@@ -15,13 +15,13 @@ export default function UsersList() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Users" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-            <div className="flex  items-right">
-            <Link
-                href={route('users.create')}
-                  className="border border-green-500 bg-white text-green-500 px-2 py-1 rounded flex items-center gap-1 text-sm hover:bg-green-500 hover:text-white"
-            >
-                <PlusCircle size={16} /> Add User
-            </Link>
+                <div className="flex  items-right">
+                    <Link
+                        href={route('users.create')}
+                        className="border border-green-500 bg-white text-green-500 px-2 py-1 rounded flex items-center gap-1 text-sm hover:bg-green-500 hover:text-white"
+                    >
+                        <PlusCircle size={16} /> Add User
+                    </Link>
 
                 </div>
                 <UserList />
