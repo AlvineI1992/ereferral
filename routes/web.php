@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\Auth\RoleController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 
@@ -15,7 +15,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 });
-
 
 
 Route::get('/roles', function () {
@@ -35,8 +34,7 @@ Route::get('/users/create', function () {
 
 Route::middleware('auth')->get('/api/users', [RegisteredUserController::class, 'index']);
 
-
-
+Route::middleware('auth')->post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

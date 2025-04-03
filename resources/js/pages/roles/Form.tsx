@@ -32,10 +32,11 @@ export default function rolesForm() {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('register'), {
-            onFinish: () => reset('password', 'password_confirmation'),
+        post(route('roles.store'), { // Fixed route
+           /*  onFinish: () => reset('guard_name', 'guard'), */
         });
     };
+
 
     return (
         <div className="w-full max-w-lg p-8 bg-white  rounded-2xl ml-1 mt-2 ">
@@ -49,21 +50,21 @@ export default function rolesForm() {
                 <div className="grid gap-4">
                     {/* Name Field */}
                     <div className="grid gap-1">
-                        <Label htmlFor="name">Role name:</Label>
+                        <Label htmlFor="guard_name">Role name:</Label>
                         <Input
                             ref={nameInputRef}
-                            id="name"
+                            id="guard_name"
                             type="text"
                             required
                             autoComplete="off"
-                            value={data.name}
+                            value={data.guard_name}
                             onChange={handleChange}
                             disabled={processing}
                             placeholder="Guard"
                             className="focus:ring focus:ring-indigo-300"
-                            aria-describedby={errors.name ? 'name-error' : undefined}
+                            aria-describedby={errors.guard_name ? 'name-error' : undefined}
                         />
-                        <InputError id="name-error" message={errors.name} aria-live="polite" />
+                        <InputError id="name-error" message={errors.guard_name} aria-live="polite" />
                     </div>
 
                     {/* Email Field */}
