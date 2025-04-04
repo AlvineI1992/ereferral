@@ -1,18 +1,10 @@
 <?php
-use Illuminate\Foundation\Application;
+
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\RoleController;
 
-
-Route::get('/test', function () {
-    return response()->json(['message' => 'API is working']);
+Route::prefix('api')->middleware('auth:sanctum')->group(function () {
+    Route::get('/roles', [RoleController::class, 'apiIndex'])->name('api.roles.index');
+    Route::post('/roles', [RoleController::class, 'apiStore'])->name('api.roles.store');
+    Route::delete('/roles/{role}', [RoleController::class, 'apiDestroy'])->name('api.roles.destroy');
 });
-
-Route::get('/api/users', [RegisteredUserController::class, 'index']);
-
-require __DIR__.'/auth.php';
-
-
-
-

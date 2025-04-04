@@ -8,17 +8,18 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class RolesModel extends Authenticatable
+class RoleModel extends Authenticatable
 {
-    use HasApiTokens;
-
+   
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
-    use HasProfilePhoto;
-    use Notifiable;
-    use TwoFactorAuthenticatable;
+    use SoftDeletes;
+
+    // Optionally, you can set the name of the column that stores the deleted timestamp
+    protected $dates = ['deleted_at'];
+
 
     /**
      * The table associated with the model.

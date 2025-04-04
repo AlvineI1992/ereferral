@@ -18,10 +18,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 Route::get('/roles', function () {
-    return Inertia::render('roles/Index');
+    return Inertia::render('Roles/Index');
 })->middleware(['auth', 'verified'])->name('roles');
 
-Route::middleware('auth')->get('/api/roles', [RoleController::class, 'index']);
+
 
 Route::get('/users', function () {
     return Inertia::render('users/Index');
@@ -32,7 +32,11 @@ Route::get('/users/create', function () {
     return Inertia::render('users/usersForm');
 })->middleware(['auth', 'verified'])->name('users.create');
 
+Route::middleware('auth')->get('/api/roles', [RoleController::class, 'index']);
+
 Route::middleware('auth')->get('/api/users', [RegisteredUserController::class, 'index']);
+
+Route::middleware('auth')->delete('/roles/dele{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
 Route::middleware('auth')->post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
 

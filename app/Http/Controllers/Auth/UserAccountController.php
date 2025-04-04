@@ -15,7 +15,7 @@ class UserAccountController extends Controller
     public function index()
     {
         $users = User::latest()->paginate(10);
-        return Inertia::render('Users/Index', ['users' => $users]);
+        return response()->json(['roles' => $users]);
     }
 
     /**

@@ -1,12 +1,13 @@
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { NavReference } from '@/components/nav-references';
 import { NavAdministrator } from '@/components/nav-admin';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid,User,CircleChevronRight } from 'lucide-react';
+import { LayoutGrid,User,CircleChevronRight,Inbox,ExternalLink,BookUser,Hospital,MonitorCog ,MapPinned} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -15,10 +16,40 @@ const mainNavItems: NavItem[] = [
         href: '/dashboard',
         icon: LayoutGrid,
     },
-  
-    
+    {
+        title: 'Inbox',
+        href: '/dashboard',
+        icon: Inbox,
+    },
+    {
+        title: 'Outbox',
+        href: '/dashboard',
+        icon: ExternalLink ,
+    },
+    {
+        title: 'Patients',
+        href: '/dashboard',
+        icon: BookUser,
+    },
 ];
 
+const navReferences: NavItem[] = [
+    {
+        title: 'Demographics',
+        href: '/dashboard',
+        icon: MapPinned,
+    },
+    {
+        title: 'EMR',
+        href: '/dashboard',
+        icon: MonitorCog,
+    },
+    {
+        title: 'Facilities',
+        href: '/dashboard',
+        icon: Hospital ,
+    }
+];
 const adminNavItems: NavItem[] = [
     {
         title: 'Administrator', // Main menu item "Administrator"
@@ -64,6 +95,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                <NavReference items={navReferences} />
                 <NavAdministrator items={adminNavItems} /> 
             </SidebarContent>
 

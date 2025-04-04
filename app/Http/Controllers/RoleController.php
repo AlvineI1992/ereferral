@@ -3,38 +3,53 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\RoleModel;
 use Inertia\Inertia;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $roles = Role::with('permissions')->get();
-        return Inertia::render('roles/Index', compact('roles'));
+        $query = RoleModel::query();
+
+        if ($search = $request->input('search')) {
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('guard_name', 'LIKE', "%{$search}%")
+                  ->orderBy('id', 'desc');
+        }
+    
+        $roles = $query->paginate(10); // Paginate results
+    
+   return response()->json([
+            'data' => $roles->items(),
+            'total' => $roles->total(),
+        ]); 
+        
     }
 
+   
     public function create()
     {
         $permissions = Permission::all();
-        return Inertia::render('roles/Create', compact('permissions'));
+        return Inertia::render('Roles/Create', compact('permissions'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|unique:roles,name',
-            'permissions' => 'array'
+            'guard_name' => 'required',
         ]);
-
-        $role = Role::create(['name' => $request->name]);
-        $role->syncPermissions($request->permissions);
-
+        
+        $role = RoleModel::create([
+            'name' => $request->input('name'),
+            'guard_name' => $request->input('guard_name'),
+        ]);
+        
         return redirect()->route('roles')->with('success', 'Role created successfully.');
     }
 
-    public function edit(Role $role)
+    public function edit(RoleModel $role)
     {
         $permissions = Permission::all();
         return Inertia::render('Roles/Edit', [
@@ -43,7 +58,7 @@ class RoleController extends Controller
         ]);
     }
 
-    public function update(Request $request, Role $role)
+    public function update(Request $request, RoleModel $role)
     {
         $request->validate([
             'name' => 'required|unique:roles,name,' . $role->id,
@@ -53,12 +68,12 @@ class RoleController extends Controller
         $role->update(['name' => $request->name]);
         $role->syncPermissions($request->permissions);
 
-        return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
+        return redirect()->route('Roles.index')->with('success', 'Role updated successfully.');
     }
 
-    public function destroy(Role $role)
+    public function destroy(RoleModel $role)
     {
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
+        return redirect()->route('roles')->with('success', 'Role deleted successfully.');
     }
 }
