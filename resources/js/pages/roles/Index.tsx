@@ -1,11 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from "@inertiajs/react";
-import RolesList from "./RolesList";
-import Form from "./Form";
-import { PlusCircle } from "lucide-react";
-import { Link } from '@inertiajs/react';
-import React, { useState } from 'react';
-
+import { Head } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import RolesManagement from './RolesManagement';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Roles',
@@ -14,18 +10,24 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 export default function Roles() {
     const [refreshKey, setRefreshKey] = useState(0);
+    const [loading, setLoading] = useState(true);
     const handleRoleCreated = () => {
-      setRefreshKey((prev) => prev + 1); // triggers reload of RolesList
+        setRefreshKey((prev) => prev + 1); // triggers reload of RolesList
     };
+    useEffect(() => {
+        // Simulate a network request or data fetching
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+        }, 2000); // Simulate loading for 2 seconds
+    }, [refreshKey]);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-        <Head title="Roles" />
-        <div className="flex flex-col h-full rounded-xl p-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
-            <RolesList refreshKey={refreshKey} className="w-full" />
-                <Form onRoleCreated={handleRoleCreated} className="w-full" />
-                
+            <Head title="Roles" />
+            <div className="lg:col-span-1">
+                <RolesManagement onRoleCreated={() => {}} />
             </div>
-        </div>
-    </AppLayout>);
+            {/*   <RolesManagement refreshKey={refreshKey} className="w-full" /> */}
+        </AppLayout>
+    );
 }

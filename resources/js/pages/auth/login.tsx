@@ -10,6 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 type LoginForm = {
     email: string;
     password: string;
@@ -36,17 +43,28 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
+        
+        <AuthLayout title={
+            <div className="flex items-center space-x-2">
+                <img
+                    src="/doh-logo.png"
+                    alt="Department of Health Official Logo"
+                    className="h-8 w-8 select-none"
+                />
+                <span className="text-xl font-semibold">eReferral</span>
+            </div>
+        } description="Enter your email and password below to log in">
+             
             <Head title="Log in" />
-
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
+           
+            <form className="flex flex-col gap-4" onSubmit={submit}>
+                <div className="grid gap-3">
+                    <div className="grid gap-1">
                         <Label htmlFor="email">Email address</Label>
                         <Input
                             id="email"
                             type="email"
-                            required
+                         
                             autoFocus
                             tabIndex={1}
                             autoComplete="email"
@@ -54,10 +72,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="email@example.com"
                         />
-                        <InputError message={errors.email} />
+                        <InputError message={errors.email} className="text-xs text-red-500" />
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-1">
                         <div className="flex items-center">
                             <Label htmlFor="password">Password</Label>
                             {canResetPassword && (
@@ -69,14 +87,14 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         <Input
                             id="password"
                             type="password"
-                            required
+                          
                             tabIndex={2}
                             autoComplete="current-password"
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             placeholder="Password"
                         />
-                        <InputError message={errors.password} />
+                        <InputError message={errors.password}  className="text-xs text-red-500"/>
                     </div>
 
                     <div className="flex items-center space-x-3">

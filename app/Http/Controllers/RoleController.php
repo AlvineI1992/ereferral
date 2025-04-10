@@ -20,7 +20,7 @@ class RoleController extends Controller
     
         $roles = $query->paginate(10); // Paginate results
     
-   return response()->json([
+       return response()->json([
             'data' => $roles->items(),
             'total' => $roles->total(),
         ]); 
@@ -42,7 +42,7 @@ class RoleController extends Controller
         ]);
         
         $role = RoleModel::create([
-            'name' => $request->input('name'),
+            'name' => ucfirst($request->input('name')),
             'guard_name' => $request->input('guard_name'),
         ]);
         
@@ -66,14 +66,16 @@ class RoleController extends Controller
         ]);
 
         $role->update(['name' => $request->name]);
-        $role->syncPermissions($request->permissions);
+        //$role->syncPermissions($request->permissions);
 
-        return redirect()->route('Roles.index')->with('success', 'Role updated successfully.');
+        return redirect()->route('roles')->with('success', 'Role updated successfully.');
     }
 
     public function destroy(RoleModel $role)
     {
         $role->delete();
-        return redirect()->route('roles')->with('success', 'Role deleted successfully.');
+        return response()->json([
+            'message' => 'Role deleted successfully.',
+        ]);
     }
 }

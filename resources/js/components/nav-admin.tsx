@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { ChevronUp ,ChevronDown   } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -15,6 +15,7 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
     const [openMenu, setOpenMenu] = useState<string | null>(null);
 
     const toggleMenu = (menu: string) => {
+        // Toggle the submenu only when the menu header is clicked
         setOpenMenu(openMenu === menu ? null : menu);
     };
 
@@ -27,7 +28,7 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
                         <SidebarMenuButton 
                             asChild 
                             isActive={route().current(item.href)}
-                            onClick={() => item.submenu ? toggleMenu(item.title) : null}
+                            onClick={() => item.submenu ? toggleMenu(item.title) : null} // Open/close submenu only
                         >
                             {item.submenu ? (
                                 // Button for expandable submenu

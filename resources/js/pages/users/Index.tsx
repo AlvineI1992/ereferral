@@ -1,8 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from "@inertiajs/react";
-import UserList from "./UserList";
-import { Link } from '@inertiajs/react';
-import { PlusCircle } from "lucide-react";
+import { Head } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import UsersManagement from './UsersManagement';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -11,20 +10,23 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 export default function UsersList() {
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const handleRoleCreated = () => {
+        setRefreshKey((prev) => prev + 1); // triggers reload of RolesList
+    };
+    useEffect(() => {
+        // Simulate a network request or data fetching
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+        }, 2000); // Simulate loading for 2 seconds
+    }, [refreshKey]);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Users" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex  items-right">
-                    <Link
-                        href={route('users.create')}
-                        className="border border-green-500 bg-white text-green-500 px-2 py-1 rounded flex items-center gap-1 text-sm hover:bg-green-500 hover:text-white"
-                    >
-                        <PlusCircle size={16} /> Add User
-                    </Link>
-
-                </div>
-                <UserList />
+            <div className="lg:col-span-1">
+                <UsersManagement onRoleCreated={() => {}} />
             </div>
         </AppLayout>
     );

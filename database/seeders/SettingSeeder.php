@@ -16,7 +16,9 @@ class SettingSeeder extends Seeder
         $class_methods = get_class_methods(Settings::class);
 
         foreach ($class_methods as $class_method) {
-            $branch = Settings::$class_method();
+            // Dynamically call static method
+            $branch = call_user_func([Settings::class, $class_method]);
+
             $branch->save();
             foreach ($branch->getChildren() as $child) {
                 $child->save();

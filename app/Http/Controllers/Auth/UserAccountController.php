@@ -90,4 +90,11 @@ class UserAccountController extends Controller
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
+
+    public function sample()
+    {
+       //return  User::find(1)->assignRole('Admin');
+       $user->givePermissionTo('edit articles');
+
+    }
 }

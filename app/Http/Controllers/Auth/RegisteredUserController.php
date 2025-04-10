@@ -63,8 +63,14 @@ public function index(Request $request)
 
         event(new Registered($user));
 
-        Auth::login($user);
+       /*  Auth::login($user);
 
-        return to_route('dashboard');
+        return to_route('dashboard'); */
+        return redirect()->route('users')->with('success', 'Added successfully.');
+    }
+
+    public function sample()
+    {
+       return  User::find(2)->assignRole('Admin');
     }
 }

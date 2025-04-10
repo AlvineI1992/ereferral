@@ -19,9 +19,8 @@ return new class extends Migration
             if (!Schema::hasColumn('referral_information', 'deleted_at')) {
                 $table->softDeletes(); // Adds deleted_at for soft deletes
             }
-
-            if (!Schema::hasColumn('referral_information', 'emr_id')) {
-                $table->foreignId('emr_id')->nullable()->constrained('emrs')->onDelete('set null'); // Foreign key to EMR table
+            if (!Schema::hasColumn('referral_information', 'updated_at')) {
+                $table->char('status',1)->nullable(); // Ensures updated_at exists
             }
         });
     }
