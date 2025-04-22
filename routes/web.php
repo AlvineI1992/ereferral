@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\RefEmrController;
+
 
 
 Route::get('/', function () {
@@ -16,11 +18,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
-
-
-
-
-
 Route::get('/users', function () {
     return Inertia::render('Users/Index');
 })->middleware(['auth', 'verified'])->name('users');
@@ -29,8 +26,6 @@ Route::get('/users', function () {
 Route::get('/users/create', function () {
     return Inertia::render('Users/usersForm');
 })->middleware(['auth', 'verified'])->name('users.create');
-
-
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
@@ -41,9 +36,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/sample', [RegisteredUserController::class, 'sample'])->name('user.sample');
     
 });
-
-
-
 
 // Inertia Page Route (Web, uses session-based auth)
 Route::get('/roles', function () {
@@ -56,6 +48,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
+});
+
+Route::get('/emr', function () {
+    return Inertia::render('Emr/Index');
+})->middleware(['auth:sanctum', 'verified'])->name('emr');
+
+// API Routes (Sanctum-protected)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/api/emr', [RefEmrController::class, 'index']);
+    Route::put('/emr/update/{role}', [RefEmrController::class, 'update'])->name('emr.update');
+    Route::delete('/emr/delete/{role}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
+    Route::post('/emr/store', [RefEmrController::class, 'store'])->name('emr.store');
 });
 
 require __DIR__.'/settings.php';

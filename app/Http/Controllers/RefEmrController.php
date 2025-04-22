@@ -10,8 +10,8 @@ class RefEmrController extends Controller
     // Display a listing of the resource
     public function index()
     {
-        $patients = RefEmrModel::all();
-        return response()->json($patients);
+        $data = RefEmrModel::all();
+        return response()->json($data);
     }
 
     // Show the form for creating a new resource
@@ -24,33 +24,20 @@ class RefEmrController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'LogID' => 'required|string|max:50|unique:referral_patientinfo,LogID',
-            'FamilyID' => 'required|string|max:50',
-            'phicNum' => 'nullable|string|max:20',
-            'caseNum' => 'nullable|string|max:20',
-            'patientLastName' => 'required|string|max:255',
-            'patientFirstName' => 'required|string|max:255',
-            'patientSuffix' => 'nullable|string|max:10',
-            'patientMiddlename' => 'nullable|string|max:255',
-            'patientBirthDate' => 'nullable|date',
-            'patientSex' => 'nullable|string|max:10',
-            'patientContactNumber' => 'nullable|string|max:20',
-            'patientReligion' => 'nullable|string|max:100',
-            'patientBloodType' => 'nullable|string|max:3',
-            'patientBloodTypeRH' => 'nullable|string|max:3',
-            'patientCivilStatus' => 'nullable|string|max:50',
+            'emr_name' => 'required|string|max:50|unique:ref_emr,emr_name',
+            'status' => 'required',
+            'remarks' => 'nullable|string|max:20',
         ]);
 
-        $patient = ReferralPatientInfoModel::create($validated);
-
+        $patient = RefEmrModel::create($validated);
         return response()->json($patient, 201);
     }
 
     // Display the specified resource
     public function show($LogID)
     {
-        $patient = ReferralPatientInfoModel::findOrFail($LogID);
-        return response()->json($patient);
+        $data = RefEmrModel::findOrFail($LogID);
+        return response()->json($data);
     }
 
     // Show the form for editing the specified resource
@@ -63,34 +50,22 @@ class RefEmrController extends Controller
     public function update(Request $request, $LogID)
     {
         $validated = $request->validate([
-            'FamilyID' => 'required|string|max:50',
-            'phicNum' => 'nullable|string|max:20',
-            'caseNum' => 'nullable|string|max:20',
-            'patientLastName' => 'required|string|max:255',
-            'patientFirstName' => 'required|string|max:255',
-            'patientSuffix' => 'nullable|string|max:10',
-            'patientMiddlename' => 'nullable|string|max:255',
-            'patientBirthDate' => 'nullable|date',
-            'patientSex' => 'nullable|string|max:10',
-            'patientContactNumber' => 'nullable|string|max:20',
-            'patientReligion' => 'nullable|string|max:100',
-            'patientBloodType' => 'nullable|string|max:3',
-            'patientBloodTypeRH' => 'nullable|string|max:3',
-            'patientCivilStatus' => 'nullable|string|max:50',
+            'emr_name' => 'required|string|max:50|unique:ref_emr,emr_name',
+            'status' => 'required',
+            'remarks' => 'nullable|string|max:20',
         ]);
 
-        $patient = ReferralPatientInfoModel::findOrFail($LogID);
-        $patient->update($validated);
-
-        return response()->json($patient);
+        $data = RefEmrModel::findOrFail($validated);
+        $data->update($validated);
+        return response()->json($data);
     }
 
     // Remove the specified resource from storage
-    public function destroy($LogID)
+    public function destroy($id)
     {
-        $patient = ReferralPatientInfoModel::findOrFail($LogID);
-        $patient->delete();
+        $data = RefEmrModel::findOrFail($LogID);
+        $data->delete();
 
-        return response()->json(['message' => 'Patient record deleted successfully.']);
+        return response()->json(['message' => 'Record deleted successfully.']);
     }
 }

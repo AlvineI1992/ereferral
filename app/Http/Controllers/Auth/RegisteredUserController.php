@@ -59,6 +59,7 @@ public function index(Request $request)
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'status'=>'A'
         ]);
 
         event(new Registered($user));
