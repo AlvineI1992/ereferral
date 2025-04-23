@@ -3,38 +3,31 @@ import Lists from './List';
 import Form from './Form';
 
 const Manage = () => {
-    const [selectedId, setSelected] = useState(null); // State for the selected user
-    const [refreshKey, setRefreshKey] = useState(0); // To refresh the user list after create/update
+    const [selectedId, setSelectedId] = useState(null); // ID of the selected user for editing
+    const [refreshKey, setRefreshKey] = useState(0); // Used to trigger list refresh
 
-    // Handle the edit action and set the selected user
     const handleEdit = (id) => {
-        setSelected(id); // Set the user to be edited
+        setSelectedId(id); // Set selected user ID for editing
     };
 
-    // After a user is created or updated, reset the selected user to null
-    const handleCreated = () => {
-        setSelected(null); // Reset the selected user after successful creation or update
-        setRefreshKey((prev) => prev + 1); // Trigger refresh for the user list
+    const handleCreatedOrUpdated = () => {
+        setSelectedId(null); // Reset selection
+        setRefreshKey((prev) => prev + 1); // Refresh the list
     };
 
-    // Handle cancel edit action
     const handleCancelEdit = () => {
-        setSelected(null); // Reset selected user when canceling the edit
+        setSelectedId(null); // Clear selection when editing is canceled
     };
 
     return (
         <div className="roles-management">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
                 <div className="lg:col-span-1">
-                    {setSelected ? (
-                        <Form
-                            onCancel={handleCancelEdit} // Pass handleCancelEdit to the form
-                            user={setSelected}
-                            onCreated={handleCreated}
-                        />
-                    ) : (
-                        <Form  onCreated={handleCreated} />
-                    )}
+                    <Form
+                        onCancel={selectedId ? handleCancelEdit : undefined}
+                        emr={selectedId}
+                        onCreated={handleCreatedOrUpdated}
+                    />
                 </div>
                 <div className="lg:col-span-3">
                     <div className="mb-4">

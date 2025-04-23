@@ -7,11 +7,23 @@ use Illuminate\Http\Request;
 
 class RefEmrController extends Controller
 {
-    // Display a listing of the resource
-    public function index()
+
+    public function index(Request $request)
     {
-        $data = RefEmrModel::all();
-        return response()->json($data);
+        $query = RefEmrModel::query();
+
+        if ($search = $request->input('search')) {
+            $query->where('emr_name', 'LIKE', "%{$search}%")
+                  ->orderBy('id', 'desc');
+        }
+    
+        $roles = $query->paginate(10); // Paginate results
+    
+       return response()->json([
+            'data' => $roles->items(),
+            'total' => $roles->total(),
+        ]); 
+        
     }
 
     // Show the form for creating a new resource
@@ -30,13 +42,13 @@ class RefEmrController extends Controller
         ]);
 
         $patient = RefEmrModel::create($validated);
-        return response()->json($patient, 201);
+        return redirect()->route('emr')->with('success', 'Data saved!');
     }
 
     // Display the specified resource
-    public function show($LogID)
+    public function show($id)
     {
-        $data = RefEmrModel::findOrFail($LogID);
+        $data = RefEmrModel::findOrFail($id);
         return response()->json($data);
     }
 

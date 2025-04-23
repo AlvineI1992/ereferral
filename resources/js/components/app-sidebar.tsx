@@ -39,11 +39,7 @@ const navReferences: NavItem[] = [
         href: '/dashboard',
         icon: MapPinned,
     },
-    {
-        title: 'EMR',
-        href: '/emr',
-        icon: MonitorCog,
-    },
+   
     {
         title: 'Facilities',
         href: '/dashboard',
@@ -56,6 +52,11 @@ const adminNavItems: NavItem[] = [
         href: '#', // No direct link, dropdown only
         icon: User,
         submenu: [
+            {
+                title: 'Manage Provider',
+                href: 'emr',
+                icon: CircleChevronRight,
+            },
             {
                 title: 'Manage Users',
                 href: 'users',

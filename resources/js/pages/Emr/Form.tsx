@@ -5,19 +5,27 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import HeadingSmall from '@/components/heading-small';
-
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from "sonner";
 
 type Props = {
   onCreated: () => void;
-  onCancel: () => void;  // onCancel prop to handle the cancel action
-  emr?: any;  // User object for editing (optional)
+  onCancel: () => void;
+  emr?: any;
+};
+
+type Formtype = {
+  emr_name: string;
+  status: boolean;
+  remarks: string;
 };
 
 export default function Form({ onCreated, onCancel, emr }: Props) {
-  const { data, setData, post, processing, errors, reset } = useForm({
+  const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
     emr_name: emr?.emr_name || '',
-    status: emr?.status || '',
+    status: !!emr?.status,
     remarks: emr?.remarks || ''
   });
 
@@ -27,16 +35,21 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
     nameInputRef.current?.focus();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setData(e.target.id, e.target.value);
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setData('status', checked);
   };
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();
-    post(route('user.store'), {
+    post(route('emr.store'), {
       onSuccess: () => {
         reset();
         onCreated();
+        toast.success('Record saved!');
       },
     });
   };
@@ -46,44 +59,66 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
       <Head title="Register" />
       <div className="flex items-center mb-2">
         <User size={18} />
-        <h1 className="text-lg font-semibold text-gray-800 ml-2">{emr ? 'Edit Provider' : 'Create Provider'}</h1>
+        <h1 className="text-lg font-semibold text-gray-800 ml-2">
+          {emr ? 'Edit Provider' : 'Create Provider'}
+        </h1>
       </div>
       <HeadingSmall title="Provider Information" description="Enter your details below." />
-      <div className="mb-4"></div>
       <form className="flex flex-col gap-4 mt-4" onSubmit={submit}>
         <div className="grid gap-4">
-
-          <Label htmlFor="name">Name:</Label>
+          {/* Name */}
+          <Label htmlFor="emr_name">Name:</Label>
           <Input
             id="emr_name"
             ref={nameInputRef}
             value={data.emr_name}
+            placeholder='Provider name'
             onChange={handleChange}
             className="mt-1 block w-full"
-            autoComplete="emr_name"
+            autoComplete="off"
           />
           <InputError message={errors.emr_name} className="mt-1" />
 
-          {/* Submit and Cancel Buttons */}
+          {/* Status */}
+          <Label htmlFor="status" className="mb-2 block">Status:</Label>
+          <Switch
+            id="status"
+            checked={data.status}
+            onCheckedChange={handleSwitchChange}
+          />
+          <InputError message={errors.status} className="mt-1" />
+
+          {/* Remarks */}
+          <Label htmlFor="remarks">Remarks:</Label>
+          <Textarea
+            id="remarks"
+            value={data.remarks}
+            onChange={handleChange}
+            className="mt-1 block w-full"
+            placeholder='Remarks'
+            autoComplete="off"
+          />
+          <InputError message={errors.remarks} className="mt-1" />
+
+          {/* Buttons */}
           <div className="mt-4 flex justify-between gap-4">
             <Button
               type="submit"
-              className="flex-1 flex justify-center items-center gap-2 border-1 border-green-600 bg-white text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
+              className="flex-1 flex justify-center items-center gap-2 border border-green-600 bg-white text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
               disabled={processing}
             >
               {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-              <span>{processing ? 'Processing...' : <><Save size={12} /></>}</span>
+              <span>{processing ? 'Processing...' : <><Save size={12} /> </>}</span>
             </Button>
 
-            {/* Cancel Button (only shown when editing a role) */}
-            {user && (
+            {emr && (
               <Button
                 type="button"
-                onClick={onCancel} // Trigger the onCancel function passed from parent
-                className="flex-1 flex justify-center items-center gap-2 border-1 border-red-400 bg-white text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"
+                onClick={onCancel}
+                className="flex-1 flex justify-center items-center gap-2 border border-red-400 bg-white text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"
               >
                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                <span>{processing ? 'Processing...' : <><X size={12} /></>}</span>
+                <span>{processing ? 'Processing...' : <><X size={12} /> </>}</span>
               </Button>
             )}
           </div>

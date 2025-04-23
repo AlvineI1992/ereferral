@@ -5,8 +5,8 @@ import Manage from './Manage';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'User accounts',
-        href: '/user accounts',
+        title: 'Provider',
+        href: '/Provider',
     },
 ];
 export default function list() {

@@ -54,12 +54,20 @@ Route::get('/emr', function () {
     return Inertia::render('Emr/Index');
 })->middleware(['auth:sanctum', 'verified'])->name('emr');
 
+
+Route::get('emr/profile/{id}', function ($id) {
+    return Inertia::render('Emr/Profile', [
+        'id' => $id
+    ]);
+})->middleware(['auth:sanctum', 'verified'])->name('emr.profile');
+
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/api/emr', [RefEmrController::class, 'index']);
-    Route::put('/emr/update/{role}', [RefEmrController::class, 'update'])->name('emr.update');
-    Route::delete('/emr/delete/{role}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
+    Route::put('/emr/update/{id}', [RefEmrController::class, 'update'])->name('emr.update');
+    Route::delete('/emr/delete/{id}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
     Route::post('/emr/store', [RefEmrController::class, 'store'])->name('emr.store');
+    Route::get('/api/emr/info/{id}', [RefEmrController::class, 'show'])->name('emr.info');
 });
 
 require __DIR__.'/settings.php';
