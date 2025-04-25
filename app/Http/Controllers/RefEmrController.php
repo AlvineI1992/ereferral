@@ -14,7 +14,7 @@ class RefEmrController extends Controller
 
         if ($search = $request->input('search')) {
             $query->where('emr_name', 'LIKE', "%{$search}%")
-                  ->orderBy('id', 'desc');
+                  ->orderBy('created_at', 'asc');
         }
     
         $roles = $query->paginate(10); // Paginate results

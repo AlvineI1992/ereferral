@@ -102,7 +102,7 @@ const Lists = ({ refreshKey, onEdit }) => {
       <div className="flex justify-end mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-1 p-1 text-xs">
+            <Button variant="outline" className="flex items-center gap-1 p-1 text-xs cursor-pointer">
               <Eye size={16} /> Columns
             </Button>
           </DropdownMenuTrigger>
@@ -173,13 +173,13 @@ const Lists = ({ refreshKey, onEdit }) => {
                   {visibleColumns.remarks && <TableCell className="p-1 max-w-xs truncate">{row.remarks}</TableCell>}
                   {visibleColumns.actions && (
                     <TableCell className="p-1 text-right flex justify-end space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
                         <Pencil size={12} />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.emr_id)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.emr_id)} className="cursor-pointer">
                         <Trash2 size={12} className="text-red-600" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleGoto(row.emr_id)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleGoto(row.emr_id)} className="cursor-pointer">
                         <CircleArrowRight size={12} className="text-blue-600" />
                       </Button>
                     </TableCell>
@@ -206,7 +206,7 @@ const Lists = ({ refreshKey, onEdit }) => {
                 variant="outline"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                className="text-xs p-1"
+                className="text-xs p-1 cursor-pointer"
               >
                 Previous
               </Button>
@@ -217,7 +217,7 @@ const Lists = ({ refreshKey, onEdit }) => {
                   <Button
                     key={pNum}
                     variant={pNum === page ? "default" : "outline"}
-                    className="px-3 py-1 text-xs"
+                    className="px-3 py-1 text-xs cursor-pointer"
                     onClick={() => setPage(pNum)}
                   >
                     {pNum}
@@ -228,7 +228,7 @@ const Lists = ({ refreshKey, onEdit }) => {
                 variant="outline"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                className="text-xs p-1"
+                className="text-xs p-1 cursor-pointer"
               >
                 Next
               </Button>
