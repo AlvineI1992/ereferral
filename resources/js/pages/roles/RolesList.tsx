@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Pencil, Trash2,List } from "lucide-react";
-import DataTable from "react-data-table-component";
+import { Pencil, Trash2, List, CircleArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import axios from "axios";
-import { Progress } from "@/components/ui/progress";
 import Swal from "sweetalert2";
+import { Inertia } from "@inertiajs/inertia";
 
 const RolesList = ({ refreshKey, onEdit }) => {
   const [data, setData] = useState([]);
@@ -11,7 +10,7 @@ const RolesList = ({ refreshKey, onEdit }) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
-  const [selectedRoleId, setSelectedRoleId] = useState(null);
+  const perPage = 10; // Set per page
 
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
@@ -28,10 +27,18 @@ const RolesList = ({ refreshKey, onEdit }) => {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       fetchData(page, searchTerm);
-    }, 1000); // 300ms delay
-  
+    }, 500);
+
     return () => clearTimeout(delayDebounce);
   }, [refreshKey, page, searchTerm]);
+
+  const handleGoto = (id) => {
+    if (!id) {
+      console.error("ID parameter is required");
+      return;
+    }
+    Inertia.visit(`/roles/assign/${id}`);
+  };
 
   const handleDelete = async (id) => {
     const result = await Swal.fire({
@@ -46,12 +53,11 @@ const RolesList = ({ refreshKey, onEdit }) => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`/roles/delete/${id}`,{
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,  // or wherever your token is stored
-            }
-          }
-        ); // ✅ Fixed delete route
+        await axios.delete(`/roles/delete/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         fetchData(page, searchTerm);
         Swal.fire({
           title: "Deleted!",
@@ -67,45 +73,36 @@ const RolesList = ({ refreshKey, onEdit }) => {
     }
   };
 
-   // Handle the edit action: call the onEdit prop function from parent and pass the selected role
-   const handleEdit = (id) => {
-    setSelectedRoleId(id);
-    onEdit(id); // Pass the selected role to the parent component
+  const handleEdit = (row) => {
+    onEdit?.(row);
   };
 
-  const columns = [
-    { name: "ID", selector: (row) => row.id, sortable: true },
-    { name: "Name", selector: (row) => row.name, sortable: true },
-    { name: "Guard", selector: (row) => row.guard_name },
-    {
-      name: "Actions",
-      cell: (row) => (
-        <div className="flex gap-1">
-          <button
-            onClick={() => handleEdit(row)}
-            className="p-1 text-blue-500 hover:text-blue-700"
-          >
-           <Pencil size={16} style={{ cursor: 'pointer' }} />
-          </button>
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="p-1 text-red-500 hover:text-red-700"
-          >
-            <Trash2 size={16}  style={{ cursor: 'pointer' }}  />
-          </button>
-        </div>
-      ),
-      ignoreRowClick: true,
-    },
-  ];
+  const handleView = (row) => {
+    console.log("View details of:", row);
+    // You can replace this with your view logic (maybe open modal or redirect)
+  };
+
+  const totalPages = Math.ceil(totalRows / perPage);
+
+  const handlePreviousPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
+
+  const startEntry = (page - 1) * perPage + 1;
+  const endEntry = Math.min(startEntry + perPage - 1, totalRows);
 
   return (
-    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3  mt-3">
+    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3 mt-3">
+      {/* Header */}
       <div className="flex justify-between items-center mb-3">
-      <div className="flex items-center space-x-2">
-  <List size="16" />
-  <h2 className="text-lg font-semibold">Roles</h2>
-</div>
+        <div className="flex items-center space-x-2">
+          <List size={16} />
+          <h2 className="text-lg font-semibold">Roles</h2>
+        </div>
         <input
           type="text"
           placeholder="Search..."
@@ -114,27 +111,104 @@ const RolesList = ({ refreshKey, onEdit }) => {
           className="px-2 py-1 border rounded-md text-sm w-56"
         />
       </div>
+
+      {/* Table with loading */}
       {loading ? (
-       <div className="flex justify-center items-center py-4">
-       <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-       <span className="text-sm text-blue-600">&nbsp;Please wait...</span>
-     </div>
+        <div className="flex justify-center items-center py-4">
+          <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-blue-600">&nbsp;Please wait...</span>
+        </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={data}
-          pagination
-          paginationServer
-          paginationTotalRows={totalRows}
-          onChangePage={(page) => setPage(page)}
-          striped
-          highlightOnHover
-          className="text-sm"
-          customStyles={{
-            rows: { style: { cursor: "pointer" } },  
-            cells: { style: { borderBottom: "1px solid #ddd" } },
-          }}
-        />
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm text-left border-collapse">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-4 py-2 border-b">ID</th>
+                <th className="px-4 py-2 border-b">Name</th>
+                <th className="px-4 py-2 border-b">Guard</th>
+                <th className="px-4 py-2 border-b text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.length > 0 ? (
+                data.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 border-b">{row.id}</td>
+                    <td className="px-4 py-2 border-b">{row.name}</td>
+                    <td className="px-4 py-2 border-b">{row.guard_name}</td>
+                    <td className="px-4 py-2 border-b text-center">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(row)}
+                          className="p-1 text-blue-500 hover:text-blue-700"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(row.id)}
+                          className="p-1 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleGoto(row.id)}
+                          className="p-1 text-green-500 hover:text-green-700"
+                        >
+                          <CircleArrowRight size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center py-4">
+                    No roles found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Info and Pagination */}
+          <div className="flex justify-between items-center mt-4 px-2">
+            {/* Info */}
+            <div className="text-sm text-gray-600">
+              {totalRows > 0 ? (
+                <>Showing {startEntry} to {endEntry} of {totalRows} entries</>
+              ) : (
+                <>No entries to show</>
+              )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePreviousPage}
+                disabled={page === 1}
+                className={`flex items-center gap-1 px-3 py-1 border rounded-md text-sm ${
+                  page === 1 ? "text-gray-400 border-gray-300" : "text-blue-600 border-blue-300 hover:bg-blue-50"
+                }`}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={handleNextPage}
+                disabled={page === totalPages}
+                className={`flex items-center gap-1 px-3 py-1 border rounded-md text-sm ${
+                  page === totalPages ? "text-gray-400 border-gray-300" : "text-blue-600 border-blue-300 hover:bg-blue-50"
+                }`}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

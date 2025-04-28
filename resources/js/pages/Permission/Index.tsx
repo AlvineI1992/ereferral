@@ -10,6 +10,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 export default function Permission() {
+   
+
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(true);
     const handleCreated = () => {

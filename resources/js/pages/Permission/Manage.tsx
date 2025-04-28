@@ -1,8 +1,18 @@
-import React, { useState } from "react";
+import React, { useState} from "react";
+import { usePage } from '@inertiajs/react';
 import Lists from "./List";  
 import Form from "./Form"; 
 
+
 const Manage = () => {
+  const { auth } = usePage().props;
+  const permissions = auth?.permissions ?? [];
+
+  const canCreate = permissions.includes('permission create');
+  const canEdit = permissions.includes('permission edit');
+  const canDelete = permissions.includes('permission delete');
+  const canView = permissions.includes('permission list');
+
   const [selected, setSelected] = useState(null); 
   const [refreshKey, setRefreshKey] = useState(0); 
 

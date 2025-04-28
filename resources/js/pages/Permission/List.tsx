@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Pencil, Trash2, List } from "lucide-react";
-import DataTable from "react-data-table-component";
 import axios from "axios";
-import { Progress } from "@/components/ui/progress";
 import Swal from "sweetalert2";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-const Lists = ({ refreshKey, onEdit }) => {
+const RolesList = ({ refreshKey, onEdit }) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
-  const [selected, setSelected] = useState(null);
+  const perPage = 10;
 
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
@@ -20,7 +20,7 @@ const Lists = ({ refreshKey, onEdit }) => {
       setData(response.data.data);
       setTotalRows(response.data.total);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching roles:", error);
     }
     setLoading(false);
   };
@@ -28,7 +28,7 @@ const Lists = ({ refreshKey, onEdit }) => {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       fetchData(page, searchTerm);
-    }, 1000); // 300ms delay
+    }, 500); // 0.5-second debounce
 
     return () => clearTimeout(delayDebounce);
   }, [refreshKey, page, searchTerm]);
@@ -48,10 +48,9 @@ const Lists = ({ refreshKey, onEdit }) => {
       try {
         await axios.delete(`/permission/delete/${id}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,  // or wherever your token is stored
-          }
-        }
-        ); // ✅ Fixed delete route
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         fetchData(page, searchTerm);
         Swal.fire({
           title: "Deleted!",
@@ -67,46 +66,21 @@ const Lists = ({ refreshKey, onEdit }) => {
     }
   };
 
-  // Handle the edit action: call the onEdit prop function from parent and pass the selected role
-  const handleEdit = (id) => {
-    setSelected(id);
-    onEdit(id); // Pass the selected role to the parent component
+  const handleEdit = (row) => {
+    onEdit?.(row);
   };
 
-  const columns = [
-    { name: "ID", selector: (row) => row.id, sortable: true },
-    { name: "Name", selector: (row) => row.name, sortable: true },
-    { name: "Guard", selector: (row) => row.guard_name },
-    {
-      name: "Actions",
-      cell: (row) => (
-        <div className="flex gap-1">
-          <button
-            onClick={() => handleEdit(row)}
-            className="p-1 text-blue-500 hover:text-blue-700"
-          >
-            <Pencil size={16} style={{ cursor: 'pointer' }} />
-          </button>
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="p-1 text-red-500 hover:text-red-700"
-          >
-            <Trash2 size={16} style={{ cursor: 'pointer' }} />
-          </button>
-        </div>
-      ),
-      ignoreRowClick: true,
-    },
-  ];
+  const totalPages = Math.ceil(totalRows / perPage);
 
   return (
-    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3  mt-3">
+    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3 mt-3">
+      {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
-          <List size="16" />
-          <h2 className="text-lg font-semibold">Permissions</h2>
+          <List size={16} />
+          <h2 className="text-lg font-semibold">Roles</h2>
         </div>
-        <input
+        <Input
           type="text"
           placeholder="Search..."
           value={searchTerm}
@@ -114,30 +88,108 @@ const Lists = ({ refreshKey, onEdit }) => {
           className="px-2 py-1 border rounded-md text-sm w-56"
         />
       </div>
+
+      {/* Table */}
       {loading ? (
         <div className="flex justify-center items-center py-4">
           <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           <span className="text-sm text-blue-600">&nbsp;Please wait...</span>
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={data}
-          pagination
-          paginationServer
-          paginationTotalRows={totalRows}
-          onChangePage={(page) => setPage(page)}
-          striped
-          highlightOnHover
-          className="text-sm"
-          customStyles={{
-            rows: { style: { cursor: "pointer" } },
-            cells: { style: { borderBottom: "1px solid #ddd" } },
-          }}
-        />
+        <>
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-2 py-1 text-left font-medium text-gray-700">ID</th>
+                <th className="px-2 py-1 text-left font-medium text-gray-700">Name</th>
+                <th className="px-2 py-1 text-left font-medium text-gray-700">Guard</th>
+                <th className="px-2 py-1 text-right font-medium text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {data.length > 0 ? (
+                data.map((row) => (
+                  <tr key={row.id}>
+                    <td className="px-2 py-1">{row.id}</td>
+                    <td className="px-2 py-1">{row.name}</td>
+                    <td className="px-2 py-1">{row.guard_name}</td>
+                    <td className="px-2 py-1 text-right">
+                      <div className="flex justify-end space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(row)}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(row.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center text-gray-500 italic py-4">
+                    No roles found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-2 space-y-2 sm:space-y-0">
+            <div className="text-xs text-gray-600">
+              Page <span className="font-medium">{page}</span> of{" "}
+              <span className="font-medium">{totalPages}</span> &nbsp;(
+              {totalRows} {totalRows === 1 ? "record" : "records"})
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                className="text-xs p-1 cursor-pointer"
+              >
+                Previous
+              </Button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))
+                .map((pNum) => (
+                  <Button
+                    key={pNum}
+                    variant={pNum === page ? "default" : "outline"}
+                    className="px-3 py-1 text-xs cursor-pointer"
+                    onClick={() => setPage(pNum)}
+                  >
+                    {pNum}
+                  </Button>
+                ))}
+
+              <Button
+                variant="outline"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                className="text-xs p-1 cursor-pointer"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 };
 
-export default Lists;
+export default RolesList;

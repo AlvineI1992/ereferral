@@ -14,13 +14,7 @@ class PermissionController extends Controller
      * @return \Illuminate\Http\Response
      */
 
- /*    function __construct()
-    {
-         $this->middleware('can:permission list', ['only' => ['index','show']]);
-         $this->middleware('can:permission create', ['only' => ['create','store']]);
-         $this->middleware('can:permission edit', ['only' => ['edit','update']]);
-         $this->middleware('can:permission delete', ['only' => ['destroy']]);
-    } */
+   
 
     public function index(Request $request)
     {

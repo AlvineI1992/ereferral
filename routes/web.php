@@ -43,12 +43,19 @@ Route::get('/roles', function () {
     return Inertia::render('Roles/Index');
 })->middleware(['auth:sanctum', 'verified'])->name('roles');
 
+Route::get('roles/assign/{id}', function ($id) {
+    return Inertia::render('Roles/RolesProfileLayout', [
+        'id' => $id
+    ]);
+})->middleware(['auth:sanctum', 'verified'])->name('emr.profile');
+
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/api/roles', [RoleController::class, 'index']);
     Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
+    Route::get('/api/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
 });
 
 // Inertia Page Route (Web, uses session-based auth)

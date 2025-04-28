@@ -71,6 +71,13 @@ class RoleController extends Controller
         return redirect()->route('roles')->with('success', 'Role updated successfully.');
     }
 
+    public function show($id)
+    {
+        $data = RoleModel::findOrFail($id);
+        return response()->json($data);
+    }
+
+
     public function destroy(RoleModel $role)
     {
         $role->delete();
