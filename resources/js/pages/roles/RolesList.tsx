@@ -3,8 +3,12 @@ import { Pencil, Trash2, List, CircleArrowRight, ChevronLeft, ChevronRight } fro
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Inertia } from "@inertiajs/inertia";
-
-const RolesList = ({ refreshKey, onEdit }) => {
+type RolesListProps = {
+  refreshKey: any; 
+  onEdit: (id: number) => void;
+  onSave?: () => void;
+};
+const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -12,17 +16,20 @@ const RolesList = ({ refreshKey, onEdit }) => {
   const [totalRows, setTotalRows] = useState(0);
   const perPage = 10; // Set per page
 
-  const fetchData = async (pageNumber = 1, search = "") => {
+  const fetchData = async (pageNumber = 1, search = "", id = null) => { 
     setLoading(true);
     try {
-      const response = await axios.get(`/api/roles?page=${pageNumber}&search=${search}`);
+      const baseUrl = id ? `/api/roles/${id}` : `/api/roles`;
+
+      const response = await axios.get(`${baseUrl}?page=${pageNumber}&search=${search}`);
+      
       setData(response.data.data);
       setTotalRows(response.data.total);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
     setLoading(false);
-  };
+ };
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -96,7 +103,7 @@ const RolesList = ({ refreshKey, onEdit }) => {
   const endEntry = Math.min(startEntry + perPage - 1, totalRows);
 
   return (
-    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3 mt-3">
+    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
@@ -162,7 +169,7 @@ const RolesList = ({ refreshKey, onEdit }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
+                  <td colspan="4" className="text-center py-4">
                     No roles found.
                   </td>
                 </tr>

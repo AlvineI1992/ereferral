@@ -8,8 +8,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Candara', 'Arial', sans-serif, system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -103,14 +102,14 @@
     --chart-4: oklch(0.7 0.2 180);
     --chart-5: oklch(0.8 0.1 180);
     --radius: 0.625rem;
-    --sidebar: #4CAF50; /* Green color for the sidebar background */
+    --sidebar: hsl(123, 94%, 21%); /* Green color for the sidebar background */
     --sidebar-foreground: #fff; /* White text color for the sidebar */
-    --sidebar-primary: #388E3C; /* Darker green for primary accent */
+    --sidebar-primary:hsl(123, 94%, 21%); /* Darker green for primary accent */
     --sidebar-primary-foreground: #fff; /* White text for primary accent */
-    --sidebar-accent: #66BB6A; /* Lighter green for accent */
+    --sidebar-accent: hsl(123, 94%, 21%); /* Lighter green for accent */
     --sidebar-accent-foreground: #fff; /* White text for accent */
-    --sidebar-border: #388E3C; /* Darker green for border */
-    --sidebar-ring: #66BB6A; /* Light green for ring */
+    --sidebar-border:hsl(123, 94%, 21%); /* Darker green for border */
+    --sidebar-ring:hsl(123, 94%, 21%);/* Light green for ring */
 }
 
 .dark {
@@ -138,14 +137,14 @@
     --chart-3: oklch(0.6 0.1 180);
     --chart-4: oklch(0.7 0.2 180);
     --chart-5: oklch(0.8 0.1 180);
-    --sidebar: #388E3C; /* Dark green for sidebar in dark mode */
-    --sidebar-foreground: #fff; /* White text for contrast */
-    --sidebar-primary: #4CAF50; /* Lighter green for primary accent */
+    --sidebar: hsl(123, 94%, 21%); /* Green color for the sidebar background */
+    --sidebar-foreground: #fff; /* White text color for the sidebar */
+    --sidebar-primary:hsl(123, 94%, 21%); /* Darker green for primary accent */
     --sidebar-primary-foreground: #fff; /* White text for primary accent */
-    --sidebar-accent: #66BB6A; /* Lighter green accent */
+    --sidebar-accent: hsl(123, 94%, 21%); /* Lighter green for accent */
     --sidebar-accent-foreground: #fff; /* White text for accent */
-    --sidebar-border: #388E3C; /* Darker green for border */
-    --sidebar-ring: #66BB6A; /* Lighter green for ring */
+    --sidebar-border:hsl(123, 94%, 21%); /* Darker green for border */
+    --sidebar-ring:hsl(123, 94%, 21%);/* Light green for ring */
 }
 
 

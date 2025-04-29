@@ -16,7 +16,13 @@ import {
   DropdownMenuContent, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const Lists = ({ refreshKey, onEdit }) => {
+
+type ListProps = {
+  refreshKey: any; 
+  onEdit: (id: number) => void;
+};
+
+const Lists = ({ refreshKey, onEdit }: ListProps) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -47,7 +53,7 @@ const Lists = ({ refreshKey, onEdit }) => {
     fetchData(page, searchTerm);
   }, [refreshKey, page, searchTerm]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id:string) => {
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "This action cannot be undone!",
@@ -78,9 +84,9 @@ const Lists = ({ refreshKey, onEdit }) => {
     }
   };
 
-  const handleEdit = (row) => onEdit?.(row);
+  const handleEdit = (row:string) => onEdit?.(row);
 
-  const handleGoto = (id) => {
+  const handleGoto = (id:string) => {
     if (!id) {
       console.error("ID parameter is required");
       return;
@@ -98,7 +104,7 @@ const Lists = ({ refreshKey, onEdit }) => {
   };
 
   return (
-    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3 mt-3">
+    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
       <div className="flex justify-end mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

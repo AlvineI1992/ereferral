@@ -47,7 +47,14 @@ Route::get('roles/assign/{id}', function ($id) {
     return Inertia::render('Roles/RolesProfileLayout', [
         'id' => $id
     ]);
-})->middleware(['auth:sanctum', 'verified'])->name('emr.profile');
+})->middleware(['auth:sanctum', 'verified']);
+
+Route::get('roles/assigned/{id}', function ($id) {
+    return Inertia::render('Roles/RolesProfileLayout', [
+        'id' => $id,
+        'is_include'=>true
+    ]);
+})->middleware(['auth:sanctum', 'verified']);
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
@@ -56,8 +63,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
     Route::get('/api/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
+    
+    
 });
-
+Route::patch('/api/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.permission');
 // Inertia Page Route (Web, uses session-based auth)
 Route::get('/permission', function () {
     return Inertia::render('Permission/Index');
@@ -69,6 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/permission/update/{role}', [PermissionController::class, 'update'])->name('permission.update');
     Route::delete('/permission/delete/{role}', [PermissionController::class, 'destroy'])->name('permission.destroy');
     Route::post('/permission/store', [PermissionController::class, 'store'])->name('permission.store');
+    Route::get('/permission-has-role', [PermissionController::class, 'permission_has_role'])->name('permission.has.role');
 });
 
 Route::get('/emr', function () {

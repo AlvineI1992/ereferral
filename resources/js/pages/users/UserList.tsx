@@ -93,7 +93,7 @@ const UserList = ({ refreshKey, onEdit }) => {
   ];
 
   return (
-    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3 mt-3">
+    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <List size="16" />

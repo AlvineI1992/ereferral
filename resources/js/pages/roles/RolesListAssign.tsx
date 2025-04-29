@@ -13,9 +13,14 @@ type Role = {
 
 type ListProps = {
   refreshKey: any;
+  id: number | null;
+  is_include: boolean | null;
+  onSave?: () => void;
 };
 
-const RolesListAssign = ({ refreshKey }: ListProps) => {
+const RolesListAssign = ({ refreshKey, id: selectedRoleId,is_include }: ListProps) => {
+
+  const [isInclude, setIsInclude] = useState<boolean>(true);
   const [data, setData] = useState<Role[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -27,13 +32,22 @@ const RolesListAssign = ({ refreshKey }: ListProps) => {
   const perPage = 10;
 
   const fetchData = async (pageNumber = 1, search = "") => {
+    if (!selectedRoleId) {
+      setData([]);
+      setTotalRows(0);
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await axios.get(`/api/permission?page=${pageNumber}&search=${search}`);
+      const response = await axios.get(
+        `/permission-has-role?page=${pageNumber}&search=${search}&role_id=${selectedRoleId}&is_include=${isInclude}`
+      );
       setData(response.data.data);
       setTotalRows(response.data.total);
     } catch (error) {
       console.error("Error fetching data:", error);
+      Swal.fire("Error", "Failed to load permissions.", "error");
     }
     setLoading(false);
   };
@@ -67,20 +81,36 @@ const RolesListAssign = ({ refreshKey }: ListProps) => {
   };
 
   const handleSubmit = async () => {
+    if (!selectedRoleId) {
+      Swal.fire("No Role Selected", "Please select a role first.", "warning");
+      return;
+    }
+
     if (selectedIds.length === 0) {
-      Swal.fire("No Selection", "Please select at least one role.", "warning");
+      Swal.fire("No Selection", "Please select at least one permission.", "warning");
       return;
     }
 
     setProcessing(true);
     try {
-      await axios.post("/api/assign-permissions", {
-        role_ids: selectedIds,
-      });
+      await axios.patch(
+        `/api/assign-permissions/${selectedRoleId}`, // ✅ include role ID
+        {
+          permissionids: selectedIds,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       Swal.fire("Success", "Permissions assigned successfully.", "success");
+      setSelectedIds([]);
+      setSelectAll(false);
+      onSave?.();
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", "Something went wrong!", "error");
+      Swal.fire("Error", "Something went wrong while assigning permissions.", "error");
     }
     setProcessing(false);
   };
@@ -95,7 +125,7 @@ const RolesListAssign = ({ refreshKey }: ListProps) => {
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <List size={16} />
-          <h2 className="text-lg font-semibold">Permission</h2>
+          <h2 className="text-lg font-semibold">Available Permission</h2>
         </div>
 
         {/* Save Button */}
@@ -156,7 +186,7 @@ const RolesListAssign = ({ refreshKey }: ListProps) => {
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="px-4 py-2 border-b">
                       <Checkbox
-                        
+                        checked={selectedIds.includes(row.id)}
                         onCheckedChange={(checked) => handleSelectOne(row.id, checked)}
                       />
                     </td>
@@ -168,7 +198,7 @@ const RolesListAssign = ({ refreshKey }: ListProps) => {
               ) : (
                 <tr>
                   <td colSpan={4} className="text-center py-4">
-                    No roles found.
+                    No permission found.
                   </td>
                 </tr>
               )}

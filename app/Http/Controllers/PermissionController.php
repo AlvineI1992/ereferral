@@ -34,6 +34,56 @@ class PermissionController extends Controller
         ]); 
     }
 
+    public function permission_has_role(Request $request)
+    {
+        $query = PermissionModel::query();
+    
+        // Apply search filter if provided
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('guard_name', 'LIKE', "%{$search}%");
+            });
+        }
+    
+        // ✅ Get assigned permission IDs if role_id is provided
+        $assignedPermissions = [];
+        if ($roleId = $request->input('role_id')) {
+            $assignedPermissions = \DB::table('role_has_permissions')
+                ->where('role_id', $roleId)
+                ->pluck('permission_id')
+                ->toArray();
+            
+        $is_include = $request->input('is_include');
+        if($is_include==true)
+        {
+            $query->whereNotIn('id', $assignedPermissions);
+        }else{
+            // Filter out the permissions already assigned to the role
+        
+            $query->whereIn('id', $assignedPermissions);
+        }
+            
+        }
+    
+        $query->orderBy('id', 'desc');
+        $permissions = $query->paginate(10);
+    
+        // ✅ Add `is_assigned` flag
+        $permissions->getCollection()->transform(function ($item) use ($assignedPermissions) {
+            $item->is_assigned = in_array($item->id, $assignedPermissions);
+            return $item;
+        });
+    
+        return response()->json([
+            'data' => $permissions->items(),
+            'total' => $permissions->total(),
+        ]);
+    }
+    
+
+    
+
     /**
      * Show the form for creating a new resource.
      *

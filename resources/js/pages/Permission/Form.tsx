@@ -110,6 +110,7 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
                         <SelectContent>
                             <SelectItem value="web">Web</SelectItem>
                             <SelectItem value="api">API</SelectItem>
+                            <SelectItem value="sanctum">Sanctum</SelectItem>
                         </SelectContent>
                     </Select>
                     <InputError id="guard_name-error" message={errors.guard_name} aria-live="polite" className="text-xs text-red-500" />
