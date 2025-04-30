@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RefFacilitiesModel;
 use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
+
 class RefFacilitiesController extends Controller
 {
     /**
@@ -13,42 +13,40 @@ class RefFacilitiesController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-{
-    if ($request->ajax()) {
-        $data = RefFacilitiesModel::select([
+    {
+        $query = RefFacilitiesModel::select([
             'ref_facilities.hfhudcode',
             'ref_facilities.facility_name',
             'ref_facilities.status',
-            'ref_region.regname',
-            'ref_province.provname',
+             'ref_region.regname',
+            /*'ref_province.provname',
             'ref_city.cityname',
-            'ref_barangay.bgyname',
+            'ref_barangay.bgyname', */
             'ref_facilities.fhudaddress',
-            'ref_facilities.status',
         ])
-        ->leftJoin('ref_region', 'ref_facilities.region_code', '=', 'ref_region.regcode') 
-        ->leftJoin('ref_province', 'ref_facilities.province_code', '=', 'ref_province.provcode') 
-        ->leftJoin('ref_city', 'ref_facilities.city_code', '=', 'ref_city.citycode') 
-        ->leftJoin('ref_barangay', 'ref_facilities.bgycode', '=', 'ref_barangay.bgycode') 
-        ->get(); 
+             ->leftJoin('ref_region', 'ref_facilities.region_code', '=', 'ref_region.regcode');
+            /*->leftJoin('ref_province', 'ref_facilities.province_code', '=', 'ref_province.provcode')
+            ->leftJoin('ref_city', 'ref_facilities.city_code', '=', 'ref_city.citycode')
+            ->leftJoin('ref_barangay', 'ref_facilities.bgycode', '=', 'ref_barangay.bgycode'); */
 
-        return DataTables::of($data)
-            ->addColumn('actions', function ($row) {
-                return '<div class="btn-group btn-sm  ">
-                         <button  class="btn btn-success btn-sm edit-btn" data-id="'.$row->hfhudcode.'"><i class="fas fa-edit"></i>&nbsp;Edit</button> 
-                        <a href="'.route('users.destroy', $row->hfhudcode).'" class="btn btn-danger btn-sm delete-btn" 
-                           data-id="'.$row->hfhudcode.'" onclick="return confirm(\'Are you sure?\')">
-                            <i class="fas fa-times-circle">&nbsp;Delete</i>
-                        </a>
-                         </div>
-                       ';
-            })
-            ->rawColumns(['actions'])
-            ->make(true);
+            if ($search = $request->input('search')) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('ref_facilities.facility_name', 'LIKE', "%{$search}%")
+                      ->orWhere('ref_facilities.hfhudcode', 'LIKE', "%{$search}%")
+                      ->orWhere('ref_region.regname', '=', $search); // exact match
+                });
+            }
+
+        $facilities = $query->paginate(10); // This returns a LengthAwarePaginator
+
+        return response()->json([
+            'data' => $facilities->items(),
+            'total' => $facilities->total(),
+            'current_page' => $facilities->currentPage(),
+            'last_page' => $facilities->lastPage(),
+        ]);
     }
 
-    return inertia('Facilities/Show');
-}
 
     /**
      * Show the form for creating a new resource.

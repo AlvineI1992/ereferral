@@ -42,7 +42,7 @@ const navReferences: NavItem[] = [
    
     {
         title: 'Facilities',
-        href: '/dashboard',
+        href: '/facilities',
         icon: Hospital ,
     }
 ];

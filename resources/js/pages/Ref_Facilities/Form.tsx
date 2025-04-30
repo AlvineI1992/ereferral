@@ -64,7 +64,7 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
         </h1>
       </div>
       <HeadingSmall title="Provider Information" description="Enter your details below." />
-      <form className="flex flex-col gap-1 mt-4" onSubmit={submit}>
+      <form className="flex flex-col gap-4 mt-4" onSubmit={submit}>
         <div className="grid gap-4">
           {/* Name */}
           <Label htmlFor="emr_name">Name:</Label>

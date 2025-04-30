@@ -6,6 +6,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\RefEmrController;
+use App\Http\Controllers\RefFacilitiesController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -121,6 +122,29 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 Route::get('/emr/list', [RefEmrController::class, 'list'])->name('emr.list');
+
+
+
+// API Routes (Sanctum-protected)
+
+Route::get('/facilities', function () {
+    return Inertia::render('Ref_Facilities/Index');
+})->middleware(['auth:sanctum', 'verified'])->name('facilities');
+
+Route::middleware('auth:sanctum')->group(function () {
+    
+    Route::put('/facility/update/{id}', [RefFacilitiesController::class, 'update'])->name('facility.update');
+    Route::delete('/facility/delete/{id}', [RefFacilitiesController::class, 'destroy'])->name('facility.destroy');
+    Route::post('/facility/store', [RefFacilitiesController::class, 'store'])->name('facility.store');
+    Route::get('/api/emr/info/{id}', [RefFacilitiesController::class, 'show'])->name('facility.info');
+ 
+    Route::get('/facility/profile_form', function () {
+        return Inertia::render('Emr/ProfileForm');
+    })->name('facility/profile_form');
+  
+});
+/* Route::get('/api/facilities', [RefFacilitiesController::class, 'index']); */
+Route::get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

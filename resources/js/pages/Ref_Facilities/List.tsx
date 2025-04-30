@@ -40,7 +40,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/emr?page=${pageNumber}&search=${search}`);
+      const res = await axios.get(`/facility/list?page=${pageNumber}&search=${search}`);
       setData(res.data.data);
       setTotalRows(res.data.total);
     } catch (err) {
@@ -104,7 +104,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
   };
 
   return (
-    <div className="p-3 bg-white rounded-lg shadow-md mr-3 ml-3 mt-3">
+    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
       <div className="flex justify-end mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -155,37 +155,39 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
               <TableRow>
                 {visibleColumns.id && <TableHead className="p-1">ID</TableHead>}
                 {visibleColumns.name && <TableHead className="p-1">Name</TableHead>}
+                {visibleColumns.name && <TableHead className="p-1">Region</TableHead>}
                 {visibleColumns.status && <TableHead className="p-1">Status</TableHead>}
-                {visibleColumns.remarks && <TableHead className="p-1">Remarks</TableHead>}
+               
                 {visibleColumns.actions && <TableHead className="p-1 text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.length > 0 ? data.map((row) => (
                 <TableRow key={row.emr_id}>
-                  {visibleColumns.id && <TableCell className="p-1">{row.emr_id}</TableCell>}
-                  {visibleColumns.name && <TableCell className="p-1">{row.emr_name}</TableCell>}
+                  {visibleColumns.id && <TableCell className="p-1">{row.hfhudcode}</TableCell>}
+                  {visibleColumns.name && <TableCell className="p-1">{row.facility_name}</TableCell>}
+                  {visibleColumns.name && <TableCell className="p-1">{row.regname}</TableCell>}
                   {visibleColumns.status && (
                     <TableCell className="p-1">
                       <span className={`px-1 py-0.5 rounded-full text-xs font-medium ${
-                        row.status === "1"
+                        row.status === "A"
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
                       }`}>
-                        {row.status === "1" ? "Active" : "Inactive"}
+                        {row.status === "A" ? "Active" : "Inactive"}
                       </span>
                     </TableCell>
                   )}
-                  {visibleColumns.remarks && <TableCell className="p-1 max-w-xs truncate">{row.remarks}</TableCell>}
+         
                   {visibleColumns.actions && (
                     <TableCell className="p-1 text-right flex justify-end space-x-1">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
                         <Pencil size={12} />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.emr_id)} className="cursor-pointer">
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.hfhudcode)} className="cursor-pointer">
                         <Trash2 size={12} className="text-red-600" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleGoto(row.emr_id)} className="cursor-pointer">
+                      <Button variant="ghost" size="icon" onClick={() => handleGoto(row.hfhudcode)} className="cursor-pointer">
                         <CircleArrowRight size={12} className="text-blue-600" />
                       </Button>
                     </TableCell>
