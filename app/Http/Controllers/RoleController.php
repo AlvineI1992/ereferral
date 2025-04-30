@@ -82,10 +82,6 @@ class RoleController extends Controller
         return response()->json($data);
     }
 
-   
-    
-
-
     public function assignPermissions(Request $request, $id)
     {
         $validated = $request->validate([
@@ -120,6 +116,34 @@ class RoleController extends Controller
         return response()->json([
             'success' => false,
             'message' => 'No new permissions to assign.',
+        ]);
+    }
+
+
+    public function revokePermissions($id)
+    {
+        $validated = request()->validate([
+            'permissionsids' => 'required|array|min:1',
+            'permissionsids.*' => 'integer|exists:permissions,id',
+        ]);
+        $role = Role::findOrFail($id);
+        $permissions = PermissionModel::whereIn('id', $validated['permissionsids'])
+            ->whereIn('id', $role->permissions()->pluck('id'))
+            ->get();
+    
+        $count = 0;
+    
+        foreach ($permissions as $permission) {
+            $role->revokePermissionTo($permission);
+            $count++;
+        }
+    
+        return response()->json([
+            'success' => true,
+            'permissions' => $permissions,
+            'message' => $count === 0
+                ? 'No permission to revoke.'
+                : "{$count} permission(s) revoked from role successfully!",
         ]);
     }
     

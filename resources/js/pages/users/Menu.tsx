@@ -14,8 +14,8 @@ export default function Menu({ id, children }: MenuProps) {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
   const sidebarNavItems: NavItem[] = [
-    { title: 'Available Permission/s', href: `/roles/assign/${id}`, icon: Check },
-    { title: 'Access Permission/s', href:`/roles/assigned/${id}`, icon: Key },
+    { title: 'Available  Roles', href: `/users/assign-roles/${id}`, icon: Check },
+    { title: 'Access Roles', href:`/users/assigned-roles/${id}`, icon: Key },
     
   ];
 

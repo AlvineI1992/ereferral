@@ -18,7 +18,8 @@ type ListProps = {
   onSave: () => void;
 };
 
-const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }: ListProps) => {
+const UsersListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }: ListProps) => {
+
   const [data, setData] = useState<Role[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -30,6 +31,7 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
   const perPage = 10;
 
   const fetchData = async (pageNumber = 1, search = "") => {
+    console.log('asd');
     if (!selectedRoleId) {
       setData([]);
       setTotalRows(0);
@@ -39,7 +41,7 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
     setLoading(true);
     try {
       const response = await axios.get(
-        `/permission-has-role?page=${pageNumber}&search=${search}&role_id=${selectedRoleId}&is_include=${is_include}`
+        `/user-has-role?page=${pageNumber}&search=${search}&user_id=${selectedRoleId}&is_include=${is_include}`
       );
       setData(response.data.data);
       setTotalRows(response.data.total);
@@ -82,39 +84,39 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
       Swal.fire("No Role Selected", "Please select a role first.", "warning");
       return;
     }
-  
+
     if (selectedIds.length === 0) {
       Swal.fire("No Selection", "Please select at least one permission.", "warning");
       return;
     }
-  
+
     setProcessing(true);
     try {
       if (is_include) {
         await axios.patch(
-          `/api/assign-permissions/${selectedRoleId}`,
-          { permissionids: selectedIds },
+          `/users/assign-roles/${selectedRoleId}`,
+          { roleids: selectedIds },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
-        Swal.fire("Success", "Permissions assigned successfully.", "success");
+        Swal.fire("Success", "Roles assigned successfully.", "success");
       } else {
-        
+
         await axios.patch(
-          `/api/revoke-permissions/${selectedRoleId}`,
-          { permissionsids: selectedIds },
+          `/users/revoke-roles/${selectedRoleId}`,
+          { roleids: selectedIds },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
-        Swal.fire("Success", "Permissions revoked successfully.", "success");
+        Swal.fire("Success", "Roles revoked successfully.", "success");
       }
-  
+
       // Reset selection
       setSelectedIds([]);
       setSelectAll(false);
@@ -136,12 +138,12 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
-          
+
           <h2
             className={`text-lg font-semibold ${is_include ? 'text-blue-600' : 'text-green-600'
               }`}
           >
-            {is_include ? "Available Permission" : "Access Permission"}
+            {is_include ? "Available" : "Assigned"}
           </h2>
         </div>
 
@@ -186,41 +188,38 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
           <table className="min-w-full text-sm text-left border-collapse">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-2 border-b">
+                <th className="px-1 py-1 border-b">
                   <Checkbox
                     checked={selectAll}
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
-                <th className="px-4 py-2 border-b">ID</th>
-                <th className="px-4 py-2 border-b">Name</th>
-                <th className="px-4 py-2 border-b">Guard</th>
+                <th className="px-1 py-1 border-b">Name</th>
               </tr>
             </thead>
             <tbody>
               {data.length > 0 ? (
                 data.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border-b">
+                  <tr key={row.id}>
+                    <td className="px-1 py-1 border-b">
                       <Checkbox
                         checked={selectedIds.includes(row.id)}
                         onCheckedChange={(checked) => handleSelectOne(row.id, checked)}
                       />
                     </td>
-                    <td className="px-4 py-2 border-b">{row.id}</td>
-                    <td className="px-4 py-2 border-b">{row.name}</td>
-                    <td className="px-4 py-2 border-b">{row.guard_name}</td>
+                    <td className="px-1 py-1 border-b">{row.name}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="text-center py-4">
+                  <td colSpan={2} className="text-center py-2 text-gray-500">
                     No permission found.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+
 
           {/* Info and Pagination */}
           <div className="flex flex-col md:flex-row justify-between items-center mt-4 px-2 gap-2">
@@ -273,4 +272,4 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
   );
 };
 
-export default RolesListAssign;
+export default UsersListAssign;

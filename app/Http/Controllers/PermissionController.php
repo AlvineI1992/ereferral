@@ -54,15 +54,15 @@ class PermissionController extends Controller
                 ->pluck('permission_id')
                 ->toArray();
             
-        $is_include = $request->input('is_include');
-        if($is_include==true)
-        {
-            $query->whereNotIn('id', $assignedPermissions);
-        }else{
-            // Filter out the permissions already assigned to the role
-        
-            $query->whereIn('id', $assignedPermissions);
-        }
+                $isInclude = filter_var($request->input('is_include'), FILTER_VALIDATE_BOOLEAN);
+
+                if ($isInclude) {
+                    // Get permissions that are NOT assigned to the role
+                    $query->whereNotIn('id', $assignedPermissions);
+                } else {
+                    // Get permissions that ARE assigned to the role
+                    $query->whereIn('id', $assignedPermissions);
+                }
             
         }
     
@@ -80,9 +80,6 @@ class PermissionController extends Controller
             'total' => $permissions->total(),
         ]);
     }
-    
-
-    
 
     /**
      * Show the form for creating a new resource.

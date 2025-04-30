@@ -75,7 +75,7 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
             </div>
             <HeadingSmall title={perm ? "Edit Permission" : "Create Permission"} description={perm ? "Edit the permission details below." : "Enter the permission details below."} />
 
-            <form className="flex flex-col gap-4 mt-4" onSubmit={submit}>
+            <form className="flex flex-col gap-1 mt-4" onSubmit={submit}>
                 {/* Name Field */}
                 <div className="grid gap-1">
                     <Label htmlFor="name">Permission Name:</Label>

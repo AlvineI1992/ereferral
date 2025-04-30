@@ -75,7 +75,7 @@ export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormPr
             </div>
             <HeadingSmall title={role ? "Edit Role" : "Create Role"} description={role ? "Edit the role details below." : "Enter the role details below."} />
             
-            <form className="flex flex-col gap-4 mt-4" onSubmit={submit}>
+            <form className="flex flex-col gap-1 mt-4" onSubmit={submit}>
                 {/* Name Field */}
                 <div className="grid gap-1">
                     <Label htmlFor="name">Role Name:</Label>

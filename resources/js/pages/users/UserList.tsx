@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Pencil, Trash2, List } from "lucide-react";
+import { Pencil, Trash2, List, CircleArrowRight, Check } from "lucide-react";
 import DataTable from "react-data-table-component";
 import axios from "axios";
-import { Progress } from "@/components/ui/progress";
 import Swal from "sweetalert2";
+import { Inertia } from "@inertiajs/inertia";
+
+import { cn } from "@/lib/utils"; // required for conditional classNames
 
 const UserList = ({ refreshKey, onEdit }) => {
   const [data, setData] = useState([]);
@@ -11,13 +13,14 @@ const UserList = ({ refreshKey, onEdit }) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
-  const [selectedRoleId, setSelectedRoleId] = useState(null);
-
-  // Fetch data from API
-  const fetchData = async (pageNumber = 1, search = "") => {
+  const [selectedRole, setSelectedRole] = useState("");
+  const [open, setOpen] = useState(false);
+  const fetchData = async (pageNumber = 1, search = "", role = "") => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/users?page=${pageNumber}&search=${search}`);
+      const response = await axios.get(
+        `/api/users?page=${pageNumber}&search=${search}&role=${role}`
+      );
       setData(response.data.data);
       setTotalRows(response.data.total);
     } catch (error) {
@@ -26,12 +29,10 @@ const UserList = ({ refreshKey, onEdit }) => {
     setLoading(false);
   };
 
-  // Fetch data when refreshKey, page or searchTerm changes
   useEffect(() => {
-    fetchData(page, searchTerm);
-  }, [refreshKey, page, searchTerm]);
+    fetchData(page, searchTerm, selectedRole);
+  }, [refreshKey, page, searchTerm, selectedRole]);
 
-  // Handle Delete action
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -47,10 +48,10 @@ const UserList = ({ refreshKey, onEdit }) => {
       try {
         await axios.delete(`/roles/delete/${id}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
-        fetchData(page, searchTerm);
+        fetchData(page, searchTerm, selectedRole);
         Swal.fire({
           title: "Deleted!",
           text: "The role has been deleted.",
@@ -65,10 +66,13 @@ const UserList = ({ refreshKey, onEdit }) => {
     }
   };
 
-  // Handle Edit action
-  const handleEdit = (id) => {
-    setSelectedRoleId(id);
-    onEdit(id); // Pass the selected user to the parent component
+  const handleEdit = (row) => {
+    onEdit(row);
+  };
+
+  const handleGoto = (id) => {
+    if (!id) return;
+    Inertia.visit(`/users/assign-roles/${id}`);
   };
 
   const columns = [
@@ -80,11 +84,14 @@ const UserList = ({ refreshKey, onEdit }) => {
       name: "Actions",
       cell: (row) => (
         <div className="flex gap-1">
-          <button onClick={() => handleEdit(row)} className="p-1 text-blue-500 hover:text-blue-700">
+          <button onClick={() => handleEdit(row)} className="p-1 text-blue-500 hover:text-gray-700">
             <Pencil size={16} />
           </button>
-          <button onClick={() => handleDelete(row.id)} className="p-1 text-red-500 hover:text-red-700">
+          <button onClick={() => handleDelete(row.id)} className="p-1 text-red-500 hover:text-gray-700">
             <Trash2 size={16} />
+          </button>
+          <button onClick={() => handleGoto(row.id)} className="p-1 text-blue-500 hover:text-gray-700">
+            <CircleArrowRight size={16} />
           </button>
         </div>
       ),
@@ -93,24 +100,29 @@ const UserList = ({ refreshKey, onEdit }) => {
   ];
 
   return (
-    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
+    <div className="p-3 bg-white mr-3 ml-3 mt-3">
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <List size="16" />
           <h2 className="text-lg font-semibold">Users</h2>
         </div>
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-2 py-1 border rounded-md text-sm w-56"
-        />
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-2 py-1 border rounded-md text-sm w-56"
+          />
+
+         
+        </div>
       </div>
+
       {loading ? (
         <div className="flex justify-center items-center py-4">
           <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm text-blue-600">&nbsp;Please wait...</span>
+          <span className="text-sm text-blue-600 ml-2">Please wait...</span>
         </div>
       ) : (
         <DataTable

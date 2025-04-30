@@ -6,7 +6,7 @@ import { Inertia } from "@inertiajs/inertia";
 type RolesListProps = {
   refreshKey: any; 
   onEdit: (id: number) => void;
-  onSave?: () => void;
+
 };
 const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
   const [data, setData] = useState([]);
@@ -108,7 +108,7 @@ const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <List size={16} />
-          <h2 className="text-lg font-semibold">Roles</h2>
+          <h2 className="text-lg font-semibold">Permissions</h2>
         </div>
         <input
           type="text"
