@@ -9,11 +9,12 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\Permission\Traits\HasRoles;
+use Laravel\Sanctum\HasApiTokens;   
 
 class User extends Authenticatable implements Auditable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable ,SoftDeletes, \OwenIt\Auditing\Auditable,hasRoles;
+    use HasFactory, Notifiable ,SoftDeletes, \OwenIt\Auditing\Auditable,hasRoles,HasApiTokens;
     protected $guard_name = 'web';
     protected $dates = ['deleted_at'];
     /**

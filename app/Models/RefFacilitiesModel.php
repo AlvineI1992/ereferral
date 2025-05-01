@@ -55,7 +55,13 @@ class RefFacilitiesModel extends Model
         'hfhudcode',
         'facility_name',
         'fhudaddress',
-        'status'
+        'status',
+        'factype_code',
+        'region_code',
+        'province_code',
+        'city_code',
+        'barangay_code',
+        'remarks',
     ];
 
 

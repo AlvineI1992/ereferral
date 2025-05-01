@@ -37,6 +37,14 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
     actions: true,
   });
 
+  function getAbbreviation(name:string) {
+    return name
+      .split(' ')                    // split by space
+      .map(word => word[0])         // take the first letter of each word
+      .join('')                     // join them together
+      .toUpperCase();               // make sure it's uppercase
+  }
+
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
     try {
@@ -104,7 +112,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
   };
 
   return (
-    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
+    <div className="p-3  mr-2 ml-2 mt-1">
       <div className="flex justify-end mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -129,7 +137,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <TableOfContents size="16" />
-          <h2 className="text-sm font-semibold">Provider List</h2>
+          <h2 className="text-xl font-semibold">Facility List</h2>
         </div>
         <Input
           type="text"
@@ -155,6 +163,8 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
               <TableRow>
                 {visibleColumns.id && <TableHead className="p-1">ID</TableHead>}
                 {visibleColumns.name && <TableHead className="p-1">Name</TableHead>}
+                {visibleColumns.name && <TableHead className="p-1">Abbrv</TableHead>}
+                {visibleColumns.name && <TableHead className="p-1">Type</TableHead>}
                 {visibleColumns.name && <TableHead className="p-1">Region</TableHead>}
                 {visibleColumns.status && <TableHead className="p-1">Status</TableHead>}
                
@@ -163,9 +173,11 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
             </TableHeader>
             <TableBody>
               {data.length > 0 ? data.map((row) => (
-                <TableRow key={row.emr_id}>
+                <TableRow key={row.hfhudcode}>
                   {visibleColumns.id && <TableCell className="p-1">{row.hfhudcode}</TableCell>}
                   {visibleColumns.name && <TableCell className="p-1">{row.facility_name}</TableCell>}
+                  {visibleColumns.name && <TableCell className="p-1">{row.facility_name}</TableCell>}
+                  {visibleColumns.name && <TableCell className="p-1">{row.description}</TableCell>}
                   {visibleColumns.name && <TableCell className="p-1">{row.regname}</TableCell>}
                   {visibleColumns.status && (
                     <TableCell className="p-1">

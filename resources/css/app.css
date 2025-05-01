@@ -1,4 +1,10 @@
+
+/* In resources/css/app.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
 @import 'tailwindcss';
+/* In resources/css/app.css */
+
 
 @plugin 'tailwindcss-animate';
 
@@ -8,7 +14,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    --font-sans: 'Candara', 'Arial', sans-serif, system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Poppins', 'Arial', sans-serif, system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -94,8 +100,8 @@
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
+    --input: oklch(0.75 0.2 142);
+    --ring: oklch(0.45 0.2 142);
     --chart-1: oklch(0.6 0.2 180);
     --chart-2: oklch(0.5 0.15 180);
     --chart-3: oklch(0.4 0.1 180);
@@ -109,7 +115,14 @@
     --sidebar-accent: hsl(123, 94%, 21%); /* Lighter green for accent */
     --sidebar-accent-foreground: #fff; /* White text for accent */
     --sidebar-border:hsl(123, 94%, 21%); /* Darker green for border */
-    --sidebar-ring:hsl(123, 94%, 21%);/* Light green for ring */
+    --sidebar-ring:hsl(0, 0%, 100%);/* Light green for ring */
+    --sidebar-hover: rgb(204, 231, 205); /* Slightly lighter green on hover */
+  --sidebar-hover-foreground: #f3f0f0;
+
+  --sidebar-selected: hsl(120, 17%, 98%); /* More distinct green for selection */
+  --sidebar-selected-foreground: #fff;
+
+  --sidebar-hover-blue: rgb(173, 216, 230); /* Light blue on hover */
 }
 
 .dark {
@@ -148,6 +161,7 @@
 }
 
 
+/* Global base layer styles */
 @layer base {
     * {
         @apply border-border;
@@ -155,5 +169,19 @@
 
     body {
         @apply bg-background text-foreground;
+        font-family: 'Poppins', 'Arial', sans-serif;
+        -webkit-font-smoothing: antialiased; /* Chrome/Safari font smoothing */
+        -moz-osx-font-smoothing: grayscale; /* Firefox macOS font smoothing */
+        font-size: 16px; /* Adjust as needed */
+        font-weight: 400; /* Regular weight */
     }
 }
+
+/* Tailwind's custom font-sans utility */
+@layer base {
+    body {
+        @apply bg-background text-foreground font-sans;
+    }
+}
+
+

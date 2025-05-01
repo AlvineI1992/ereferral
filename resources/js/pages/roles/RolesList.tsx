@@ -103,7 +103,7 @@ const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
   const endEntry = Math.min(startEntry + perPage - 1, totalRows);
 
   return (
-    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
+    <div className="p-3  mr-3 ml-3 mt-3">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
@@ -128,7 +128,7 @@ const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left border-collapse">
-            <thead className="bg-gray-100">
+            <thead >
               <tr>
                 <th className="px-4 py-2 border-b">ID</th>
                 <th className="px-4 py-2 border-b">Name</th>

@@ -7,6 +7,8 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\RefEmrController;
 use App\Http\Controllers\RefFacilitiesController;
+use App\Http\Controllers\RefFacilitytypeController;
+use App\Http\Controllers\DemographicController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -145,6 +147,27 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 /* Route::get('/api/facilities', [RefFacilitiesController::class, 'index']); */
 Route::get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
+
+
+// API Routes (Sanctum-protected)
+
+/* Route::get('/facility_type', function () {
+    return Inertia::render('Ref_Facilities/Index');
+})->middleware(['auth:sanctum', 'verified'])->name('facilities'); */
+
+Route::middleware('auth:sanctum')->group(function () {
+    
+    Route::put('/facility_type/update/{id}', [RefFacilitytypeController::class, 'update'])->name('facility_type.update');
+    Route::delete('/facility_type/delete/{id}', [RefFacilitytypeController::class, 'destroy'])->name('facility_type.destroy');
+    Route::post('/facility_type/store', [RefFacilitytypeController::class, 'store'])->name('facility_type.store');
+    Route::get('/api/facility_type/info/{id}', [RefFacilitytypeController::class, 'show'])->name('facility_type.info');
+  
+});
+Route::get('/facility_type/list', [RefFacilitytypeController::class, 'list'])->name('facility_type.list');
+
+
+
+Route::get('/demographic/list', [DemographicController::class, 'list'])->name('demographic.list');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

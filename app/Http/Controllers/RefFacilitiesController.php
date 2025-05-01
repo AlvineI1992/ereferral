@@ -18,24 +18,38 @@ class RefFacilitiesController extends Controller
             'ref_facilities.hfhudcode',
             'ref_facilities.facility_name',
             'ref_facilities.status',
-             'ref_region.regname',
-            /*'ref_province.provname',
-            'ref_city.cityname',
-            'ref_barangay.bgyname', */
+            'ref_region.regname',
+            'ref_facilitytype.description',
             'ref_facilities.fhudaddress',
         ])
-             ->leftJoin('ref_region', 'ref_facilities.region_code', '=', 'ref_region.regcode');
-            /*->leftJoin('ref_province', 'ref_facilities.province_code', '=', 'ref_province.provcode')
-            ->leftJoin('ref_city', 'ref_facilities.city_code', '=', 'ref_city.citycode')
-            ->leftJoin('ref_barangay', 'ref_facilities.bgycode', '=', 'ref_barangay.bgycode'); */
+             ->leftJoin('ref_region', 'ref_facilities.region_code', '=', 'ref_region.regcode')
+             ->leftJoin('ref_facilitytype', 'ref_facilitytype.factype_code', '=', 'ref_facilities.facility_type')
+             ->orderBy('ref_facilities.fhud_seq','desc');
 
             if ($search = $request->input('search')) {
                 $query->where(function ($q) use ($search) {
                     $q->where('ref_facilities.facility_name', 'LIKE', "%{$search}%")
                       ->orWhere('ref_facilities.hfhudcode', 'LIKE', "%{$search}%")
+                      ->orWhere('ref_facilitytype.description', '=', $search)
                       ->orWhere('ref_region.regname', '=', $search); // exact match
                 });
             }
+
+            if ($request->filled('id')) {
+                $query->where('ref_facilities.hfhudcode', 'like', "%{$request->id}%");
+            }
+        
+            if ($request->filled('name')) {
+                $query->where('ref_facilities.facility_name', 'like', "%{$request->name}%");
+            }
+        
+           
+        
+            if ($request->filled('region')) {
+                $query->where('ref_region.regname', 'like', "%{$request->region}%");
+            }
+    
+        
 
         $facilities = $query->paginate(10); // This returns a LengthAwarePaginator
 
@@ -46,6 +60,8 @@ class RefFacilitiesController extends Controller
             'last_page' => $facilities->lastPage(),
         ]);
     }
+
+    
 
 
     /**
@@ -68,18 +84,25 @@ class RefFacilitiesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'regcode' => 'required|integer',
-            'regname' => 'nullable|string|max:50',
-            'regabbrev' => 'nullable|string|max:10',
-            'nscb_reg_code' => 'nullable|string|max:2',
-            'nscb_reg_name' => 'nullable|string|max:50',
-            'UserLevelID' => 'nullable|integer',
-            'addedby' => 'nullable|string|max:50',
-            'dateupdated' => 'nullable|date',
-            'status' => 'nullable|string|max:1',
+            'hfhudcode' => 'required|exists:ref_facilities,hfhudcode',
+            'facility_name' => 'required|string',
+            'factype_code' => 'required|string',
+            'region' => 'required|string',
+            'city' => 'required|string',
+            'province' => 'required|string',
+            'barangay' => 'required|string',
         ]);
+        $data = [
+            'hfhudcode'     => $request->hfhudcode,
+            'facility_name' => $request->facility_name,
+            'facility_type'  => $request->factype_code,
+            'region_code'   => $request->region,
+            'province_code' => $request->province,
+            'city_code'     => $request->city,
+            'bgycode' => $request->barangay
+        ];
 
-        $region = RefFacilitiesModel::create($request->all());
+        $region = RefFacilitiesModel::create($data);
 
         return response()->json($region, 201);
     }

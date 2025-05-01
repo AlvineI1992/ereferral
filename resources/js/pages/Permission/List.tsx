@@ -73,7 +73,7 @@ const RolesList = ({ refreshKey, onEdit }) => {
   const totalPages = Math.ceil(totalRows / perPage);
 
   return (
-    <div className="p-3 bg-white  mr-3 ml-3 mt-3">
+    <div className="p-3   mr-3 ml-3 mt-3">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
@@ -98,12 +98,12 @@ const RolesList = ({ refreshKey, onEdit }) => {
       ) : (
         <>
           <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+            <thead >
               <tr>
-                <th className="px-2 py-1 text-left font-medium text-gray-700">ID</th>
-                <th className="px-2 py-1 text-left font-medium text-gray-700">Name</th>
-                <th className="px-2 py-1 text-left font-medium text-gray-700">Guard</th>
-                <th className="px-2 py-1 text-right font-medium text-gray-700">Actions</th>
+                <th className="px-2 py-1 text-left font-medium">ID</th>
+                <th className="px-2 py-1 text-left font-medium">Name</th>
+                <th className="px-2 py-1 text-left font-medium">Guard</th>
+                <th className="px-2 py-1 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

@@ -60,4 +60,9 @@ class RefRegionModel extends Model
         'dateupdated',
         'status',
     ];
+
+    public function provinces()
+{
+    return $this->hasMany(RefProvinceModel::class, 'regcode', 'regcode');
+}
 }

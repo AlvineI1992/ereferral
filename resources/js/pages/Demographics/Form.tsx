@@ -6,16 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Head, useForm } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Hospital, LoaderCircle, Save, X } from 'lucide-react';
+import { Hospital, LoaderCircle, Save, X,ChevronsUpDown,Check } from 'lucide-react';
 import { FormEventHandler, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import DemographicSelector from '../Demographics/demographics_selector';
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { useState } from 'react';
+
+
 
 type Props = {
     onCreated: () => void;
@@ -28,14 +29,18 @@ type Formtype = {
     facility_name: string;
     fhudaddress: string;
     remarks: string;
-    factype_code: string;
-    region: string;
-    province: string;
-    city: string;
-    barangay: string;
 };
 
+/* export default function Form({ onCreated, onCancel, emr }: Props) { */
 export default function Form({ onCreated, onCancel, formval }: Props) {
+    const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
+        hfhudcode: formval?.hfhudcode || '',
+        facility_name: formval?.facility_name,
+        fhudaddress: formval?.fhudaddress,
+        remarks: formval?.remarks || '',
+        emr_id: formval?.emr_id || '',
+    });
+
     const nameInputRef = useRef<HTMLInputElement>(null);
 
     // Inside your component
@@ -43,29 +48,16 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
     const [value, setValue] = useState('');
     const [open, setOpen] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
-        hfhudcode: formval?.hfhudcode || '',
-        facility_name: formval?.facility_name,
-        fhudaddress: formval?.fhudaddress,
-        remarks: formval?.remarks || '',
-
-        factype_code: formval?.factype_code || '',
-        region: formval?.region || '',
-        province: formval?.province || '',
-        city: formval?.city || '',
-        barangay: formval?.barangay || '',
-    });
-
-    useEffect(() => {
-        axios
-            .get('/facility_type/list')
-            .then((response) => {
-                setFacilitytype(response.data);
-            })
-            .catch((error) => {
-                console.error('Error fetching frameworks:', error);
-            });
-    }, []);
+useEffect(() => {
+    axios
+        .get('/facility_type/list')
+        .then((response) => {
+            setFacilitytype(response.data);
+        })
+        .catch((error) => {
+            console.error('Error fetching frameworks:', error);
+        });
+}, []);
 
     useEffect(() => {
         nameInputRef.current?.focus();
@@ -81,7 +73,7 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('facility.store'), {
+        post(route('emr.store'), {
             onSuccess: () => {
                 reset();
                 onCreated();
@@ -91,7 +83,6 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
     };
 
     return (
-        
         <div className="mt-2 mr-3 ml-2 w-full">
             <Head title="Register" />
             <div className="mb-2 flex items-center">
@@ -127,24 +118,23 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                         autoComplete="off"
                     />
                     <InputError message={errors.facility_name} className="mt-1 text-xs" />
-
-                    {/* Status */}
-                    <div className="mb-2 flex items-center space-x-4">
-                        <Label htmlFor="status">Status:</Label>
-                        <Switch id="status" checked={data.status} onCheckedChange={handleSwitchChange} />
-                    </div>
-                    <InputError message={errors.status} className="mt-1 text-xs" />
                     {/* Remarks */}
-                    <Label htmlFor="remarks">Remarks:</Label>
+                    <Label htmlFor="fhudaddress">Address:</Label>
                     <Textarea
-                        id="remarks"
-                        value={data.remarks}
+                        id="fhudaddress"
+                        value={data.fhudaddress}
                         onChange={handleChange}
-                        className="mt-1 block w-full"
-                        placeholder="Remarks"
+                        className="mt-1 block h-8 w-full px-2 py-1 text-sm"
+                        placeholder="Address"
                         autoComplete="off"
                     />
-                    <InputError message={errors.remarks} className="mt-1" />
+                    <InputError message={errors.fhudaddress} className="mt-1 text-xs" />
+                    {/* Status */}
+                    <Label htmlFor="status" className="mb-2 block">
+                        Status:
+                    </Label>
+                    <Switch id="status" checked={data.status} onCheckedChange={handleSwitchChange} />
+                    <InputError message={errors.status} className="mt-1" />
                     <Label htmlFor="provider-selector">Facility type</Label>
 
                     {/* Hidden input to submit the selected value */}
@@ -153,16 +143,16 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                     <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger asChild>
                             <Button id="provider-selector" variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
-                                {value ? factypes.find((f) => f.factype_code === value)?.description : 'Select Facility type...'}
+                                {value ? factypes.find((f) => f.factype_code === value)?.description : 'Select provider...'}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
 
                         <PopoverContent className="w-100 p-0" id="provider-popover-content">
                             <Command>
-                                <CommandInput placeholder="Search Facility type..." />
+                                <CommandInput placeholder="Search provider..." />
                                 <CommandList>
-                                    <CommandEmpty>Not found.</CommandEmpty>
+                                    <CommandEmpty>No provider found.</CommandEmpty>
                                     <CommandGroup>
                                         {factypes.map((factype) => (
                                             <CommandItem
@@ -182,35 +172,18 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                                 </CommandList>
                             </Command>
                         </PopoverContent>
-                        {errors.factype_code && <div className="mt-1 text-xs text-red-500">{errors.factype_code}</div>}
                     </Popover>
-                    <p>Demogprahics</p>
                     {/* Remarks */}
-                    <Label htmlFor="fhudaddress">Address:</Label>
+                    <Label htmlFor="remarks">Remarks:</Label>
                     <Textarea
-                        id="fhudaddress"
-                        value={data.fhudaddress}
+                        id="remarks"
+                        value={data.remarks}
                         onChange={handleChange}
-                        className="mt-1 block h-8 w-full px-2 py-1 text-sm"
-                        placeholder="Address"
+                        className="mt-1 block w-full"
+                        placeholder="Remarks"
                         autoComplete="off"
                     />
-                    <InputError message={errors.fhudaddress} className="mt-1 text-xs" />
-                    <DemographicSelector
-                        variant="vertical"
-                        value={{
-                            region: data.region,
-                            province: data.province,
-                            city: data.city,
-                            barangay: data.barangay,
-                        }}
-                        onChange={(val) => {
-                            setData('region', val.region || '');
-                            setData('province', val.province || '');
-                            setData('city', val.city || '');
-                            setData('barangay', val.barangay || '');
-                        }}
-                    />
+                    <InputError message={errors.remarks} className="mt-1" />
 
                     {/* Buttons */}
                     <div className="mt-4 flex justify-between gap-4">

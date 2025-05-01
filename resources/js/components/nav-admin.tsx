@@ -8,16 +8,24 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { type NavItem } from '@/types';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
     const page = usePage();
     const [openMenu, setOpenMenu] = useState<string | null>(null);
 
     const toggleMenu = (menu: string) => {
-        // Toggle the submenu only when the menu header is clicked
         setOpenMenu(openMenu === menu ? null : menu);
     };
+
+    // Automatically open menu if a submenu item is active
+    useEffect(() => {
+        items.forEach((item) => {
+            if (item.submenu?.some((subitem) => route().current(subitem.href))) {
+                setOpenMenu(item.title);
+            }
+        });
+    }, [page.url]); // runs on route change
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -28,10 +36,9 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
                         <SidebarMenuButton 
                             asChild 
                             isActive={route().current(item.href)}
-                            onClick={() => item.submenu ? toggleMenu(item.title) : null} // Open/close submenu only
+                            onClick={() => item.submenu ? toggleMenu(item.title) : null}
                         >
                             {item.submenu ? (
-                                // Button for expandable submenu
                                 <button className="flex items-center w-full">
                                     <item.icon />
                                     <span className="ml-2">{item.title}</span>
@@ -40,7 +47,6 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
                                     </span>
                                 </button>
                             ) : (
-                                // Regular navigation link
                                 <Link href={route(item.href)}>
                                     <item.icon />
                                     <span>{item.title}</span>
@@ -48,7 +54,6 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
                             )}
                         </SidebarMenuButton>
 
-                        {/* Collapsible Submenu */}
                         {item.submenu && openMenu === item.title && (
                             <SidebarMenu className="ml-4 border-l border-gray-200">
                                 {item.submenu.map((subitem) => (

@@ -4,25 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Permission\Traits\HasRoles;
 
-class RefProvinceModel extends Model
+
+class RefBarangayModel extends Model
 {
-    use HasFactory; use HasRoles;
+    use HasFactory; 
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'ref_province';
+    protected $table = 'ref_barangay';
 
     /**
      * The primary key for the table.
      *
      * @var string
      */
-    protected $primaryKey = 'provcode';
+    protected $primaryKey = 'bgycode';
 
     /**
      * Indicates if the primary key is an incrementing integer.
@@ -51,8 +51,8 @@ class RefProvinceModel extends Model
      * @var array
      */
     protected $fillable = [
+        'citycode',
         'provcode',
-        'regcode',
         'provname',
         'nscb_prov_code',
         'nscb_prov_name',
@@ -61,9 +61,4 @@ class RefProvinceModel extends Model
         'dateupdated',
         'status',
     ];
-
-    public function cities()
-{
-    return $this->hasMany(RefCityModel::class, 'provcode', 'provcode');
-}
 }

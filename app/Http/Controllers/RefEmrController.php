@@ -32,8 +32,7 @@ class RefEmrController extends Controller
 
         if ($search = $request->input('search')) {
             $query->where('emr_name', 'LIKE', "%{$search}%")
-               
-                ->orderBy('created_at', 'asc');
+                  ->orderBy('created_at', 'asc');
         }
         $list = $query->where('status',1)->get(); // Paginate results
        return response()->json($list);
