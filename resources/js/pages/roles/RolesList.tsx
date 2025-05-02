@@ -103,12 +103,12 @@ const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
   const endEntry = Math.min(startEntry + perPage - 1, totalRows);
 
   return (
-    <div className="p-3  mr-3 ml-3 mt-3">
+    <div className="mr-3 ml-3 mt-3">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <List size={16} />
-          <h2 className="text-lg font-semibold">Permissions</h2>
+          <h2 className="text-lg font-semibold">Roles</h2>
         </div>
         <input
           type="text"

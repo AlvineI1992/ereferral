@@ -74,9 +74,9 @@ export default function ProfileLayout({ id ,is_include}: ProfileLayoutProps) {
         <div className="text-red-500 text-center py-4">{error}</div>
       )}
       <Head title="Role Management" />
-      <div className="flex items-center ml-3 mr-3 mb-3 mt-2">
-        <User size={18} />
-        <h1 className="text-2xl font-semibold text-gray-800 ">Permission Assignment</h1>
+      <div className="flex items-center ml-3 mr-3  mb-5 mt-2">
+      <User size={18} />
+        <h1 className="text-xl">Permission Assignment</h1>
       </div>
 
       {!loading && profile && (

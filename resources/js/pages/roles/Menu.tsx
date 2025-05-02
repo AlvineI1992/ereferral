@@ -14,17 +14,17 @@ export default function Menu({ id, children }: MenuProps) {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
   const sidebarNavItems: NavItem[] = [
-    { title: 'Available Permission/s', href: `/roles/assign/${id}`, icon: Check },
-    { title: 'Access Permission/s', href:`/roles/assigned/${id}`, icon: Key },
+    { title: 'Access', href: `/roles/assign/${id}`, icon: Check },
+    { title: 'Revoke', href:`/roles/assigned/${id}`, icon: Key },
     
   ];
 
   return (
     <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-12 ml-3">
     
-      <aside className="w-full max-w-xl lg:w-45">
-      <h6 className="text-lg font-bold text-gray-800"> Menu</h6>
-        <nav className="flex flex-col space-y-1 space-x-0">
+      <aside className="w-full max-w-lg lg:w-55">
+      <h6 className="text-lg mb-2"> Menu</h6>
+        <nav className="flex flex-col space-y-2 space-x-0">
           {sidebarNavItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -33,13 +33,13 @@ export default function Menu({ id, children }: MenuProps) {
                 size="sm"
                 variant="ghost"
                 asChild
-                className={cn('w-full justify-start gap-2', {
+                className={cn('w-full justify-start gap-1 mb-2', {
                   'bg-muted': currentPath === item.href,
                 })}
               >
                 <Link href={item.href} preserveScroll preserveState>
-                  <span className="flex items-center gap-2">
-                    {Icon && <Icon className="h-4 w-4" />}
+                  <span className="flex  gap-2">
+                    {Icon && <Icon className="h-2 w-2" />}
                     {item.title}
                   </span>
                 </Link>

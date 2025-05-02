@@ -56,11 +56,11 @@ class RefFacilitiesModel extends Model
         'facility_name',
         'fhudaddress',
         'status',
-        'factype_code',
+        'facility_type',
         'region_code',
         'province_code',
         'city_code',
-        'barangay_code',
+        'bgycode',
         'remarks',
     ];
 

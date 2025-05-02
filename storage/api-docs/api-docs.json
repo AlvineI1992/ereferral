@@ -1,0 +1,280 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Referral Api Documentation",
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User Login",
+                "description": "User login to obtain a Sanctum Bearer token.",
+                "operationId": "2a7a0d51b34b3964a0e53faf84c9965d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful login with token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "ACCESS_TOKEN"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/referral": {
+            "post": {
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "Referral a patient to another facility",
+                "description": "Referral a patient to another facility.",
+                "operationId": "06dad13a8a9b35e2035cbcb2adaebfa2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "patient_id",
+                                    "facility_code",
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
+                                    "facility_code": {
+                                        "type": "string",
+                                        "example": "FHU123"
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Referral due to medical condition"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient referred successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Patient referred successfully!"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid data format"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/generate_code/{fhudcode}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Generate reference code",
+                "description": "Generate a reference code.",
+                "operationId": "411092bb5c80ccd1eb86d13a5cf1fab6",
+                "parameters": [
+                    {
+                        "name": "fhudcode",
+                        "in": "path",
+                        "description": "The FHUD code for the referral",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with generated code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "reference": {
+                                            "type": "string",
+                                            "example": "HOSP-6050225100146"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Facility not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Facility not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/demographics": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Generate demographic library",
+                "description": "Generate a reference code.",
+                "operationId": "704c0bc7fa5a9bb59fc6751358378e94",
+                "responses": {
+                    "200": {
+                        "description": "Successful response with generated code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "reference": {
+                                            "type": "string",
+                                            "example": "HOSP-6050225100146"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Facility not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Facility not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Use a Sanctum Bearer token to access secured endpoints",
+                "name": "Authorization",
+                "in": "header",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
+        {
+            "name": "Referral",
+            "description": "Referral"
+        },
+        {
+            "name": "References",
+            "description": "References"
+        }
+    ]
+}

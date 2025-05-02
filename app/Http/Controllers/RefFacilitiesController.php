@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\RefFacilitiesModel;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Illuminate\Routing\Controller;
 
 class RefFacilitiesController extends Controller
 {
@@ -51,7 +53,7 @@ class RefFacilitiesController extends Controller
     
         
 
-        $facilities = $query->paginate(10); // This returns a LengthAwarePaginator
+        $facilities = $query->paginate(10); 
 
         return response()->json([
             'data' => $facilities->items(),
@@ -84,8 +86,8 @@ class RefFacilitiesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'hfhudcode' => 'required|exists:ref_facilities,hfhudcode',
-            'facility_name' => 'required|string',
+            'hfhudcode' => 'required|unique:ref_facilities,hfhudcode',
+            'facility_name' => 'required|string|unique:ref_facilities,facility_name',
             'factype_code' => 'required|string',
             'region' => 'required|string',
             'city' => 'required|string',
@@ -94,17 +96,19 @@ class RefFacilitiesController extends Controller
         ]);
         $data = [
             'hfhudcode'     => $request->hfhudcode,
-            'facility_name' => $request->facility_name,
+            'facility_name' => strtoupper($request->facility_name),
             'facility_type'  => $request->factype_code,
             'region_code'   => $request->region,
+            'fhudaddress'=>$request->fhudaddress,
             'province_code' => $request->province,
             'city_code'     => $request->city,
-            'bgycode' => $request->barangay
+            'bgycode' => $request->barangay,
+            'status' => $request->status ? 'A':'I', 
         ];
 
         $region = RefFacilitiesModel::create($data);
 
-        return response()->json($region, 201);
+        return redirect()->route('facilities')->with('message','Created successfully.');
     }
 
     /**

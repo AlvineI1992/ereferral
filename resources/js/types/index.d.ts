@@ -42,3 +42,11 @@ export interface User {
    
     [key: string]: unknown; // This allows for additional properties...
 }
+
+
+interface PermissionProps {
+    canCreate: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+    canView: boolean;
+}

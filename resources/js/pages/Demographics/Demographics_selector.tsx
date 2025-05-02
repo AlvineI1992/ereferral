@@ -29,9 +29,10 @@ type Props = {
     city?: string;
     barangay?: string;
   }) => void;
+  canCreate:boolean;
 }
 
-export default function DemographicSelector({ variant = 'vertical', value, onChange }: Props) {
+export default function DemographicSelector({ variant = 'vertical', value, onChange,canCreate }: Props) {
   const [data, setData] = useState<Region[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -46,6 +47,31 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
       .catch(err => console.error('Failed to fetch demographic data:', err))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    // Reset selections when value prop changes
+    if (value?.region !== selectedRegion) {
+      setSelectedRegion(value?.region || undefined)
+      setSelectedProvince(undefined)
+      setSelectedCity(undefined)
+      setSelectedBarangay(undefined)
+    }
+
+    if (value?.province !== selectedProvince) {
+      setSelectedProvince(value?.province || undefined)
+      setSelectedCity(undefined)
+      setSelectedBarangay(undefined)
+    }
+
+    if (value?.city !== selectedCity) {
+      setSelectedCity(value?.city || undefined)
+      setSelectedBarangay(undefined)
+    }
+
+    if (value?.barangay !== selectedBarangay) {
+      setSelectedBarangay(value?.barangay || undefined)
+    }
+  }, [value]) // Dependency on value
 
   const regionObj = data.find(r => r.code === selectedRegion)
   const provinceObj = regionObj?.provinces.find(p => p.code === selectedProvince)
@@ -92,6 +118,7 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
       <div className={fieldClass}>
         <label className="mb-1 text-sm font-medium">Region</label>
         <Select
+          disabled={!canCreate}
           value={selectedRegion}
           onValueChange={(value) => {
             setSelectedRegion(value)

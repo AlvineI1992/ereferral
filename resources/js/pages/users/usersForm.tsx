@@ -1,5 +1,5 @@
   import { Head, useForm } from '@inertiajs/react';
-  import { LoaderCircle, Save, User, X, Check, ChevronsUpDown } from 'lucide-react';
+  import { LoaderCircle, Save, User, X, Check, ChevronsUpDown,Edit } from 'lucide-react';
   import { FormEventHandler, useEffect, useRef } from 'react';
   import InputError from '@/components/input-error';
   import { Button } from '@/components/ui/button';
@@ -82,8 +82,9 @@
       <div className="w-full ml-2 mt-2 mr-3">
         <Head title="Register" />
         <div className="flex items-center mb-2">
-          <User size={18} />
-          <h1 className="text-2xl font-semibold text-gray-800 ml-2">{user ? 'Edit User' : 'Create User'}</h1>
+          
+          {user ? <Edit size={18} /> : <User size={18} />}
+          <h1 className="text-lg font-semibold ml-2">{user ? 'Edit User' : 'Create User'}</h1>
         </div>
         <HeadingSmall title="Profile information" description="Enter your details below to create your account" />
         <div className="mb-3"></div>
@@ -220,7 +221,8 @@
             <div className="mt-4 flex justify-between gap-2">
               <Button
                 type="submit"
-                className="flex-1 flex justify-center items-center gap-2 border-1 border-green-600 bg-white text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
+                variant="outline"
+                className="flex-1 flex justify-center items-center gap-2 border-1 border-green-600  text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
                 disabled={processing}
               >
                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
@@ -231,8 +233,9 @@
               {user && (
                 <Button
                   type="button"
+                       variant="outline"
                   onClick={onCancel} // Trigger the onCancel function passed from parent
-                  className="flex-1 flex justify-center items-center gap-2 border-1 border-red-400 bg-white text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"
+                  className="flex-1 flex justify-center items-center gap-2 border-1 border-red-400  text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"
                 >
                   {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                   <span>{processing ? 'Processing...' : <><X size={12} /></>}</span>

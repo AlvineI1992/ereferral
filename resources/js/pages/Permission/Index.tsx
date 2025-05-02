@@ -9,7 +9,17 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/permission',
     },
 ];
-export default function Permission() {
+export default function Permission({
+    canCreatePermission,
+    canEditPermission,
+    canDeletePermission,
+    canViewPermission,
+}: {
+    canCreatePermission: boolean;
+    canEditPermission: boolean;
+    canDeletePermission: boolean;
+    canViewPermission: boolean;
+}) {
    
 
     const [refreshKey, setRefreshKey] = useState(0);
@@ -28,7 +38,12 @@ export default function Permission() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Roles" />
             <div className="lg:col-span-1">
-                <Manage onCreated={() => {}} />
+                <Manage onCreated={() => {}}
+                canCreate={canCreatePermission} 
+                canEdit={canEditPermission} 
+                canDelete={canDeletePermission} 
+                canView={canViewPermission} 
+                />
             </div>
             {/*   <RolesManagement refreshKey={refreshKey} className="w-full" /> */}
         </AppLayout>

@@ -5,7 +5,7 @@ import Swal from "sweetalert2";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const RolesList = ({ refreshKey, onEdit }) => {
+const Lists = ({ canEdit,canDelete,refreshKey, onEdit }) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -73,12 +73,12 @@ const RolesList = ({ refreshKey, onEdit }) => {
   const totalPages = Math.ceil(totalRows / perPage);
 
   return (
-    <div className="p-3   mr-3 ml-3 mt-3">
+    <div className="mr-3 ml-3 mt-3">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <List size={16} />
-          <h2 className="text-lg font-semibold">Roles</h2>
+          <h2 className="text-lg font-semibold">Permissions</h2>
         </div>
         <Input
           type="text"
@@ -115,14 +115,18 @@ const RolesList = ({ refreshKey, onEdit }) => {
                     <td className="px-2 py-1">{row.guard_name}</td>
                     <td className="px-2 py-1 text-right">
                       <div className="flex justify-end space-x-1">
+                      {canEdit && (
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(row)}
                           className="text-blue-500 hover:text-blue-700"
                         >
-                          <Pencil size={16} />
-                        </Button>
+                              <Pencil size={16} />
+                           </Button>
+                        )}
+      
+      {canDelete && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -131,6 +135,7 @@ const RolesList = ({ refreshKey, onEdit }) => {
                         >
                           <Trash2 size={16} />
                         </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -192,4 +197,4 @@ const RolesList = ({ refreshKey, onEdit }) => {
   );
 };
 
-export default RolesList;
+export default Lists;

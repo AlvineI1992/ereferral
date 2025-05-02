@@ -9,6 +9,9 @@ use App\Http\Controllers\RefEmrController;
 use App\Http\Controllers\RefFacilitiesController;
 use App\Http\Controllers\RefFacilitytypeController;
 use App\Http\Controllers\DemographicController;
+use Illuminate\Http\Request;
+
+
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -58,8 +61,15 @@ Route::patch('/users/assign-roles/{id}', [RegisteredUserController::class, 'assi
 Route::patch('/users/revoke-roles/{id}', [RegisteredUserController::class, 'revokeRolesFromUser'])->name('user.revoke');
 
 // Inertia Page Route (Web, uses session-based auth)
-Route::get('/roles', function () {
-    return Inertia::render('Roles/Index');
+Route::get('/roles', function (Request $request) {
+    $permissions = [
+        'canCreateRole' => $request->user()->can('role create'),
+        'canEditRole' => $request->user()->can('role edit'),
+        'canDeleteRole' => $request->user()->can('role delete'),
+        'canViewRole' => $request->user()->can('role list'),
+        'canAssignRole' => $request->user()->can('role assign'),
+    ];
+    return Inertia::render('Roles/Index',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('roles');
 
 Route::get('roles/assign/{id}', function ($id) {
@@ -85,13 +95,24 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::patch('/api/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
 Route::patch('/api/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
+
+
 // Inertia Page Route (Web, uses session-based auth)
-Route::get('/permission', function () {
-    return Inertia::render('Permission/Index');
+Route::get('/permission', function (Request $request) {
+     // Check permissions for the authenticated user
+     $permissions = [
+        'canCreatePermission' => $request->user()->can('permission create'),
+        'canEditPermission' => $request->user()->can('permission edit'),
+        'canDeletePermission' => $request->user()->can('permission delete'),
+        'canViewPermission' => $request->user()->can('permission list'),
+    ];
+    return Inertia::render('Permission/Index',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('permission');
+
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
+    
     Route::get('/api/permission', [PermissionController::class, 'index']);
     Route::put('/permission/update/{role}', [PermissionController::class, 'update'])->name('permission.update');
     Route::delete('/permission/delete/{role}', [PermissionController::class, 'destroy'])->name('permission.destroy');
@@ -129,41 +150,76 @@ Route::get('/emr/list', [RefEmrController::class, 'list'])->name('emr.list');
 
 // API Routes (Sanctum-protected)
 
-Route::get('/facilities', function () {
-    return Inertia::render('Ref_Facilities/Index');
-})->middleware(['auth:sanctum', 'verified'])->name('facilities');
+Route::get('/facilities', function (Request $request) {
+    // Check permissions for the authenticated user
+    $permissions = [
+        'canCreateFacilities' => $request->user()->can('facility create'),
+        'canEditFacilities' => $request->user()->can('facility edit'),
+        'canDeleteFacilities' => $request->user()->can('facility delete'),
+        'canViewFacilities' => $request->user()->can('facility list'),
+    ];
 
-Route::middleware('auth:sanctum')->group(function () {
-    
-    Route::put('/facility/update/{id}', [RefFacilitiesController::class, 'update'])->name('facility.update');
-    Route::delete('/facility/delete/{id}', [RefFacilitiesController::class, 'destroy'])->name('facility.destroy');
-    Route::post('/facility/store', [RefFacilitiesController::class, 'store'])->name('facility.store');
-    Route::get('/api/emr/info/{id}', [RefFacilitiesController::class, 'show'])->name('facility.info');
- 
-    Route::get('/facility/profile_form', function () {
+    // Return the Inertia view with the permissions data
+    return Inertia::render('Ref_Facilities/Index', $permissions);
+})
+    ->middleware(['auth:sanctum', 'verified']) // Apply permission middleware here
+    ->name('facilities');
+
+// Authenticated and permission-guarded API routes
+Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::put('/facilities/update/{id}', [RefFacilitiesController::class, 'update'])
+        ->middleware('can:facility edit')
+        ->name('facility.update');
+
+    Route::delete('/facilities/delete/{id}', [RefFacilitiesController::class, 'destroy'])
+        ->middleware('can:facility delete')
+        ->name('facility.destroy');
+
+    Route::post('/facilities/store', [RefFacilitiesController::class, 'store'])
+        ->middleware('can:facility create')
+        ->name('facility.store');
+
+    Route::get('/api/emr/info/{id}', [RefFacilitiesController::class, 'show'])
+        ->middleware('can:facility view')
+        ->name('facility.info');
+
+    Route::get('/facilities/profile_form', function () {
         return Inertia::render('Emr/ProfileForm');
-    })->name('facility/profile_form');
-  
+    })->middleware('can:facility list')->name('facilities/profile_form');
+
 });
 /* Route::get('/api/facilities', [RefFacilitiesController::class, 'index']); */
-Route::get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
-
-
+Route::middleware(['auth:sanctum', 'can:facility list'])->get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
 // API Routes (Sanctum-protected)
 
 /* Route::get('/facility_type', function () {
     return Inertia::render('Ref_Facilities/Index');
 })->middleware(['auth:sanctum', 'verified'])->name('facilities'); */
-
 Route::middleware('auth:sanctum')->group(function () {
-    
-    Route::put('/facility_type/update/{id}', [RefFacilitytypeController::class, 'update'])->name('facility_type.update');
-    Route::delete('/facility_type/delete/{id}', [RefFacilitytypeController::class, 'destroy'])->name('facility_type.destroy');
-    Route::post('/facility_type/store', [RefFacilitytypeController::class, 'store'])->name('facility_type.store');
-    Route::get('/api/facility_type/info/{id}', [RefFacilitytypeController::class, 'show'])->name('facility_type.info');
-  
+
+    Route::put('/facility_type/update/{id}', [RefFacilitytypeController::class, 'update'])
+       
+        ->name('facility_type.update');
+
+    Route::delete('/facility_type/delete/{id}', [RefFacilitytypeController::class, 'destroy'])
+      
+        ->name('facility_type.destroy');
+
+    Route::post('/facility_type/store', [RefFacilitytypeController::class, 'store'])
+        
+        ->name('facility_type.store');
+
+    Route::get('/api/facility_type/info/{id}', [RefFacilitytypeController::class, 'show'])
+        ->middleware('can:view facility_type')
+        ->name('facility_type.info');
 });
-Route::get('/facility_type/list', [RefFacilitytypeController::class, 'list'])->name('facility_type.list');
+
+// If you want this to be publicly accessible, you can leave it as is.
+// Otherwise, wrap in auth and add permission middleware too.
+Route::get('/facility_type/list', [RefFacilitytypeController::class, 'list'])
+    
+    ->name('facility_type.list');
 
 
 

@@ -2,11 +2,19 @@ import { useState } from 'react';
 import Lists from './List';
 import Form from './Form';
 import { Separator } from '@/components/ui/separator';
-const Manage = () => {
-    const [selectedId, setSelectedId] = useState(null); // ID of the selected user for editing
+import { PermissionProps } from './types';
+
+
+const Manage = ({
+    canCreate,
+    canEdit,
+    canDelete,
+    canView,
+}: PermissionProps) => {
+    const [selectedId, setSelectedId] = useState<number | null>(null); // ID of the selected user for editing
     const [refreshKey, setRefreshKey] = useState(0); // Used to trigger list refresh
-    
-    const handleEdit = (id) => {
+
+    const handleEdit = (id: number) => {
         setSelectedId(id); // Set selected user ID for editing
     };
 
@@ -23,16 +31,20 @@ const Manage = () => {
         <div className="roles-management">
             <div className="grid grid-cols-1 gap-1 lg:grid-cols-4">
                 <div className="lg:col-span-1">
+                    {/* Conditionally render Form component based on permission */}
                     <Form
-                        onCancel={selectedId ? handleCancelEdit : undefined}
+                        canCreate = {canCreate} onCancel={selectedId ? handleCancelEdit : undefined}
                         emr={selectedId}
                         onCreated={handleCreatedOrUpdated}
                     />
                 </div>
-           
+
                 <div className="lg:col-span-3">
                     <div className="mb-1">
-                        <Lists refreshKey={refreshKey} onEdit={handleEdit} />
+                        {/* Conditionally render Lists component based on permission */}
+                        {canView && (
+                            <Lists canEdit={canEdit} canDelete={canDelete} refreshKey={refreshKey} onEdit={handleEdit} />
+                        )}
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import { Head, useForm } from "@inertiajs/react";
-import { LoaderCircle, Save, User, X } from "lucide-react";
+import { LoaderCircle, Save, User, X,Edit} from "lucide-react";
 import { FormEventHandler, useEffect, useRef } from "react";
 import InputError from "@/components/input-error";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import {
 type PermissionFormProps = {
     onCreated: () => void;
     onCancel: () => void;  // Add onCancel prop
-    perm?: { id: number; name: string; guard_name: string }; // Role data for editing
+    perm?: { id: number; name: string; guard_name: string }; 
+    canCreate:boolean;// Role data for editing
 };
 
 type PermissionForm = {
@@ -26,7 +27,7 @@ type PermissionForm = {
     guard_name: string;
 };
 
-export default function PermissionForm({ onCreated, onCancel, perm }: PermissionFormProps) {
+export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: PermissionFormProps) {
     const { data, setData, post, processing, errors, reset, put } = useForm<PermissionForm>({
         name: perm?.name || "", // Set initial values based on the role prop
         guard_name: perm?.guard_name || "", // Set initial guard name
@@ -67,11 +68,12 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
     };
 
     return (
-        <div className="w-full ml-2 mt-2 mr-3">
+        <div className="w-full ml-2 mt-2 mr-3 ">
             <Head title="Permission Management" />
             <div className="flex items-center mb-2">
-                <User size={18} />
-                <h1 className="text-lg font-semibold text-gray-800 ml-2">{perm ? 'Edit  Permission' : 'Create Permission'}</h1>
+                
+                {perm ? <Edit size={18}/>: <User size={18} />}
+                <h1 className="text-lg font-semibold ml-2">{perm ? 'Edit  Permission' : 'Create Permission'} </h1>
             </div>
             <HeadingSmall title={perm ? "Edit Permission" : "Create Permission"} description={perm ? "Edit the permission details below." : "Enter the permission details below."} />
 
@@ -87,7 +89,7 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
                         autoComplete="off"
                         value={data.name}
                         onChange={handleChange}
-                        disabled={processing}
+                        disabled={processing||!canCreate }
                         placeholder="Enter Permission Name"
                         className="focus:ring focus:ring-indigo-300"
                         aria-describedby={errors.name ? "name-error" : undefined}
@@ -99,9 +101,10 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
                 <div className="grid gap-1">
                     <Label htmlFor="guard_name">Guard:</Label>
                     <Select
+                    
                         value={data.guard_name}
                         onValueChange={(value) => setData("guard_name", value)}
-                        disabled={processing}
+                        disabled={processing||!canCreate }
                         aria-labelledby="guard_name"
                     >
                         <SelectTrigger className="w-full border-gray-300 rounded-md shadow-sm">
@@ -121,7 +124,7 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
                     <Button
                         type="submit"
                         className="flex-1 flex justify-center items-center gap-2 border-1 border-green-600 bg-white text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
-                        disabled={processing}
+                        disabled={processing||!canCreate}
                     >
                         {processing ? (
                             <>
@@ -131,7 +134,7 @@ export default function PermissionForm({ onCreated, onCancel, perm }: Permission
                         ) : (
                             <>
                                 <Save size={12} />
-                                <span>Save</span>
+                             
                             </>
                         )}
                     </Button>

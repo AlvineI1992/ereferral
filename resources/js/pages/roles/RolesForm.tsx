@@ -71,7 +71,7 @@ export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormPr
             <Head title="Role Management" />
             <div className="flex items-center mb-2">
                 <User size={18} />
-                <h1 className="text-lg font-semibold text-gray-800 ml-2">{role ? 'Edit Role' : 'Create Role'}</h1>
+                <h1 className="text-lg font-semibold ml-2">{role ? 'Edit Role' : 'Create Role'}</h1>
             </div>
             <HeadingSmall title={role ? "Edit Role" : "Create Role"} description={role ? "Edit the role details below." : "Enter the role details below."} />
             

@@ -9,7 +9,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { Check, ChevronsUpDown, Hospital, LoaderCircle, Save, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import DemographicSelector from '../Demographics/demographics_selector';
+import DemographicSelector from '../Demographics/Demographics_selector';
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,13 +21,13 @@ type Props = {
     onCreated: () => void;
     onCancel: () => void;
     formval?: any;
+    canCreate:boolean;
 };
 
 type Formtype = {
     hfhudcode: string;
     facility_name: string;
     fhudaddress: string;
-    remarks: string;
     factype_code: string;
     region: string;
     province: string;
@@ -35,20 +35,17 @@ type Formtype = {
     barangay: string;
 };
 
-export default function Form({ onCreated, onCancel, formval }: Props) {
+export default function Form({ onCreated, onCancel, formval, canCreate }: Props) {
     const nameInputRef = useRef<HTMLInputElement>(null);
 
-    // Inside your component
     const [factypes, setFacilitytype] = useState([]);
     const [value, setValue] = useState('');
     const [open, setOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
         hfhudcode: formval?.hfhudcode || '',
-        facility_name: formval?.facility_name,
-        fhudaddress: formval?.fhudaddress,
-        remarks: formval?.remarks || '',
-
+        facility_name: formval?.facility_name || '',
+        fhudaddress: formval?.fhudaddress || '',
         factype_code: formval?.factype_code || '',
         region: formval?.region || '',
         province: formval?.province || '',
@@ -91,7 +88,6 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
     };
 
     return (
-        
         <div className="mt-2 mr-3 ml-2 w-full">
             <Head title="Register" />
             <div className="mb-2 flex items-center">
@@ -113,38 +109,29 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                         onChange={handleChange}
                         className="mt-1 block h-8 w-full px-2 py-1 text-xs"
                         autoComplete="off"
+                        disabled={!canCreate} // Disable if canCreate is false
                     />
                     <InputError message={errors.hfhudcode} className="mt-1 text-xs" />
 
                     <Label htmlFor="facility_name">Facility name:</Label>
                     <Input
                         id="facility_name"
-                        ref={nameInputRef}
                         value={data.facility_name}
                         placeholder="Facility name"
                         onChange={handleChange}
                         className="mt-1 block h-8 w-full px-2 py-1 text-sm"
                         autoComplete="off"
+                        disabled={!canCreate} // Disable if canCreate is false
                     />
                     <InputError message={errors.facility_name} className="mt-1 text-xs" />
 
                     {/* Status */}
                     <div className="mb-2 flex items-center space-x-4">
                         <Label htmlFor="status">Status:</Label>
-                        <Switch id="status" checked={data.status} onCheckedChange={handleSwitchChange} />
+                        <Switch id="status" checked={data.status} onCheckedChange={handleSwitchChange} disabled={!canCreate} />
                     </div>
                     <InputError message={errors.status} className="mt-1 text-xs" />
-                    {/* Remarks */}
-                    <Label htmlFor="remarks">Remarks:</Label>
-                    <Textarea
-                        id="remarks"
-                        value={data.remarks}
-                        onChange={handleChange}
-                        className="mt-1 block w-full"
-                        placeholder="Remarks"
-                        autoComplete="off"
-                    />
-                    <InputError message={errors.remarks} className="mt-1" />
+            
                     <Label htmlFor="provider-selector">Facility type</Label>
 
                     {/* Hidden input to submit the selected value */}
@@ -152,7 +139,14 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
 
                     <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger asChild>
-                            <Button id="provider-selector" variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                            <Button
+                                id="provider-selector"
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={open}
+                                className="w-full justify-between"
+                                disabled={!canCreate} // Disable if canCreate is false
+                            >
                                 {value ? factypes.find((f) => f.factype_code === value)?.description : 'Select Facility type...'}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -184,7 +178,7 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                         </PopoverContent>
                         {errors.factype_code && <div className="mt-1 text-xs text-red-500">{errors.factype_code}</div>}
                     </Popover>
-                    <p>Demogprahics</p>
+                    <p>Demographics</p>
                     {/* Remarks */}
                     <Label htmlFor="fhudaddress">Address:</Label>
                     <Textarea
@@ -194,6 +188,7 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                         className="mt-1 block h-8 w-full px-2 py-1 text-sm"
                         placeholder="Address"
                         autoComplete="off"
+                        disabled={!canCreate} // Disable if canCreate is false
                     />
                     <InputError message={errors.fhudaddress} className="mt-1 text-xs" />
                     <DemographicSelector
@@ -210,6 +205,7 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                             setData('city', val.city || '');
                             setData('barangay', val.barangay || '');
                         }}
+                        canCreate={canCreate}// Disable if canCreate is false
                     />
 
                     {/* Buttons */}
@@ -217,7 +213,7 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                         <Button
                             type="submit"
                             className="flex flex-1 items-center justify-center gap-2 rounded-md border border-green-600 bg-white py-2 font-semibold text-green-600 transition-all hover:bg-green-600 hover:text-white"
-                            disabled={processing}
+                            disabled={processing || !canCreate} // Disable if processing or canCreate is false
                         >
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                             <span>
@@ -236,6 +232,7 @@ export default function Form({ onCreated, onCancel, formval }: Props) {
                                 type="button"
                                 onClick={onCancel}
                                 className="flex flex-1 items-center justify-center gap-2 rounded-md border border-red-400 bg-white py-2 font-semibold text-red-600 transition-all hover:bg-red-600 hover:text-white"
+                                disabled={!canCreate} // Disable if canCreate is false
                             >
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                                 <span>

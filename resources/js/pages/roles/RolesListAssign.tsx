@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { List, ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { List, ChevronLeft, ChevronRight, Save,XCircle} from "lucide-react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
@@ -136,28 +136,31 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
-          
+        <Save size={16} className={`text-lg  ${is_include ? 'text-green-600' : 'text-red-600'
+              }`} />
           <h2
-            className={`text-lg font-semibold ${is_include ? 'text-blue-600' : 'text-green-600'
+            className={`text-lg  ${is_include ? 'text-green-600' : 'text-red-600'
               }`}
-          >
-            {is_include ? "Available Permission" : "Access Permission"}
+          > 
+            {is_include ? "Available Permission" : "Revoke Permission"}
           </h2>
         </div>
 
         {/* Save Button */}
         <div className="flex justify-end mb-3">
           <Button
+          variant="outline"
             onClick={handleSubmit}
             disabled={processing}
-            className="flex gap-1 border border-green-700 bg-white text-green-700 hover:bg-green-600 hover:text-white font-semibold py-2 px-3 rounded-sm transition-all"
+            className={`flex gap-1 ${is_include ? ' text-green-700  hover:bg-green-600 ' : ' text-red-700 hover:bg-red-600'} bg-white  980p[hover:text-white font-semibold py-2 px-3 rounded-sm transition-all`}
           >
             {processing ? (
               <span className="animate-pulse">Processing...</span>
             ) : (
               <>
-                <Save size={16} />
-                Save
+              
+                {is_include ?   <Save size={16} /> :   <XCircle size={16} />}
+                {is_include ? "Save" : "Revoke"}
               </>
             )}
           </Button>
@@ -184,7 +187,7 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left border-collapse">
-            <thead className="bg-gray-100">
+            <thead >
               <tr>
                 <th className="px-4 py-2 border-b">
                   <Checkbox
@@ -223,7 +226,7 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
           </table>
 
           {/* Info and Pagination */}
-          <div className="flex flex-col md:flex-row justify-between items-center mt-4 px-2 gap-2">
+          <div className="flex flex-col md:flex-row justify-between items-center mt-4 px-2 gap-1">
             <div className="text-sm text-gray-600">
               {totalRows > 0 ? (
                 <>Showing {startEntry} to {endEntry} of {totalRows} entries</>
@@ -240,7 +243,7 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
                 className={`flex items-center gap-1 px-3 py-1 border rounded-md text-sm ${page === 1 ? "text-gray-400 border-gray-300" : "text-blue-600 border-blue-300 hover:bg-blue-50"}`}
               >
                 <ChevronLeft size={16} />
-                Previous
+                
               </button>
 
               {/* Page Numbers */}
@@ -262,7 +265,7 @@ const RolesListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
                 disabled={page === totalPages}
                 className={`flex items-center gap-1 px-3 py-1 border rounded-md text-sm ${page === totalPages ? "text-gray-400 border-gray-300" : "text-blue-600 border-blue-300 hover:bg-blue-50"}`}
               >
-                Next
+                
                 <ChevronRight size={16} />
               </button>
             </div>

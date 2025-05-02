@@ -20,9 +20,23 @@ import {
 type ListProps = {
   refreshKey: any; 
   onEdit: (id: number) => void;
+  canEdit: boolean; 
+  canDelete: boolean; 
 };
 
-const Lists = ({ refreshKey, onEdit }: ListProps) => {
+
+
+
+
+/* {canCreateFacilities && (
+  <Form
+      onCancel={selectedId ? handleCancelEdit : undefined}
+      emr={selectedId}
+      onCreated={handleCreatedOrUpdated}
+  />
+)} */
+const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
+  console.log(canEdit);
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -176,7 +190,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
                 <TableRow key={row.hfhudcode}>
                   {visibleColumns.id && <TableCell className="p-1">{row.hfhudcode}</TableCell>}
                   {visibleColumns.name && <TableCell className="p-1">{row.facility_name}</TableCell>}
-                  {visibleColumns.name && <TableCell className="p-1">{row.facility_name}</TableCell>}
+                  {visibleColumns.name && <TableCell className="p-1">{getAbbreviation(row.facility_name)}</TableCell>}
                   {visibleColumns.name && <TableCell className="p-1">{row.description}</TableCell>}
                   {visibleColumns.name && <TableCell className="p-1">{row.regname}</TableCell>}
                   {visibleColumns.status && (
@@ -193,15 +207,19 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
          
                   {visibleColumns.actions && (
                     <TableCell className="p-1 text-right flex justify-end space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
+                      
+                      {canEdit && (
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
                         <Pencil size={12} />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.hfhudcode)} className="cursor-pointer">
-                        <Trash2 size={12} className="text-red-600" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleGoto(row.hfhudcode)} className="cursor-pointer">
-                        <CircleArrowRight size={12} className="text-blue-600" />
-                      </Button>
+                        </Button>
+                      )}
+                      
+                      {canDelete && (
+                           <Button variant="ghost" size="icon" onClick={() => handleDelete(row.hfhudcode)} className="cursor-pointer">
+                           <Trash2 size={12} className="text-red-600" />
+                         </Button>
+                      )}
+                     
                     </TableCell>
                   )}
                 </TableRow>
