@@ -207,18 +207,70 @@
                     "References"
                 ],
                 "summary": "Generate demographic library",
-                "description": "Generate a reference code.",
+                "description": "Generate a demographic reference.",
                 "operationId": "704c0bc7fa5a9bb59fc6751358378e94",
                 "responses": {
                     "200": {
-                        "description": "Successful response with generated code",
+                        "description": "Successful response with demographic data",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "reference": {
-                                            "type": "string",
-                                            "example": "HOSP-6050225100146"
+                                        "regions": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "provinces": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "code": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cities": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "code": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "barangays": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "properties": {
+                                                                                        "code": {
+                                                                                            "type": "string"
+                                                                                        },
+                                                                                        "name": {
+                                                                                            "type": "string"
+                                                                                        }
+                                                                                    },
+                                                                                    "type": "object"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -235,6 +287,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Facility not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
                                         }
                                     },
                                     "type": "object"

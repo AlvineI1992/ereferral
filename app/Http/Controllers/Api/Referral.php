@@ -140,6 +140,7 @@ class Referral extends Controller
             'message' => 'Patient referred successfully!',
             'data' => $output
         ]);
+        return response()->json(['error' => 'Unauthorized'], 401);
     }
 
     
@@ -182,11 +183,11 @@ class Referral extends Controller
         if ($code) {
             return response()->json(['code' => $code]);
         }
-        return response()->json(['message' => 'Facility not found'], 404);
-    }
+        return response()->json(['error' => 'Unauthorized'], 401);
 
-    /**
- * Generate a reference code.
+    }
+/**
+ * Generate a demographic reference.
  *
  * @OA\Get(
  *     path="/api/demographics",
@@ -195,10 +196,37 @@ class Referral extends Controller
  *     security={{ "sanctum": {} }},
  *     @OA\Response(
  *         response=200,
- *         description="Successful response with generated code",
+ *         description="Successful response with demographic data",
  *         @OA\JsonContent(
  *             type="object",
- *             @OA\Property(property="reference", type="string", example="HOSP-6050225100146")
+ *             @OA\Property(property="regions", type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     @OA\Property(property="code", type="string"),
+ *                     @OA\Property(property="name", type="string"),
+ *                     @OA\Property(property="provinces", type="array",
+ *                         @OA\Items(
+ *                             type="object",
+ *                             @OA\Property(property="code", type="string"),
+ *                             @OA\Property(property="name", type="string"),
+ *                             @OA\Property(property="cities", type="array",
+ *                                 @OA\Items(
+ *                                     type="object",
+ *                                     @OA\Property(property="code", type="string"),
+ *                                     @OA\Property(property="name", type="string"),
+ *                                     @OA\Property(property="barangays", type="array",
+ *                                         @OA\Items(
+ *                                             type="object",
+ *                                             @OA\Property(property="code", type="string"),
+ *                                             @OA\Property(property="name", type="string")
+ *                                         )
+ *                                     )
+ *                                 )
+ *                             )
+ *                         )
+ *                     )
+ *                 )
+ *             )
  *         )
  *     ),
  *     @OA\Response(
@@ -208,15 +236,30 @@ class Referral extends Controller
  *             type="object",
  *             @OA\Property(property="message", type="string", example="Facility not found")
  *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized access",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="message", type="string", example="Unauthorized")
+ *         )
  *     )
  * )
  */
 public function demographic_reference()
 {
+    // Check if the user is authenticated (using Sanctum)
+    if (!auth()->check()) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    // Retrieve the regions, provinces, cities, and barangays data
     $regions = RefRegionModel::with([
         'provinces.cities.barangays'
     ])->get();
 
+    // Format the data into the required structure
     $result = $regions->map(function ($region) {
         return [
             'code' => $region->regcode,
@@ -227,7 +270,7 @@ public function demographic_reference()
                     'name' => $province->provname,
                     'cities' => $province->cities->map(function ($city) {
                         return [
-                            'code' => $city->citycode,  // Ensure the field is accessed correctly
+                            'code' => $city->citycode,
                             'name' => $city->cityname,
                             'barangays' => $city->barangays->map(function ($barangay) {
                                 return [
@@ -242,9 +285,9 @@ public function demographic_reference()
         ];
     });
 
+    // Return the formatted data in JSON format
     return response()->json([
         'regions' => $result
     ]);
 }
-
 }
