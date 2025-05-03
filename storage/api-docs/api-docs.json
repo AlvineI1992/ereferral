@@ -60,14 +60,14 @@
                 }
             }
         },
-        "/api/referral": {
+        "/api/refer_patient": {
             "post": {
                 "tags": [
-                    "Referral"
+                    "Transactions"
                 ],
                 "summary": "Referral a patient to another facility",
                 "description": "Referral a patient to another facility.",
-                "operationId": "06dad13a8a9b35e2035cbcb2adaebfa2",
+                "operationId": "1f00e2d08007a4df55970d986e2def76",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -279,14 +279,14 @@
                         }
                     },
                     "404": {
-                        "description": "Facility not found",
+                        "description": "Not Found",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Facility not found"
+                                            "example": "No Found"
                                         }
                                     },
                                     "type": "object"
@@ -317,6 +317,497 @@
                     }
                 ]
             }
+        },
+        "api/region/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get a specific region by ID",
+                "description": "Returns a region with the given ID",
+                "operationId": "22972dba9624297d7326be61e379ae4c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the region",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with region data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "region": {
+                                            "properties": {
+                                                "regcode": {
+                                                    "type": "string",
+                                                    "example": "01"
+                                                },
+                                                "regname": {
+                                                    "type": "string",
+                                                    "example": "Ilocos Region"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Region not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Region not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/province/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get a specific province by name",
+                "description": "Returns a province with the given name",
+                "operationId": "93cbacf9a36384ddc967a95d241e70ea",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "description": "The name of the province",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with province data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "province": {
+                                            "properties": {
+                                                "provcode": {
+                                                    "type": "string",
+                                                    "example": "0128"
+                                                },
+                                                "provname": {
+                                                    "type": "string",
+                                                    "example": "Ilocos Norte"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Province not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Province not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/city/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get a specific city by code",
+                "description": "Returns a city with the given citycode",
+                "operationId": "808277c27a4e5c27fdee1f7fbad6131d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "City code",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with city data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "city": {
+                                            "properties": {
+                                                "citycode": {
+                                                    "type": "string",
+                                                    "example": "012801"
+                                                },
+                                                "cityname": {
+                                                    "type": "string",
+                                                    "example": "Laoag City"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "City not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "City not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "api/barangay/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get a specific barangay by ID",
+                "description": "Returns a barangay with the given ID",
+                "operationId": "f7c7c524c209049ccc043c5241b7009c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the barangay",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with barangay data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "barangay": {
+                                            "properties": {
+                                                "citycode": {
+                                                    "type": "string",
+                                                    "example": "0128"
+                                                },
+                                                "bgycode": {
+                                                    "type": "string",
+                                                    "example": "012801001"
+                                                },
+                                                "bgyname": {
+                                                    "type": "string",
+                                                    "example": "Barangay Uno"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Barangay not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Barangay not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/facility/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get facility by ID",
+                "operationId": "378d68767c80374affa7b6026689bd39",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Facility HFH UDCODE",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "hfhudcode": {
+                                                    "type": "string",
+                                                    "example": "12345"
+                                                },
+                                                "facility_name": {
+                                                    "type": "string",
+                                                    "example": "General Hospital"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Facility not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Facility not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/get-referral-information/{id}": {
+            "get": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Get full referral data by LogID",
+                "description": "Returns referral data including clinical, patient info, and demographic data.",
+                "operationId": "88c939bcb3c02002000816d950d0aa56",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "LogID of the referral",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "LOG123456"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with referral data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "LogID": {
+                                                    "type": "string",
+                                                    "example": "LOG123456"
+                                                },
+                                                "referral_information": {
+                                                    "properties": {
+                                                        "LogID": {
+                                                            "type": "string",
+                                                            "example": "LOG123456"
+                                                        },
+                                                        "referral_reason": {
+                                                            "type": "string",
+                                                            "example": "SEFTA"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "patient_information": {
+                                                    "properties": {
+                                                        "patient_lastname": {
+                                                            "type": "string",
+                                                            "example": "Doe"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "demographic_information": {
+                                                    "properties": {
+                                                        "address": {
+                                                            "type": "string",
+                                                            "example": "123 Main St."
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Referral not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Referral not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/get-referral-list/{hfhudcode}": {
+            "get": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Get referral list by HFHUDCODE",
+                "operationId": "1a0c9238f4e20b2564f7321ac309eb25",
+                "parameters": [
+                    {
+                        "name": "hfhudcode",
+                        "in": "path",
+                        "description": "HFH UDCODE of the facility",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of referrals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -337,8 +828,8 @@
             "description": "Auth"
         },
         {
-            "name": "Referral",
-            "description": "Referral"
+            "name": "Transactions",
+            "description": "Transactions"
         },
         {
             "name": "References",

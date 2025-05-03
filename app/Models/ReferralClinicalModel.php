@@ -17,9 +17,10 @@ class ReferralClinicalModel extends Model
 
     // Disable the automatic timestamps if your table doesn't have created_at/updated_at
     public $timestamps = false;
-
+    protected $keyType = 'string';
     // Define the attributes that are mass assignable
     protected $fillable = [
+        'LogID',
         'clinicalDiagnosis',
         'clinicalHistory',
         'physicalExamination',
@@ -27,4 +28,6 @@ class ReferralClinicalModel extends Model
         'findings',
         'vitals'
     ];
+
+ 
 }

@@ -2,6 +2,8 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import Manage from './Manage';
+import { BreadcrumbItem } from './types';
+
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -9,6 +11,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/permission',
     },
 ];
+
 export default function Permission({
     canCreatePermission,
     canEditPermission,

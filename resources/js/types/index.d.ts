@@ -50,3 +50,8 @@ interface PermissionProps {
     canDelete: boolean;
     canView: boolean;
 }
+
+type BreadcrumbItem = {
+    title: string;
+    href: string;
+};

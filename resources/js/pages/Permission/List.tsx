@@ -66,7 +66,7 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }) => {
     }
   };
 
-  const handleEdit = (row) => {
+  const handleEdit = (row:any) => {
     onEdit?.(row);
   };
 

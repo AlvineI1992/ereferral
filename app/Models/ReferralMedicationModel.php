@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Traits\HasRoles;
 
-class ReferralPatientInfoModel extends Model
+class ReferralMedicationModel extends Model
 {
     use HasFactory; use HasRoles;
     
-    protected $table = 'referral_patientinfo';
+    protected $table = 'referral_medicine';
     protected $primaryKey = 'LogID';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -18,20 +18,10 @@ class ReferralPatientInfoModel extends Model
 
     protected $fillable = [
         'LogID',
-        'FamilyID',
-        'phicNum',
-        'caseNum',
-        'patientLastName',
-        'patientFirstName',
-        'patientSuffix',
-        'patientMiddlename',
-        'patientBirthDate',
-        'patientSex',
-        'patientContactNumber',
-        'patientReligion',
-        'patientBloodType',
-        'patientBloodTypeRH',
-        'patientCivilStatus',
+         'drugcode',
+         'generic',
+         'instructions',
+         
     ];
    
     public function demographics()

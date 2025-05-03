@@ -46,12 +46,21 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         
         <AuthLayout title={
             <div className="flex items-center space-x-2">
+                
                 <img
                     src="/doh-logo.png"
                     alt="Department of Health Official Logo"
-                    className="h-8 w-8 select-none"
+                    className="h-10 w-10 select-none"
                 />
-                <span className="text-xl font-semibold">eReferral</span>
+                 
+                 <span className="text-2xl">
+                 <em className='text-xl'> e</em>&nbsp;Referral System
+                </span>
+                <img
+                    src="/ihomisplus.png"
+                    alt="Bagong Pilipinas"
+                    className="h-12 w-12 select-none"
+                />
             </div>
         } description="Enter your email and password below to log in">
              

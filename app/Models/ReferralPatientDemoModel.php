@@ -25,4 +25,6 @@ class ReferralPatientDemoModel extends Model
         'patientRegCode',
         'patientZipCode',
     ];
+
+   
 }
