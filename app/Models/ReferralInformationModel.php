@@ -78,4 +78,9 @@ class ReferralInformationModel extends Model
         return $this->hasOne(RefFacilitiesModel::class, 'hfhudcode', 'fhudFrom');
     }
 
+    public function track()
+    {
+        return $this->belongsTo(ReferralTrackModel::class, 'LogID', 'LogID');
+    }
+
 }

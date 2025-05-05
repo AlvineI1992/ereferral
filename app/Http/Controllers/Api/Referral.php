@@ -15,6 +15,7 @@ use App\Models\RefCityModel;
 use App\Models\RefBarangayModel;
 
 use App\Models\RefFacilitiesModel;
+use App\Helpers\ReferralHelper;
 use App\Models\ReferralInformationModel as ReferralModel;
 
 
@@ -800,6 +801,37 @@ public function get_referral_list($hfhudcode,$emr_id)
         'data' => $transformedList
     ]);
 }
+
+/**
+ * @OA\Get(
+ *     path="/api/oa-options",
+ *     operationId="getOAOptions",
+ *     tags={"Reference"},
+ *     summary="Get list of Reason for referral,
+ *     description="Returns a list of predefined codes reason for referral",
+ *     @OA\Response(
+ *         response=200,
+ *         description="List of Referral Reason",
+ *         @OA\JsonContent(
+ *             type="array",
+ *             @OA\Items(
+ *                 type="object",
+ *                 @OA\Property(property="code", type="string", example="NOEQP"),
+ *                 @OA\Property(property="description", type="string", example="No equipment available")
+ *             )
+ *         )
+ *     )
+ * )
+ */
+public function referral_reason()
+{
+    $referral_reason = ReferralHelper::getReferralReasons();
+
+    return response()->json([
+        'data'=>$referral_reason
+    ]);
+}
+
 
  
 }

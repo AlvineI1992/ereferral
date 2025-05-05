@@ -17,17 +17,22 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Inbox',
-        href: '/dashboard',
+        title: 'Incoming',
+        href: '/incoming',
         icon: Inbox,
     },
     {
-        title: 'Outbox',
+        title: 'Outgoing',
         href: '/dashboard',
         icon: ExternalLink ,
     },
     {
         title: 'Patients',
+        href: '/dashboard',
+        icon: BookUser,
+    },
+    {
+        title: 'Records',
         href: '/dashboard',
         icon: BookUser,
     },

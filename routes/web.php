@@ -9,6 +9,7 @@ use App\Http\Controllers\RefEmrController;
 use App\Http\Controllers\RefFacilitiesController;
 use App\Http\Controllers\RefFacilitytypeController;
 use App\Http\Controllers\DemographicController;
+use App\Http\Controllers\ReferralController;
 use Illuminate\Http\Request;
 
 
@@ -224,6 +225,29 @@ Route::get('/facility_type/list', [RefFacilitytypeController::class, 'list'])
 
 
 Route::get('/demographic/list', [DemographicController::class, 'list'])->name('demographic.list');
+
+
+
+
+Route::get('/incoming', function (Request $request) {
+
+    $permissions = [
+        'canCreate' => $request->user()->can('incoming create'),
+        'canEdit' => $request->user()->can('incoming edit'),
+        'canDelete' => $request->user()->can('incoming delete'),
+        'canVie' => $request->user()->can('incoming list'),
+    ];
+
+    return Inertia::render('Incoming/Index',$permissions);
+})->middleware(['auth:sanctum', 'verified'])->name('facilities'); 
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/incoming/list', [ReferralController::class, 'index'])->name('facility_type.store');
+        
+   
+
+
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

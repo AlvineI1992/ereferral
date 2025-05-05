@@ -2,16 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ReferralPatientInfoModel;
+use App\Models\ReferralInformationModel;
 use Illuminate\Http\Request;
 
 class ReferralPatientInfoController extends Controller
 {
     // Display a listing of the resource
-    public function index()
+    public function index(Request $request)
     {
-        $patients = ReferralPatientInfoModel::all();
-        return response()->json($patients);
+        $query = ReferralInformationModel::query();
+
+        if ($search = $request->input('search')) {
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('guard_name', 'LIKE', "%{$search}%")
+                  ->orderBy('id', 'desc');
+        }
+    
+        $patient = $query->paginate(10); // Paginate results
+    
+       return response()->json([
+            'data' => $patient->items(),
+            'total' => $patient->total(),
+            'current_page' => $patient->currentPage(),
+            'last_page' => $patient->lastPage(),
+        ]); 
     }
 
     // Show the form for creating a new resource

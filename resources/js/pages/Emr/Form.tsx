@@ -59,7 +59,7 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
       <Head title="Register" />
       <div className="flex items-center mb-2">
         <User size={18} />
-        <h1 className="text-lg font-semibold text-gray-800 ml-2">
+        <h1 className="text-lg font-semibold  ml-2">
           {emr ? 'Edit Provider' : 'Create Provider'}
         </h1>
       </div>
