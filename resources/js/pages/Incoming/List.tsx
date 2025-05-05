@@ -13,7 +13,7 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
-  const [perPage, setPerPage] = useState(10);
+  const [perPage, setPerPage] = useState(5);
 
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
@@ -154,6 +154,7 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
 
                         {/* Sex */}
                         <div className="flex items-center space-x-1 ml-10">
+                          <span className="text-[10px] font-semibold">Sex</span>
                           {row.patient_sex === 'Male' ? (
                             <Mars
                               className="text-blue-700 group-hover:text-white transition-colors cursor-pointer"
@@ -176,7 +177,13 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
                           </span>
                         </div>
                         <div className="flex items-center space-x-1 ml-10">
+                        <span className="text-[10px] font-semibold">Date of birth</span>
                         <span className="text-[10px]">{row.patient_birthdate}</span>
+                     
+                          </div>
+                          <div className="flex items-center space-x-1 ml-10">
+                          <span className="text-[10px] font-semibold">Civil status</span>
+                          <span className="text-[10px]">{row.patient_civilstatus}</span>
                           </div>
                       </div>
                     </td>
