@@ -20,6 +20,7 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 /* Reason for Referral */
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/reason-referral', [Referral::class, 'referral_reason'])->name('referral.reason');
+    Route::get('/reason-referral-code/{code}', [Referral::class, 'referral_reason_by_code'])->name('referral.reason');
    // Route::get('/region/{id}', [Referral::class, 'region'])->name('referral.region');
 });
 

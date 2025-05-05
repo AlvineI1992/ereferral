@@ -806,7 +806,117 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/reason-referral": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get list of Reason for referral",
+                "description": "Returns a list of predefined codes reason for referral",
+                "operationId": "getOAOptions",
+                "responses": {
+                    "200": {
+                        "description": "List of Referral Reason",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "code": {
+                                                "type": "string",
+                                                "example": "NOEQP"
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                                "example": "No equipment available"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/reason-referral-code/{code}": {
+            "get": {
+                "tags": [
+                    "Reference"
+                ],
+                "summary": "Get specific referral reason by code",
+                "description": "Returns a specific referral reason based on the provided code",
+                "operationId": "getReferralReasonByCode",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "description": "Referral reason code",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "NOEQP"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Referral reason details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "code": {
+                                            "type": "string",
+                                            "example": "NOEQP"
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "example": "No equipment available"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Referral reason not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Referral reason not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         }
     },
@@ -834,6 +944,10 @@
         {
             "name": "References",
             "description": "References"
+        },
+        {
+            "name": "Reference",
+            "description": "Reference"
         }
     ]
 }

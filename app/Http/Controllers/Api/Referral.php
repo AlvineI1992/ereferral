@@ -745,6 +745,7 @@ public function get_facility_list($id)
  *     path="/api/get-referral-list/{hfhudcode}",
  *     summary="Get referral list by HFHUDCODE",
  *     tags={"Transactions"},
+ *      security={{ "sanctum": {} }},
  *     @OA\Parameter(
  *         name="hfhudcode",
  *         in="path",
@@ -804,11 +805,12 @@ public function get_referral_list($hfhudcode,$emr_id)
 
 /**
  * @OA\Get(
- *     path="/api/oa-options",
+ *     path="/api/reason-referral",
  *     operationId="getOAOptions",
- *     tags={"Reference"},
- *     summary="Get list of Reason for referral,
+ *     tags={"References"},
+ *     summary="Get list of Reason for referral",
  *     description="Returns a list of predefined codes reason for referral",
+ *      security={{ "sanctum": {} }},
  *     @OA\Response(
  *         response=200,
  *         description="List of Referral Reason",
@@ -826,9 +828,55 @@ public function get_referral_list($hfhudcode,$emr_id)
 public function referral_reason()
 {
     $referral_reason = ReferralHelper::getReferralReasons();
-
     return response()->json([
         'data'=>$referral_reason
+    ]);
+}
+
+/**
+ * @OA\Get(
+ *     path="/api/reason-referral-code/{code}",
+ *     operationId="getReferralReasonByCode",
+ *     tags={"Reference"},
+ *     summary="Get specific referral reason by code",
+ *     description="Returns a specific referral reason based on the provided code",
+ * security={{ "sanctum": {} }},
+ *     @OA\Parameter(
+ *         name="code",
+ *         in="path",
+ *         required=true,
+ *         description="Referral reason code",
+ *         @OA\Schema(type="string", example="NOEQP")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Referral reason details",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="code", type="string", example="NOEQP"),
+ *             @OA\Property(property="description", type="string", example="No equipment available")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Referral reason not found",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="message", type="string", example="Referral reason not found")
+ *         )
+ *     )
+ * )
+ */
+public function referral_reason_by_code($code)
+{
+    $referral_reason = ReferralHelper::getReferralReasonbyCode($code);
+    
+    if (!$referral_reason) {
+        return response()->json(['message' => 'Referral reason not found'], 404);
+    }
+
+    return response()->json([
+        'data' => $referral_reason
     ]);
 }
 
