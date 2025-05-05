@@ -119,10 +119,11 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
         <>
           <table className="min-w-full text-sm">
             <thead>
-              <tr>
+              <tr className="border-b mb-1">
+              <th className="px-1 py-2 text-left">Patient Name</th>
                 <th className="px-1 py-2 text-left">LogID</th>
                 <th className="px-1 py-2 text-left">Referral Date</th>
-                <th className="px-1 py-2 text-left">Patient Name</th>
+            
 
                 <th className="px-1 py-2 text-left">Origin</th>
                 <th className="px-1 py-2 text-left">Destination</th>
@@ -135,11 +136,8 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
             <tbody>
               {data.length > 0 ? (
                 data.map((row: any) => (
-                  <tr key={row.LogID} className="border-t">
-                    <td className="px-1 py-2">{row.LogID}</td>
-                    <td className="px-1 py-2">{row.referral_date} {row.referral_time}</td>
-                    <td className="px-1 py-2 align-top">
-                      <div className="flex flex-col items-start gap-1">
+                  <tr key={row.LogID} >
+                       <div className="flex flex-col items-start gap-1">
                         {/* Avatar and Name */}
                         <div className="flex items-center gap-1">
                           <Avatar className="w-8 h-8">
@@ -186,7 +184,9 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
                           <span className="text-[10px]">{row.patient_civilstatus}</span>
                           </div>
                       </div>
-                    </td>
+                    <td className="px-1 py-2">{row.LogID}</td>
+                    <td className="px-1 py-2">{row.referral_date} {row.referral_time}</td>
+                 
 
                     <td className="px-1 py-2">
                       <div className="flex items-center space-x-1">
