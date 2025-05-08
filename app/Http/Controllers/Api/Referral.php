@@ -742,14 +742,21 @@ public function get_facility_list($id)
  
 /**
  * @OA\Get(
- *     path="/api/get-referral-list/{hfhudcode}",
- *     summary="Get referral list by HFHUDCODE",
+ *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
+ *     summary="Get referral list by HFHUDCODE and EMR ID",
  *     tags={"Transactions"},
  *      security={{ "sanctum": {} }},
  *     @OA\Parameter(
  *         name="hfhudcode",
  *         in="path",
  *         description="HFH UDCODE of the facility",
+ *         required=true,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="emr_id",
+ *         in="path",
+ *         description="EMR ID of the referral",
  *         required=true,
  *         @OA\Schema(type="string")
  *     ),
@@ -763,16 +770,39 @@ public function get_facility_list($id)
  *                 type="array",
  *                 @OA\Items(
  *                     type="object",
- *                     @OA\Property(property="id", type="integer", example=1),
- *                   
+ *                     @OA\Property(property="LogID", type="integer", example=1),
+ *                     @OA\Property(property="referral_origin_code", type="string", example="12345"),
+ *                     @OA\Property(property="referral_origin_name", type="string", example="Facility A"),
+ *                     @OA\Property(property="referral_destination_code", type="string", example="67890"),
+ *                     @OA\Property(property="referral_destination_name", type="string", example="Facility B"),
+ *                     @OA\Property(property="referral_reason", type="string", example="Consultation"),
+ *                     @OA\Property(property="referral_date", type="string", format="date", example="05/04/2025"),
+ *                     @OA\Property(property="referral_time", type="string", format="time", example="10:30 AM"),
+ *                     @OA\Property(property="referral_category", type="string", example="Routine"),
+ *                     @OA\Property(property="referring_provider", type="string", example="Dr. John Doe"),
+ *                     @OA\Property(property="contact_number", type="string", example="09171234567")
  *                 )
  *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="No referrals found",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="error", type="string", example="No referrals found")
  *         )
  *     )
  * )
  */
-public function get_referral_list($hfhudcode,$emr_id)
+public function get_referral_list($hfhudcode, $emr_id)
 {
+
+    if (!Auth::check()) {
+        // If not authenticated, this will trigger the unauthenticated handler
+        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+    }
+    
     $referrals = ReferralModel::with(['facility_from', 'facility_to'])
         ->where('fhudTo', $hfhudcode)
         ->where('emr_id', $emr_id)
@@ -790,8 +820,8 @@ public function get_referral_list($hfhudcode,$emr_id)
             'referral_destination_code' => $referral->fhudTo,
             'referral_destination_name' => optional($referral->facility_to)->facility_name,
             'referral_reason' => $referral->referralReason,
-            'referral_date' => date('m/d/Y',strtotime($referral->refferalDate)),
-            'referral_time' => date('h:i A',strtotime($referral->refferalTime)),
+            'referral_date' => date('m/d/Y', strtotime($referral->refferalDate)),
+            'referral_time' => date('h:i A', strtotime($referral->refferalTime)),
             'referral_category' => $referral->referralCategory,
             'referring_provider' => $referral->referringProvider,
             'contact_number' => $referral->referringProviderContactNumber,
@@ -879,6 +909,7 @@ public function referral_reason_by_code($code)
         'data' => $referral_reason
     ]);
 }
+
 
 
  

@@ -1,10 +1,20 @@
 import React, { useState } from "react";
 import RolesList from "./RolesList";  // The component that shows the list of roles
 import RolesForm from "./RolesForm";  // The form for creating or editing roles
+import { PermissionProps } from './types';
 
-const RolesManagement = () => {
+
+
+const RolesManagement = ({
+  canCreate,
+  canEdit,
+  canDelete,
+  canView,
+  canAssign
+}: PermissionProps) => {
   const [selectedRole, setSelectedRole] = useState(null); // State for the selected role
   const [refreshKey, setRefreshKey] = useState(0); // To refresh the role list after create/update
+
 
   // Handle the edit action and set the selected role
   const handleEdit = (role) => {
@@ -28,14 +38,17 @@ const RolesManagement = () => {
         {/* Conditionally render the Roles Form based on whether a role is selected for editing */}
         <div className="lg:col-span-1">
           {selectedRole ? (
-            <RolesForm onCancel={handleCancelEdit} role={selectedRole} onRoleCreated={handleRoleCreated} />
+            <RolesForm canCreate = {canCreate} onCancel={handleCancelEdit} role={selectedRole} onRoleCreated={handleRoleCreated} />
           ) : (
-            <RolesForm onRoleCreated={handleRoleCreated} />
+            <RolesForm canCreate = {canCreate} onRoleCreated={handleRoleCreated} />
           )}
         </div>
         <div className="lg:col-span-3">
           <div className="mb-4">
-            <RolesList refreshKey={refreshKey} onEdit={handleEdit} />
+           
+          {canView && (
+            <RolesList canEdit={canEdit} canDelete={canDelete} canAssign={canAssign}  refreshKey={refreshKey} onEdit={handleEdit} />
+          )}
           </div>
         </div>
       </div>

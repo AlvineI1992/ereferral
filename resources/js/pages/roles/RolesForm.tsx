@@ -19,6 +19,7 @@ type RolesFormProps = {
     onRoleCreated: () => void;
     onCancel: () => void;  // Add onCancel prop
     role?: { id: number; name: string; guard_name: string }; // Role data for editing
+    canCreate:boolean;// Role data for editing
 };
 
 type RolesForm = {
@@ -26,7 +27,7 @@ type RolesForm = {
     guard_name: string;
 };
 
-export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormProps) {
+export default function RolesForm({ canCreate,onRoleCreated, onCancel, role }: RolesFormProps) {
     const { data, setData, post, processing, errors, reset, put } = useForm<RolesForm>({
         name: role?.name || "", // Set initial values based on the role prop
         guard_name: role?.guard_name || "", // Set initial guard name
@@ -87,7 +88,7 @@ export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormPr
                         autoComplete="off"
                         value={data.name}
                         onChange={handleChange}
-                        disabled={processing}
+                        disabled={processing||!canCreate }
                         placeholder="Enter Role Name"
                         className="focus:ring focus:ring-indigo-300"
                         aria-describedby={errors.name ? "name-error" : undefined}
@@ -101,7 +102,7 @@ export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormPr
                     <Select
                         value={data.guard_name}
                         onValueChange={(value) => setData("guard_name", value)}
-                        disabled={processing}
+                        disabled={processing||!canCreate }
                         aria-labelledby="guard_name"
                     >
                         <SelectTrigger className="w-full border-gray-300 rounded-md shadow-sm">
@@ -118,9 +119,10 @@ export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormPr
                 {/* Submit and Cancel Buttons */}
                 <div className="mt-4 flex justify-between gap-4">
                     <Button
+                    
                         type="submit"
                         className="flex-1 flex justify-center items-center gap-2 border-1 border-green-600 bg-white text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
-                        disabled={processing}
+                        disabled={processing||!canCreate }
                     >
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         <span>{processing ? 'Processing...' : <><Save size={12} /></>}</span>
@@ -129,6 +131,7 @@ export default function RolesForm({ onRoleCreated, onCancel, role }: RolesFormPr
                     {/* Cancel Button (only shown when editing a role) */}
                     {role && (
                         <Button
+                            disabled={processing||!canCreate }
                             type="button"
                             onClick={onCancel} // Trigger the onCancel function passed from parent
                             className="flex-1 flex justify-center items-center gap-2 border-1 border-red-400 bg-white text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"

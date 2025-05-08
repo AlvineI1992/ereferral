@@ -763,18 +763,27 @@
                 ]
             }
         },
-        "/api/get-referral-list/{hfhudcode}": {
+        "/api/get-referral-list/{hfhudcode}/{emr_id}": {
             "get": {
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Get referral list by HFHUDCODE",
-                "operationId": "1a0c9238f4e20b2564f7321ac309eb25",
+                "summary": "Get referral list by HFHUDCODE and EMR ID",
+                "operationId": "b645dabf25fc6aec71ecb3eb947253ba",
                 "parameters": [
                     {
                         "name": "hfhudcode",
                         "in": "path",
                         "description": "HFH UDCODE of the facility",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "emr_id",
+                        "in": "path",
+                        "description": "EMR ID of the referral",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -792,13 +801,71 @@
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "id": {
+                                                    "LogID": {
                                                         "type": "integer",
                                                         "example": 1
+                                                    },
+                                                    "referral_origin_code": {
+                                                        "type": "string",
+                                                        "example": "12345"
+                                                    },
+                                                    "referral_origin_name": {
+                                                        "type": "string",
+                                                        "example": "Facility A"
+                                                    },
+                                                    "referral_destination_code": {
+                                                        "type": "string",
+                                                        "example": "67890"
+                                                    },
+                                                    "referral_destination_name": {
+                                                        "type": "string",
+                                                        "example": "Facility B"
+                                                    },
+                                                    "referral_reason": {
+                                                        "type": "string",
+                                                        "example": "Consultation"
+                                                    },
+                                                    "referral_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "05/04/2025"
+                                                    },
+                                                    "referral_time": {
+                                                        "type": "string",
+                                                        "format": "time",
+                                                        "example": "10:30 AM"
+                                                    },
+                                                    "referral_category": {
+                                                        "type": "string",
+                                                        "example": "Routine"
+                                                    },
+                                                    "referring_provider": {
+                                                        "type": "string",
+                                                        "example": "Dr. John Doe"
+                                                    },
+                                                    "contact_number": {
+                                                        "type": "string",
+                                                        "example": "09171234567"
                                                     }
                                                 },
                                                 "type": "object"
                                             }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No referrals found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "No referrals found"
                                         }
                                     },
                                     "type": "object"

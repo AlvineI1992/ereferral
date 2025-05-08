@@ -3,23 +3,24 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Enums\Auth\Permissions;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Enums\Permissions;
 
 class PermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $class_methods = get_class_methods(Permissions::class);
+        // Get all static method names defined in Permissions class
+        $classMethods = get_class_methods(Permissions::class);
 
-        foreach ($class_methods as $class_method) {
-            $permissions = Permissions::$class_method()->getAllPermissions();
+        foreach ($classMethods as $method) {
+            $permissions = Permissions::$method(); // e.g. Permissions::dashboard()
+
             foreach ($permissions as $permission) {
-                Permission::firstOrCreate(['name' => $permission[0], 'level' => $permission[1]]);
+                // Save each permission name
+                Permission::firstOrCreate([
+                    'name' => $permission[0],
+                ]);
             }
         }
     }

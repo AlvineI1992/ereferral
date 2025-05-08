@@ -14,20 +14,26 @@ class UserSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
-    {
-        $user = User::create(
-            ['name' => "admin",'email' => "admin@admin.com",'password' => bcrypt('password'), 'status' => 'A']);
+                public function run(): void
+                {
+                // 1. Create user
+            $user = User::create([
+                'name' => 'admin',
+                'email' => 'admin@referral.doh.gov.ph',
+                'password' => bcrypt('Alvin1992!'),
+                'status' => 'A'
+            ]);
 
-       $adminrole = Role::create(['name' => 'Admin']);
+        
+             $adminRole = Role::firstOrCreate(['name' => 'Admin']);
 
-        $permissions = Permission::pluck('id','id')->all();
+            // 3. Get all permissions
+            $allPermissions = Permission::all();
 
-        $adminrole->syncPermissions($permissions);
-        $adminrole->revokePermissionTo('permission-create');
-        $adminrole->revokePermissionTo('permission-update');
-        $adminrole->revokePermissionTo('permission-delete');
+            // 4. Give all permissions to Admin role
+            $adminRole->syncPermissions($allPermissions);
 
-        $user->assignRole([$adminrole->id]);
+            // 5. Assign the Admin role to the user
+            $user->assignRole('Admin');;
     }
 }

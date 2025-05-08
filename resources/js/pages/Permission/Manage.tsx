@@ -4,19 +4,22 @@ import Lists from "./List";
 import Form from "./Form"; 
 import { PermissionProps } from './types';
 
+interface FormProps {
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canView: boolean;
+  onCancel?: () => void;
+  onCreated: () => void;
+  perm?: PermissionProps | null; // "Permission" should be a defined type
+}
 
-
-const Manage = ({
-  canCreate,
-  canEdit,
-  canDelete,
-  canView,
-}: PermissionProps) => {
+const Manage = ({canCreate,canEdit,canDelete,canView}: FormProps) => {
   const [selected, setSelected] = useState(null); 
   const [refreshKey, setRefreshKey] = useState(0); 
 
  
-  const handleEdit = (perm) => {
+  const handleEdit = (perm:null) => {
     setSelected(perm); // Set the role to be edited
   };
 
@@ -35,7 +38,7 @@ const Manage = ({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
        
         <div className="lg:col-span-1">
-          {setSelected ? (
+          {selected ? (
             <Form canCreate = {canCreate} onCancel={handleCancelEdit} perm={selected} onCreated={handleCreated} />
           ) : (
             <Form canCreate = {canCreate} onCreated={handleCreated} />

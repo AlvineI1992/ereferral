@@ -26,5 +26,24 @@ class ReferralPatientDemoModel extends Model
         'patientZipCode',
     ];
 
+    public function region()
+    {
+        return $this->hasOne(RefRegionModel::class, 'regcode', 'patientRegCode');
+    }
+
+    public function province()
+    {
+        return $this->hasOne(RefProvinceModel::class, 'provcode', 'patientProvCode');
+    }
+
+    public function city()
+    {
+        return $this->hasOne(RefCityModel::class, 'citycode', 'patientMundCode');
+    }
+
+    public function barangay()
+    {
+        return $this->hasOne(RefBarangayModel::class, 'bgycode', 'patientBrgyCode');
+    }
    
 }

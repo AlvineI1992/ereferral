@@ -6,9 +6,11 @@ import { Inertia } from "@inertiajs/inertia";
 type RolesListProps = {
   refreshKey: any; 
   onEdit: (id: number) => void;
-
+  canEdit: boolean; 
+  canDelete: boolean; 
+  canAssign: boolean; 
 };
-const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
+const RolesList = ({ canEdit,canDelete,canAssign,refreshKey, onEdit }: RolesListProps) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -145,24 +147,27 @@ const RolesList = ({ refreshKey, onEdit }: RolesListProps) => {
                     <td className="px-4 py-2 border-b">{row.guard_name}</td>
                     <td className="px-4 py-2 border-b text-center">
                       <div className="flex justify-center gap-2">
+                      {canEdit && (
                         <button
                           onClick={() => handleEdit(row)}
                           className="p-1 text-blue-500 hover:text-blue-700"
                         >
                           <Pencil size={16} />
-                        </button>
+                        </button>)}
+                        {canDelete && (
                         <button
                           onClick={() => handleDelete(row.id)}
                           className="p-1 text-red-500 hover:text-red-700"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </button>)}
+                        {canAssign && (
                         <button
                           onClick={() => handleGoto(row.id)}
                           className="p-1 text-green-500 hover:text-green-700"
                         >
                           <CircleArrowRight size={16} />
-                        </button>
+                        </button>)}
                       </div>
                     </td>
                   </tr>

@@ -2,13 +2,27 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import RolesManagement from './RolesManagement';
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Roles',
         href: '/roles',
     },
 ];
-export default function Roles() {
+export default function Roles({
+    canCreateRole,
+    canEditRole,
+    canDeleteRole,
+    canViewRole,
+    canAssignRole,
+}: {
+    canCreateRole: boolean;
+    canEditRole:boolean,
+    canDeleteRole:boolean,
+    canViewRole:boolean,
+    canAssignRole:boolean,
+
+}) {
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(true);
     const handleRoleCreated = () => {
@@ -25,9 +39,14 @@ export default function Roles() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Roles" />
             <div className="lg:col-span-1">
-                <RolesManagement onRoleCreated={() => {}} />
+                <RolesManagement onRoleCreated={() => {}}
+                 canCreate={canCreateRole} 
+                 canEdit={canEditRole} 
+                 canDelete={canDeleteRole} 
+                 canView={canViewRole} 
+                 canAssign={canAssignRole} 
+                />
             </div>
-            {/*   <RolesManagement refreshKey={refreshKey} className="w-full" /> */}
         </AppLayout>
     );
 }

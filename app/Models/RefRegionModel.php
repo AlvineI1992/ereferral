@@ -62,7 +62,7 @@ class RefRegionModel extends Model
     ];
 
     public function provinces()
-{
-    return $this->hasMany(RefProvinceModel::class, 'regcode', 'regcode');
-}
+    {
+        return $this->hasMany(RefProvinceModel::class, 'regcode', 'regcode');
+    }
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ReferralInformationModel;
+use App\Models\ReferralPatientInfoModel;
+use App\Models\ReferralPatientDemoModel;
 use Illuminate\Http\Request;
 
 class ReferralPatientInfoController extends Controller
@@ -63,8 +65,45 @@ class ReferralPatientInfoController extends Controller
     // Display the specified resource
     public function show($LogID)
     {
-        $patient = ReferralPatientInfoModel::findOrFail($LogID);
-        return response()->json($patient);
+       /*  try { */
+            $decodedID = base64_decode($LogID);
+    
+            // Retrieve the patient with related demographics
+            $patient = ReferralPatientInfoModel::with('demographics')
+                ->where('LogID', $decodedID)
+                ->firstOrFail();
+
+             $demographics = ReferralPatientDemoModel::with('region','province','city','barangay')
+             ->where('LogID', $decodedID)
+             ->firstOrFail();
+
+            // Return the response
+            return response()->json([
+                'profile' => [
+                    'fname' => $patient->patientFirstName,
+                    'mname' => $patient->patientMiddlename,
+                    'lname' => $patient->patientLastName,
+                    'dob' => $patient->patientBirthDate,
+                    'sex' => $patient->patientSex === 'M'?'Male':'Female',
+                    'age' => $this->calculateAge($patient->patientBirthDate),
+                    'avatar' => null, 
+                ],
+                'demographics' =>[
+                    'street'=>$patient->patientStreetAddress,
+                    'region'=>$demographics->region->regname,
+                    'province'=>$demographics->province->provname,
+                    'city'=>$demographics->city->cityname,
+                    'barangay'=>$demographics->barangay->bgyname
+                ]
+            ]);
+        /* } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid ID or data not found.'], 404);
+        } */
+    }
+    // Optional helper method for age calculation
+    protected function calculateAge($dob)
+    {
+        return \Carbon\Carbon::parse($dob)->age;
     }
 
     // Show the form for editing the specified resource

@@ -22,7 +22,7 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
     const { name, quote } = usePage<SharedData>().props;
     const [currentSlide, setCurrentSlide] = useState(0);
 
-    const images = ['bbm.jpg', 'herbosa.jpg'];
+    const images = ['doh.jpg','herbosa.jpg', 'bbm.jpg','8point.png',];
 
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev + 1) % images.length);
@@ -42,7 +42,7 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
                         loop={true} // Loop through images
                         autoplay={{ delay: 7000 }} // Autoplay every 2 seconds
                         effect="effect" // Fade effect for smooth transitions
-                        className="h-full w-full rounded-xl opacity-80"
+                        className="h-full w-full rounded-xl opacity-40"
                         coverflowEffect={{
                             rotate: 50,
                             stretch: 0,
@@ -63,13 +63,14 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
                     </Swiper>
                 </div>
 
-                <Link href={route('home')} className="relative z-40 flex items-center text-xl font-medium">
+                <Link href={route('home')} className="relative z-40 flex items-center text-xl">
                     <div className="flex items-center space-x-4">
                         <img src="/doh-logo.png" alt="Department of Health Official Logo" className="h-24 w-24 select-none" />
                         <span className="text-2xl ">Department of Health</span>
                     </div>
                 </Link>
             </div>
+            
             <div className="w-full lg:p-8">
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
                     <Link href={route('home')} className="relative z-20 flex items-center justify-center lg:hidden">
@@ -82,23 +83,25 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
 
                     {children}
                     {/* Watermark background image */}
-                    <img
-                        src="/bagong_pilipinas.png" // replace with your image path
-                        alt="Watermark"
-                        className="pointer-events-none absolute inset-0 h-full w-full object-contain opacity-5"
-                    />
+                    <div className="absolute    justify-start  h-full w-full">
+                            <img
+                                src="/bagong_pilipinas.png"
+                                alt="Watermark"
+                                className="pointer-events-none h-full object-contain opacity-25"
+                            />
+                    </div>
+                    
                 </div>
-                
-                
                 {quote && (
                     <div className="relative z-20 mt-auto">
                         <blockquote className="space-y-3">
                             <em className="text-sm text-green-800">&ldquo;{quote.message}&rdquo;</em>
-                            <footer className="text-md text-green-700">{quote.author}</footer>
+                            <footer className="text-xs text-green-700">-{quote.author}</footer>
                         </blockquote>
                     </div>
                 )}
             </div>
+            
         </div>
     );
 }

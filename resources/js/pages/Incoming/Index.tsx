@@ -40,9 +40,10 @@ export default function Incoming({
       <Head title="Incoming Referral Management" />
       <div className="p-2 w-full h-full">
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <span className="text-lg font-semibold text-gray-500">Please wait...</span>
-          </div>
+         <div className="flex flex-col justify-center items-center h-64">
+         <img src="/bagong_pilipinas.png" alt="Bagong Pilipinas" className="w-19 h-19 mb-4" />
+         <span className="text-lg font-semibold text-gray-500">Please wait...</span>
+       </div>
         ) : (
           <Manage
             onCreated={handleCreated}

@@ -37,6 +37,7 @@ class ReferralPatientInfoModel extends Model
     public function demographics()
     {
         return $this->hasOne(ReferralPatientDemoModel::class, 'LogID', 'LogID');
-    }
+    }   
+  
  
 }

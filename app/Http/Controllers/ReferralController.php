@@ -11,10 +11,27 @@ class ReferralController extends Controller
     // Display a listing of the resource
     public function index(Request $request)
     {
+
+        $user = auth()->user();
+        $role =$user?->getRoleNames()->first() ?? 'guest'; // for spatie roles
+
         $perPage = $request->input('per_page', 5); // default to 10
         $page = $request->input('page', 1); // default to page 1
         $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to','track'])->whereDoesntHave('track');
- 
+
+        if ($role === 'Adminstrator') {
+           $query->where();
+        } elseif ($role === 'provider') {
+
+
+        } elseif ($role === 'region') {
+           
+        
+        } elseif ($role === 'hospital') {
+           
+        } else {
+          
+        }
         
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -26,7 +43,7 @@ class ReferralController extends Controller
             });
         }
     
-      /*   $paginated = $query->orderBy('refferalDate', 'desc')->paginate(10); // Now execute the query */
+      
 
         $paginated = $query->orderBy('refferalDate', 'desc')->paginate($perPage, ['*'], 'page', $page);
     
@@ -60,6 +77,7 @@ class ReferralController extends Controller
             'last_page' => $paginated->lastPage(),
         ]);
     }
+
     
     // Show the form for creating a new resource
     public function create()
@@ -82,8 +100,14 @@ class ReferralController extends Controller
     // Display the specified resource
     public function show($LogID)
     {
-        $patient = ReferralInformationModel::findOrFail($LogID);
-        return response()->json($patient);
+        $decodedID = $LogID;
+       /*  $patient = ReferralInformationModel::findOrFail($LogID); */
+       $query =ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to'])
+       ->whereHas('patientinformation', function ($q) use ($decodedID) {
+           $q->where('id', $decodedID); // Adjust 'id' to the actual column you are checking
+       });
+
+        return response()->json($query);
     }
 
     // Show the form for editing the specified resource

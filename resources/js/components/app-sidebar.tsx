@@ -3,93 +3,69 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { NavReference } from '@/components/nav-references';
 import { NavAdministrator } from '@/components/nav-admin';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-
-import { Link } from '@inertiajs/react';
-import { LayoutGrid,User,CircleChevronRight,Inbox,ExternalLink,BookUser,Hospital,MonitorCog ,MapPinned} from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    LayoutGrid,
+    User,
+    CircleChevronRight,
+    Inbox,
+    ExternalLink,
+    BriefcaseMedical,
+    Hospital,
+    BedDouble,
+    MapPinned,
+    Calendar1,
+    FileBadge
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Incoming',
-        href: '/incoming',
-        icon: Inbox,
-    },
-    {
-        title: 'Outgoing',
-        href: '/dashboard',
-        icon: ExternalLink ,
-    },
-    {
-        title: 'Patients',
-        href: '/dashboard',
-        icon: BookUser,
-    },
-    {
-        title: 'Records',
-        href: '/dashboard',
-        icon: BookUser,
-    },
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+    { title: 'Incoming', href: '/incoming', icon: Inbox },
+    { title: 'Outgoing', href: '/dashboard', icon: ExternalLink },
+    { title: 'Patient', href: '/dashboard', icon: BriefcaseMedical },
+    { title: 'Records', href: '/dashboard', icon: FileBadge },
+    { title: 'Appointments', href: '/dashboard', icon: Calendar1 },
+    { title: 'Bed Tracker', href: '/dashboard', icon: BedDouble }
 ];
 
 const navReferences: NavItem[] = [
-    {
-        title: 'Demographics',
-        href: '/dashboard',
-        icon: MapPinned,
-    },
-   
-    {
-        title: 'Facilities',
-        href: '/facilities',
-        icon: Hospital ,
-    }
+    { title: 'Demographics', href: '/dashboard', icon: MapPinned },
+    { title: 'Facilities', href: '/facilities', icon: Hospital }
 ];
+
 const adminNavItems: NavItem[] = [
     {
-        title: 'Administrator', // Main menu item "Administrator"
-        href: '#', // No direct link, dropdown only
+        title: 'Administrator',
+        href: '#',
         icon: User,
         submenu: [
-            {
-                title: 'Manage Provider',
-                href: 'emr',
-                icon: CircleChevronRight,
-            },
-            {
-                title: 'Manage Users',
-                href: 'users',
-                icon: CircleChevronRight,
-            },
-            {
-                title: 'Roles',
-                href: 'roles',
-                icon: CircleChevronRight,
-            },
-            {
-                title: 'Permissions',
-                href: 'permission',
-                icon: CircleChevronRight,
-            },
-        ],
+            { title: 'Manage Provider', href: 'emr', icon: CircleChevronRight },
+            { title: 'Manage Users', href: 'users', icon: CircleChevronRight },
+            { title: 'Roles', href: 'roles', icon: CircleChevronRight },
+            { title: 'Permissions', href: 'permission', icon: CircleChevronRight }
+        ]
     }
-  
-    
 ];
 
-
-
-const footerNavItems: NavItem[] = [
-   
-];
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
+    const { props } = usePage();
+    const user = props.auth?.user;
+    const userRole = user?.roles; // Assumes user role is a string like 'admin'
+    console.log(userRole);
+
     return (
         <Sidebar collapsible="offcanvas" variant="inset">
             <SidebarHeader>
@@ -107,11 +83,15 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={mainNavItems} />
                 <NavReference items={navReferences} />
-                <NavAdministrator items={adminNavItems} /> 
+                
+                {/* Only show admin section for users with admin role */}
+                {['Admin'].includes(userRole) && (
+                    <NavAdministrator items={adminNavItems} />
+                )}
             </SidebarContent>
 
             <SidebarFooter>
-            {    <NavFooter items={footerNavItems}  />}
+                <NavFooter items={footerNavItems} />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

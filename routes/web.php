@@ -10,6 +10,8 @@ use App\Http\Controllers\RefFacilitiesController;
 use App\Http\Controllers\RefFacilitytypeController;
 use App\Http\Controllers\DemographicController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\ReferralPatientInfoController;
+
 use Illuminate\Http\Request;
 
 
@@ -75,7 +77,7 @@ Route::get('/roles', function (Request $request) {
 
 Route::get('roles/assign/{id}', function ($id) {
     return Inertia::render('Roles/RolesProfileLayout', [
-        'id' => $id
+        'id' => $id 
     ]);
 })->middleware(['auth:sanctum', 'verified']);
 
@@ -243,10 +245,33 @@ Route::get('/incoming', function (Request $request) {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])->name('facility_type.store');
+
+
+    Route::get('incoming/profile/{id}', function ($id) {
+        return Inertia::render('Incoming/IncomingProfile', [
+            'id' => $id,
+            'is_include'=>true
+        ]);
+    })->middleware(['auth:sanctum', 'verified']);
         
    
 
 
+});
+
+//Patient profile
+Route::get('/patient', function (Request $request) {
+    $permissions = [
+        'canCreate' => $request->user()->can('incoming create'),
+        'canEdit' => $request->user()->can('incoming edit'),
+        'canDelete' => $request->user()->can('incoming delete'),
+        'canVie' => $request->user()->can('incoming list'),
+    ];
+    return Inertia::render('Incoming/Index',$permissions);
+})->middleware(['auth:sanctum', 'verified'])->name('facilities'); 
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/patient-profile/{LogID}', [ReferralPatientInfoController::class, 'show'])->name('patient_profile.show');
 });
 
 require __DIR__.'/settings.php';

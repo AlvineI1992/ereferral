@@ -5,7 +5,15 @@ import Swal from "sweetalert2";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const Lists = ({ canEdit,canDelete,refreshKey, onEdit }) => {
+type Props = {
+  refreshKey: () => any;
+  onEdit: () => any;  // Add onCancel prop
+  canDelete:boolean;// Role data for editing
+  canEdit:boolean;// Role data for editing
+};
+
+
+const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
