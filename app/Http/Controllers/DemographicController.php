@@ -58,6 +58,16 @@ class DemographicController extends Controller
         ]);
     }
     
+
+    public function region_list()
+    {
+        $regions = RefRegionModel::select('regcode','regname')->get();
+        return response()->json([
+            'data' => $regions
+        ]);
+    }
+    
+   
    
     public function create()
     {

@@ -26,8 +26,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
-Route::get('/users', function () {
-    return Inertia::render('Users/Index');
+Route::get('/users', function (Request $request) {
+    $permissions = [
+        'canCreate' => $request->user()->can('user create'),
+        'canEdit' => $request->user()->can('user edit'),
+        'canDelete' => $request->user()->can('user delete'),
+        'canView' => $request->user()->can('user list'),
+        'canAssign' => $request->user()->can('user assign'),
+    ];
+    return Inertia::render('Users/Index',$permissions);
 })->middleware(['auth', 'verified'])->name('users');
 
 
@@ -123,14 +130,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/permission-has-role', [PermissionController::class, 'permission_has_role'])->name('permission.has.role');
 });
 
-Route::get('/emr', function () {
-    return Inertia::render('Emr/Index');
+Route::get('/emr', function (Request $request) {
+    $permissions = [
+        'canCreate' => $request->user()->can('provider create'),
+        'canEdit' => $request->user()->can('provider edit'),
+        'canDelete' => $request->user()->can('provider delete'),
+        'canView' => $request->user()->can('provider list'),
+        'canAssign' => $request->user()->can('provider assign'),
+    ];
+    return Inertia::render('Emr/Index',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('emr');
 
 
-Route::get('emr/profile/{id}', function ($id) {
+Route::get('emr/profile/{id}', function (Request $request,$id) {
+
+    $permissions = [
+        'canAdd' => $request->user()->can('emr assign'),
+    ];
     return Inertia::render('Emr/ProfileLayout', [
-        'id' => $id
+        'id' => $id,
+        'permission'=>$permissions
     ]);
 })->middleware(['auth:sanctum', 'verified'])->name('emr.profile');
 
@@ -140,9 +159,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/emr/update/{id}', [RefEmrController::class, 'update'])->name('emr.update');
     Route::delete('/emr/delete/{id}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
     Route::post('/emr/store', [RefEmrController::class, 'store'])->name('emr.store');
-    Route::get('/api/emr/info/{id}', [RefEmrController::class, 'show'])->name('emr.info');
- 
-    Route::get('/emr/profile_form', function () {
+    Route::get('/emr/info/{id}', [RefEmrController::class, 'show'])->name('emr.info');
+
+    Route::post('/emr/assign', [RefEmrController::class, 'assign'])->name('emr.assign-facility');
+    Route::post('/emr/revoke', [RefEmrController::class, 'revoke'])->name('emr.revoke-facility');
+
+    Route::get('/emr/profile_form', function (Request $request) {
+      
         return Inertia::render('Emr/ProfileForm');
     })->name('emr/profile_form');
 
@@ -179,7 +202,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('can:facility delete')
         ->name('facility.destroy');
 
-    Route::post('/facilities/store', [RefFacilitiesController::class, 'store'])
+    Route::get('/facilities-list', [RefFacilitiesController::class, 'facility_list'])
+        ->name('facility.facility_list');
+
+        Route::post('/facilities/store', [RefFacilitiesController::class, 'store'])
         ->middleware('can:facility create')
         ->name('facility.store');
 
@@ -227,7 +253,7 @@ Route::get('/facility_type/list', [RefFacilitytypeController::class, 'list'])
 
 
 Route::get('/demographic/list', [DemographicController::class, 'list'])->name('demographic.list');
-
+Route::get('/region/list', [DemographicController::class, 'region_list'])->name('demographic.region_list');
 
 
 
@@ -244,19 +270,19 @@ Route::get('/incoming', function (Request $request) {
 })->middleware(['auth:sanctum', 'verified'])->name('facilities'); 
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/incoming/list', [ReferralController::class, 'index'])->name('facility_type.store');
-
-
+    Route::get('/incoming/list', [ReferralController::class, 'index'])->name('incoming.list');
     Route::get('incoming/profile/{id}', function ($id) {
         return Inertia::render('Incoming/IncomingProfile', [
             'id' => $id,
             'is_include'=>true
         ]);
     })->middleware(['auth:sanctum', 'verified']);
-        
-   
+    
+});
 
 
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/referral-information/{LogID}', [ReferralController::class, 'index'])->name('incoming.list');
 });
 
 //Patient profile

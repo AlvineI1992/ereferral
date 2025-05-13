@@ -24,17 +24,6 @@ type ListProps = {
   canDelete: boolean; 
 };
 
-
-
-
-
-/* {canCreateFacilities && (
-  <Form
-      onCancel={selectedId ? handleCancelEdit : undefined}
-      emr={selectedId}
-      onCreated={handleCreatedOrUpdated}
-  />
-)} */
 const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
   console.log(canEdit);
   const [data, setData] = useState([]);

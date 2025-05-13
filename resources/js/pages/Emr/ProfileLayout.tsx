@@ -1,14 +1,20 @@
-// ProfileLayout.tsx
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { type NavItem, type BreadcrumbItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { User, Key, List } from 'lucide-react';
+import Swal from "sweetalert2";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import Profileinfo from './Profileinfo';
+import { type BreadcrumbItem } from '@/types';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import Reference_List from '../Ref_Facilities/Reference_List';
+import Active_List from '../Ref_Facilities/Active_List';
+import Profileinfo from './Profileinfo';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Provider', href: '/emr' },
@@ -17,60 +23,104 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type ProfileLayoutProps = {
   id: string;
-  children: React.ReactNode;
+  children?: React.ReactNode; // optional if unused
 };
 
-const sidebarNavItems: NavItem[] = [
-  { title: 'Profile', href: '/emr/profile_form', icon: User },
-  { title: 'Access', href: '/settings/password', icon: Key },
-  { title: 'Activities', href: '/settings/appearance', icon: List },
-];
+type ProfileType = {
+  emr_name: string;
+  role: string;
+  email: string;
+  phone: string;
+  location: string;
+  avatar?: string;
+};
 
 export default function ProfileLayout({ id, children }: ProfileLayoutProps) {
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
 
   useEffect(() => {
-    axios.get(`/api/emr/info/${id}`).then((res) => {
-      setProfile(res.data);
-    });
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get(`/emr/info/${id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        setProfile(response.data);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+
+    fetchProfile();
   }, [id]);
+
+  const handleConfirm = async () => {
+    try {
+      const payload = {
+        emr_id: id,
+        facilities: selectedFacilities,
+      };
+
+      const response = await axios.post(
+        '/emr/assign',
+        payload
+      );
+      setRefreshKey(prev => prev + 1);
+      Swal.fire("Assigned", `${selectedFacilities.length} facility(ies) assigned.`, "success");
+    } catch (error) {
+      console.error('Error assigning facilities:', error);
+    } finally {
+      setShowModal(false);
+    }
+  };
+
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      {profile && <Profileinfo profile={profile} />}
-      <div className="text-sm ml-4">
-        <Heading title="Menu" description="" />
-      </div>
-
-      <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-12 ml-3">
-        <aside className="w-full max-w-xl lg:w-45">
-          <nav className="flex flex-col space-y-1 space-x-0">
-            {sidebarNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Button
-                  key={item.href}
-                  size="sm"
-                  variant="ghost"
-                  asChild
-                  className={cn('w-full justify-start gap-2')}
-                >
-                  <Link href={`${item.href}/${id}`} preserveState preserveScroll>
-                    <span className="flex items-center gap-2">
-                      {Icon && <Icon className="h-4 w-4" />}
-                      {item.title}
-                    </span>
-                  </Link>
-                </Button>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <div className="flex-1 md:max-w-2xl">
-          <section className="max-w-xl space-y-12">{children}</section>
+      <div className="flex flex-col gap-4 p-4 lg:flex-row">
+        <div className="w-full space-y-4 lg:w-1/2">
+          {profile && <Profileinfo profile={profile} />}
+        </div>
+        <div className="flex w-full items-start justify-end lg:w-1/2">
+          <Button onClick={() => setShowModal(true)}>Add Facility</Button>
         </div>
       </div>
+
+      {/* Modal Controlled Here */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-7xl">
+          <DialogHeader>
+            <DialogTitle>Active facilities</DialogTitle>
+            <DialogDescription>Select active facilities to assign.</DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            <Active_List
+              refreshKey={refreshKey}
+              id={id}
+              setSelectedFacilities={setSelectedFacilities}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirm}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="my-4 border-t" />
+
+      <div className="flex flex-col">
+        <Reference_List refreshKey={refreshKey} id={id} />
+      </div>
+
+      {/* Optional children slot rendering */}
+      {children}
     </AppLayout>
   );
 }

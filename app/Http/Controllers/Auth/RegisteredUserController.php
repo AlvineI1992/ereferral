@@ -95,7 +95,8 @@ public function role_has_user(Request $request)
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status'=>'A',
-            'emr_id' => $request->emr_id,
+            'access_id' => $request->access_id,
+            'access_type' => $request->access_type,
         ]);
 
         event(new Registered($user)); 
@@ -132,7 +133,7 @@ public function role_has_user(Request $request)
     $newRoles = $roles->filter(fn($role) => !$user->hasRole($role));
     
     if ($newRoles->isNotEmpty()) {
-        $user->assignRole($newRoles);
+        $user->assignRole($newRoles); 
         
         // Add flag for frontend
         $newRoles->each(fn ($role) => $role->is_assigned_to_user = true);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RefEmrModel;
+use App\Models\RefFacilitiesModel;
 use Illuminate\Http\Request;
 
 class RefEmrController extends Controller
@@ -89,7 +90,45 @@ class RefEmrController extends Controller
     {
         $data = RefEmrModel::findOrFail($LogID);
         $data->delete();
-
         return response()->json(['message' => 'Record deleted successfully.']);
+    }
+
+    public function assign(Request $request)
+    {
+        $codes = $request->input('facilities', []); 
+        $id = $request->input('emr_id'); // e.g. ['fac123','fac456']
+
+        $updatedCount = $this->_assignFacilities($id, $codes);
+      
+        return response()->json([
+            'message'       => "Assigned $updatedCount facilities to EMR $id.",
+            'assignedCount' => $updatedCount,
+        ]);
+    }
+
+    public function revoke(Request $request)
+    {
+        $codes = $request->input('facilities', []); 
+        $id = $request->input('emr_id'); // e.g. ['fac123','fac456']
+
+        $updatedCount = $this->_revokeFacilities($id, $codes);
+      
+        return response()->json([
+            'message'       => "Assigned $updatedCount facilities to EMR $id.",
+            'assignedCount' => $updatedCount,
+        ]);
+    }
+
+
+    public function _assignFacilities(string $emrId, array $hfhudcodes)
+    {
+        return RefFacilitiesModel::whereIn('hfhudcode', $hfhudcodes)
+                        ->update(['emr_id' => $emrId]);
+    }
+
+    public function _revokeFacilities(string $emrId, array $hfhudcodes)
+    {
+        return RefFacilitiesModel::whereIn('hfhudcode', $hfhudcodes)
+                        ->update(['emr_id' =>null]);
     }
 }

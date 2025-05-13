@@ -37,6 +37,15 @@ class RefFacilitiesController extends Controller
                 });
             }
 
+            if ($request->filled('not_assigned') === true) {
+                $query->whereNull('ref_facilities.emr_id');
+            }
+
+            if ($request->filled('emr_id')) {
+                $query->where('ref_facilities.emr_id',"{$request->emr_id}");
+            }
+        
+        
             if ($request->filled('id')) {
                 $query->where('ref_facilities.hfhudcode', 'like', "%{$request->id}%");
             }
@@ -44,8 +53,6 @@ class RefFacilitiesController extends Controller
             if ($request->filled('name')) {
                 $query->where('ref_facilities.facility_name', 'like', "%{$request->name}%");
             }
-        
-           
         
             if ($request->filled('region')) {
                 $query->where('ref_region.regname', 'like', "%{$request->region}%");
@@ -60,6 +67,17 @@ class RefFacilitiesController extends Controller
             'total' => $facilities->total(),
             'current_page' => $facilities->currentPage(),
             'last_page' => $facilities->lastPage(),
+        ]);
+    }
+
+    public function facility_list()
+    {
+        $query = RefFacilitiesModel::select([
+            'ref_facilities.hfhudcode',
+            'ref_facilities.facility_name'
+        ])->get();
+        return response()->json([
+            'data' => $query
         ]);
     }
 

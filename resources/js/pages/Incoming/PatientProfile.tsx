@@ -27,9 +27,7 @@ type Props = {
 };
 
 export default function PatientInfo({ profile, demographics }: Props) {
-  if (!profile && !demographics) {
-    return <p className="text-sm text-muted-foreground">Loading profile...</p>;
-  }
+
 
   const fullName = [profile?.fname, profile?.mname, profile?.lname].filter(Boolean).join(' ');
   const initial = profile?.fname?.charAt(0).toUpperCase() || '?';
@@ -38,7 +36,7 @@ export default function PatientInfo({ profile, demographics }: Props) {
     <div className="space-y-6">
       <div className="p-3 ">
         {/* Header */}
-        <div className="flex items-center mb-1">
+        <div className="flex items-center mb-4">
           <UserCircle2Icon size={24} className="text-primary mr-2" />
           <h2 className="text-xl">Patient Profile</h2>
         </div>

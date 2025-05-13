@@ -1,249 +1,373 @@
-  import { Head, useForm } from '@inertiajs/react';
-  import { LoaderCircle, Save, User, X, Check, ChevronsUpDown,Edit } from 'lucide-react';
-  import { FormEventHandler, useEffect, useRef } from 'react';
-  import InputError from '@/components/input-error';
-  import { Button } from '@/components/ui/button';
-  import { Input } from '@/components/ui/input';
-  import { Label } from '@/components/ui/label';
-  import HeadingSmall from '@/components/heading-small';
-  import { RegisterForm } from './types';
-  import * as React from "react";
-  import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-  } from '@/components/ui/popover';
-  import {
+import * as React from 'react';
+import {
+    FormEventHandler,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
+import { Head, useForm } from '@inertiajs/react';
+import axios from 'axios';
+
+import HeadingSmall from '@/components/heading-small';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import {
     Command,
     CommandEmpty,
     CommandGroup,
     CommandInput,
     CommandItem,
     CommandList,
-  } from "@/components/ui/command";
-  import { cn } from '@/lib/utils';
-  import { useState } from 'react';
-  import axios from 'axios';
+} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import {
+    Check,
+    ChevronsUpDown,
+    Edit,
+    LoaderCircle,
+    Save,
+    User,
+    X,
+} from 'lucide-react';
+import { RegisterForm } from './types';
 
-
-  type UserFormProps = {
+type UserFormProps = {
     onUserCreated: () => void;
-    onCancel: () => void;  // onCancel prop to handle the cancel action
-    user?: any;  // User object for editing (optional)
-  };
+    onCancel: () => void;
+    user?: any;
+};
 
-  export default function UsersForm({ onUserCreated, onCancel, user }: UserFormProps) {
+export default function UsersForm({ onUserCreated, onCancel, user }: UserFormProps) {
     const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
-      name: user?.name || '',
-      email: user?.email || '',
-      password: user?.password || '',
-      password_confirmation: user?.password_confirmation || '',
-      emr_id: user?.emr_id || '',
+        name: user?.name || '',
+        email: user?.email || '',
+        password: user?.password || '',
+        password_confirmation: user?.password_confirmation || '',
+        access_id: user?.access_id || '',
+        access_type: user?.access_type || ''
     });
 
-
     const nameInputRef = useRef<HTMLInputElement>(null);
-    // Inside your component
     const [frameworks, setFrameworks] = useState([]);
-    const [value, setValue] = useState("");
-    const [open, setOpen] = useState(false);
+    const [regions, setRegions] = useState([]);
+    const [hospitals, setHospital] = useState([]);
+
+    const [selectedProvider, setSelectedProvider] = useState(data.access_id);
+    const [selectedRegion, setSelectedRegion] = useState(data.access_id);
+    const [selectedHospital, setSelectedHospital] = useState(data.access_id);
+
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const [regionPopoverOpen, setRegionPopoverOpen] = useState(false);
+    const [hospitalPopoverOpen, setHospitalPopoverOpen] = useState(false);
+
+    const [accessType, setAccessType] = useState(data.access_type);
+
 
     useEffect(() => {
-      axios.get("/emr/list")
-        .then(response => {
-          setFrameworks(response.data);
-        })
-        .catch(error => {
-          console.error("Error fetching frameworks:", error);
-        });
-    }, []);
-
+      if (user) {
+          if (user.access_type === 'EMR') {
+              setSelectedProvider(user.access_id);
+          } else if (user.access_type === 'CHD') {
+              setSelectedRegion(user.access_id);
+          } else if (user.access_type === 'HOSP') {
+              setSelectedHospital(user.access_id);
+          }
+      }
+  }, [user]);
+  
     useEffect(() => {
-      nameInputRef.current?.focus();
+        axios.get('/emr/list')
+            .then(res => setFrameworks(res.data))
+            .catch(err => console.error(err));
+
+        axios.get('/region/list')
+            .then(res => setRegions(res.data.data))
+            .catch(err => console.error(err));
+
+        axios.get('/facilities-list')
+            .then(res => setHospital(res.data.data))
+            .catch(err => console.error(err));
+
+        nameInputRef.current?.focus();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setData(e.target.id, e.target.value);
+        setData(e.target.id, e.target.value);
     };
 
     const submit: FormEventHandler = (e) => {
-      e.preventDefault();
-      post(route('user.store'), {
-        onSuccess: () => {
-          reset();
-          onUserCreated();
-          setValue(null);
-
-        },
-      });
+        e.preventDefault();
+        post(route('user.store'), {
+            onSuccess: () => {
+                reset();
+                setSelectedProvider('');
+                setSelectedRegion('');
+                setSelectedHospital('');
+                onUserCreated();
+            },
+        });
     };
+  
+    const renderProviderSelector = (label: string) => (
+        <div className="grid gap-1">
+            <Label htmlFor="provider-selector">{label}</Label>
+           
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="provider-selector"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={popoverOpen}
+                        className="w-full justify-between"
+                    >
+                        {frameworks.find(f => f.emr_id === selectedProvider)?.emr_name || 'Select provider...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-100 p-0">
+                    <Command>
+                        <CommandInput placeholder="Search provider..." />
+                        <CommandList>
+                            <CommandEmpty>No provider found.</CommandEmpty>
+                            <CommandGroup>
+                                {frameworks.map(framework => (
+                                    <CommandItem
+                                        key={framework.emr_id}
+                                        value={framework.emr_name}
+                                        onSelect={() => {
+                                            setSelectedProvider(framework.emr_id);
+                                            setData('access_id', framework.emr_id);
+                                            setPopoverOpen(false);
+                                        }}
+                                    >
+                                        <Check className={cn('mr-2 h-4 w-4', selectedProvider === framework.emr_id ? 'opacity-100' : 'opacity-0')} />
+                                        {framework.emr_name}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+            <InputError message={errors.emr_id} />
+        </div>
+    );
+
+    const renderRegionSelector = (label: string) => (
+        <div className="grid gap-1">
+            <Label htmlFor="region-selector">{label}</Label>
+           {/*  <input type="hidden" name="regcode" id="regcode" value={selectedRegion} /> */}
+            <Popover open={regionPopoverOpen} onOpenChange={setRegionPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="region-selector"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={regionPopoverOpen}
+                        className="w-full justify-between"
+                    >
+                        {regions.find(f => f.regcode === selectedRegion)?.regname || 'Select region...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-100 p-0">
+                    <Command>
+                        <CommandInput placeholder="Search region..." />
+                        <CommandList>
+                            <CommandEmpty>No region found.</CommandEmpty>
+                            <CommandGroup>
+                                {regions.map(region => (
+                                    <CommandItem
+                                        key={region.regcode}
+                                        value={region.regname}
+                                        onSelect={() => {
+                                            setSelectedRegion(region.regcode);
+                                            setData('access_id', region.regcode);
+                                            setRegionPopoverOpen(false);
+                                        }}
+                                    >
+                                        <Check className={cn('mr-2 h-4 w-4', selectedRegion === region.regcode ? 'opacity-100' : 'opacity-0')} />
+                                        {region.regname}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+            <InputError message={errors.regcode} />
+        </div>
+    );
+
+    const renderHospitalSelector = (label: string) => (
+        <div className="grid gap-1">
+            <Label htmlFor="hospital-selector">{label}</Label>
+            {/* <input type="hidden" name="hfhudcode" id="hfhudcode" value={selectedHospital} /> */}
+            <Popover open={hospitalPopoverOpen} onOpenChange={setHospitalPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="hospital-selector"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={hospitalPopoverOpen}
+                        className="w-full justify-between"
+                    >
+                        {hospitals.find(f => f.hfhudcode === selectedHospital)?.facility_name || 'Select hospital...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-100 p-0">
+                    <Command>
+                        <CommandInput placeholder="Search hospital..." />
+                        <CommandList>
+                            <CommandEmpty>No hospital found.</CommandEmpty>
+                            <CommandGroup>
+                                {hospitals.map(hospital => (
+                                    <CommandItem
+                                        key={hospital.hfhudcode}
+                                        value={hospital.facility_name}
+                                        onSelect={() => {
+                                            setSelectedHospital(hospital.hfhudcode);
+                                            setData('access_id', hospital.hfhudcode);
+                                            setHospitalPopoverOpen(false);
+                                        }}
+                                    >
+                                        <Check className={cn('mr-2 h-4 w-4', selectedHospital === hospital.hfhudcode ? 'opacity-100' : 'opacity-0')} />
+                                        {hospital.facility_name}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+            <InputError message={errors.hfhudcode} />
+        </div>
+    );
 
     return (
-      <div className="w-full ml-2 mt-2 mr-3">
-        <Head title="Register" />
-        <div className="flex items-center mb-2">
-          
-          {user ? <Edit size={18} /> : <User size={18} />}
-          <h1 className="text-lg font-semibold ml-2">{user ? 'Edit User' : 'Create User'}</h1>
-        </div>
-        <HeadingSmall title="Profile information" description="Enter your details below to create your account" />
-        <div className="mb-3"></div>
-        <form className="flex flex-col gap-2 mt-2" onSubmit={submit}>
-          <div className="grid gap-1">
-            {/* Name Field */}
-            <div className="grid gap-1">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                ref={nameInputRef}
-                id="name"
-                type="text"
-                autoComplete="off"
-                value={data.name}
-                onChange={handleChange}
-                disabled={processing}
-                placeholder="Full name"
-                className="focus:ring focus:ring-indigo-300 text-sm py-1 px-1"
-                aria-describedby={errors.name ? 'name-error' : undefined}
-              />
-              <InputError id="name-error" message={errors.name} aria-live="polite" className="text-xs text-red-500" />
+        <div className="mt-2 mr-3 ml-2 w-full">
+            <Head title="Register" />
+            <div className="mb-2 flex items-center">
+                {user ? <Edit size={18} /> : <User size={18} />}
+                <h1 className="ml-2 text-lg font-semibold">{user ? 'Edit User' : 'Create User'}</h1>
             </div>
+            <HeadingSmall
+                title="Profile information"
+                description="Enter your details below to create your account"
+            />
+            <form className="mt-2 flex flex-col gap-2" onSubmit={submit}>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                    ref={nameInputRef}
+                    id="name"
+                    value={data.name}
+                    onChange={handleChange}
+                    disabled={processing}
+                    placeholder="Full name"
+                />
+                <InputError message={errors.name} />
 
-            {/* Email Field */}
-            <div className="grid gap-1">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="off"
-                value={data.email}
-                onChange={handleChange}
-                disabled={processing}
-                placeholder="email@example.com"
-                className="focus:ring focus:ring-indigo-300"
-                aria-describedby={errors.email ? 'email-error' : undefined}
-              />
-              <InputError id="email-error" message={errors.email} aria-live="polite" className="text-xs text-red-500" />
-            </div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                    id="email"
+                    type="email"
+                    value={data.email}
+                    onChange={handleChange}
+                    disabled={processing}
+                    placeholder="Email"
+                />
+                <InputError message={errors.email} />
 
-            {/* Password Field */}
-            <div className="grid gap-1">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="off"
-                value={data.password}
-                onChange={handleChange}
-                disabled={processing}
-                placeholder="Password"
-                className="focus:ring focus:ring-indigo-300"
-                aria-describedby={errors.password ? 'password-error' : undefined}
-              />
-              <InputError id="password-error" message={errors.password} aria-live="polite" className="text-xs text-red-500" />
-            </div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                    id="password"
+                    type="password"
+                    value={data.password}
+                    onChange={handleChange}
+                    disabled={processing}
+                    placeholder="Password"
+                />
+                <InputError message={errors.password} />
 
-            {/* Confirm Password Field */}
-            <div className="grid gap-1">
-              <Label htmlFor="password_confirmation">Confirm Password</Label>
-              <Input
-                id="password_confirmation"
-                type="password"
-                autoComplete="off"
-                value={data.password_confirmation}
-                onChange={handleChange}
-                disabled={processing}
-                placeholder="Confirm password"
-                className="focus:ring focus:ring-indigo-300"
-                aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
-              />
-              <InputError id="password_confirmation-error" message={errors.password_confirmation} aria-live="polite" className="text-xs text-red-500" />
-            </div>
+                <Label htmlFor="password_confirmation">Confirm Password</Label>
+                <Input
+                    id="password_confirmation"
+                    type="password"
+                    value={data.password_confirmation}
+                    onChange={handleChange}
+                    disabled={processing}
+                    placeholder="Confirm Password"
+                />
+                <InputError message={errors.password_confirmation} />
 
-            <div className="grid gap-1">
-    <Label htmlFor="provider-selector">Emr Provider</Label>
-
-    {/* Hidden input to submit the selected value */}
-    <input type="hidden" name="emr_id" id ="emr_id" value={value || ''} />
-
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id="provider-selector"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
-          {value
-            ? frameworks.find((f) => f.emr_id === value)?.emr_name
-            : "Select provider..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent className="w-100 p-0" id="provider-popover-content">
-        <Command>
-          <CommandInput placeholder="Search provider..." />
-          <CommandList>
-            <CommandEmpty>No provider found.</CommandEmpty>
-            <CommandGroup>
-              {frameworks.map((framework) => (
-                <CommandItem
-                  key={framework.emr_id}
-                  value={framework.emr_name}
-                  onSelect={() => {
-                    setValue(framework.emr_id);         // Update internal state for display
-                    setData("emr_id", framework.emr_id); // Sync with Inertia form data
-                    setOpen(false);
-                  }}
+                <p className="text-md font-semibold">Access Type</p>
+                <Select
+                    value={accessType}
+                    onValueChange={value => {
+                        setAccessType(value);
+                        setData('access_type', value);
+                    }}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === framework.emr_id ? "opacity-100" : "opacity-0"
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select access type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="EMR">EMR Provider</SelectItem>
+                        <SelectItem value="HOSP">Hospital</SelectItem>
+                        <SelectItem value="CHD">Region</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                {accessType === 'EMR' && renderProviderSelector('EMR Provider')}
+                {accessType === 'CHD' && renderRegionSelector('Region')}
+                {accessType === 'HOSP' && renderHospitalSelector('Hospital')}
+                <Input
+                  type="hidden"
+            
+                  id="access_id"
+                  value={
+                    accessType === 'CHD'
+                      ? selectedRegion
+                      : accessType === 'HOSP'
+                      ? selectedHospital
+                      : selectedProvider
+                  }
+                />
+
+                <div className="mt-4 flex gap-2">
+                    <Button type="submit" disabled={processing} className="flex-1">
+                        {processing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save size={16} />}
+                        <span>{processing ? 'Processing...' : 'Save'}</span>
+                    </Button>
+                    {user && (
+                        <Button
+                            type="button"
+                            onClick={onCancel}
+                            variant="outline"
+                            className="flex-1 text-red-600 border-red-400 hover:bg-red-600 hover:text-white"
+                        >
+                            <X size={16} />
+                            <span>Cancel</span>
+                        </Button>
                     )}
-                  />
-                  {framework.emr_name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-
-    {/* Corrected error binding */}
-    <InputError id="emr-error" message={errors.emr_id} aria-live="polite" className="text-xs text-red-500" />
-  </div>
-
-
-            {/* Submit and Cancel Buttons */}
-            <div className="mt-4 flex justify-between gap-2">
-              <Button
-                type="submit"
-                variant="outline"
-                className="flex-1 flex justify-center items-center gap-2 border-1 border-green-600  text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"
-                disabled={processing}
-              >
-                {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                <span>{processing ? 'Processing...' : <><Save size={12} /></>}</span>
-              </Button>
-
-              {/* Cancel Button (only shown when editing a role) */}
-              {user && (
-                <Button
-                  type="button"
-                       variant="outline"
-                  onClick={onCancel} // Trigger the onCancel function passed from parent
-                  className="flex-1 flex justify-center items-center gap-2 border-1 border-red-400  text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"
-                >
-                  {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                  <span>{processing ? 'Processing...' : <><X size={12} /></>}</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        </form>
-      </div>
+                </div>
+            </form>
+        </div>
     );
-  }
+}

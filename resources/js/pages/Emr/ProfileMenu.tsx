@@ -27,7 +27,7 @@ export default function MenuProfile({ children }) {
                 variant="ghost"
                 asChild
                 className={cn('w-full justify-start gap-2', {
-                  'bg-muted': currentPath === item.href,
+                  'bg-muted': currentPath === item.href, 
                 })}
               >
                 <Link href={item.href} preserveScroll preserveState>

@@ -11,28 +11,38 @@ class ReferralController extends Controller
     // Display a listing of the resource
     public function index(Request $request)
     {
-
         $user = auth()->user();
-        $role =$user?->getRoleNames()->first() ?? 'guest'; // for spatie roles
-
-        $perPage = $request->input('per_page', 5); // default to 10
+        $role = $user?->getRoleNames()->first() ?? 'guest'; // for spatie roles
+    
+        $perPage = $request->input('per_page', 5); // default to 5
         $page = $request->input('page', 1); // default to page 1
-        $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to','track'])->whereDoesntHave('track');
-
-        if ($role === 'Adminstrator') {
-           $query->where();
-        } elseif ($role === 'provider') {
-
-
+    
+        $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to', 'destination', 'track'])
+            ->whereDoesntHave('track'); // This ensures you get referrals without a track
+    
+        // Handle role-based query adjustments
+        $emr_id = $user->emr_id ?? null;
+        $hfhudcode = $user->hfhudcode ?? null;
+    
+        if ($role === 'EMR') {
+            // Use whereHas to filter by the destination relationship
+            $query->whereHas('facility_to', function($query) use ($emr_id) {
+                $query->where('emr_id', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
+            });
         } elseif ($role === 'region') {
-           
-        
+            // Use whereHas to filter by the destination relationship
+            $query->whereHas('facility_to', function($query) use ($emr_id) {
+                $query->where('emr_id', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
+            });
+            // Define region-specific logic here if applicable
         } elseif ($role === 'hospital') {
-           
-        } else {
-          
+            // Use whereHas to filter by the destination relationship
+            $query->whereHas('facility_to', function($query) use ($hfhudcode) {
+                $query->where('hfhudcode', $hfhudcode); // This will filter based on hfhudcode in the related RefFacilitiesModel
+            });
         }
-        
+    
+        // Handle search functionality
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('patientinformation', function ($subQuery) use ($search) {
@@ -43,33 +53,34 @@ class ReferralController extends Controller
             });
         }
     
-      
-
+        // Perform pagination (role filters should already be applied here)
         $paginated = $query->orderBy('refferalDate', 'desc')->paginate($perPage, ['*'], 'page', $page);
     
+        // Transform the data for response
         $transformedList = $paginated->getCollection()->map(function ($referral) {
             return [
                 'LogID' => $referral->LogID,
-                'patient_name'=>$referral->patientinformation->patientFirstName.' '.$referral->patientinformation->patientMiddlename.' '.$referral->patientinformation->patientLastname,
-                'patient_sex' => $referral->patientinformation->patientSex ==='M'? 'Male':'Female',
-                'patient_birthdate' => date('m/d/Y',strtotime($referral->patientinformation->patientBirthDate)),
+                'patient_name' => $referral->patientinformation->patientFirstName.' '.$referral->patientinformation->patientMiddlename.' '.$referral->patientinformation->patientLastname,
+                'patient_sex' => $referral->patientinformation->patientSex === 'M' ? 'Male' : 'Female',
+                'patient_birthdate' => \Carbon\Carbon::parse($referral->patientinformation->patientBirthDate)->format('m/d/Y'),
                 'patient_civilstatus' => $referral->patientinformation->patientCivilStatus,
                 'referral_origin_code' => $referral->fhudFrom,
                 'referral_origin_name' => optional($referral->facility_from)->facility_name,
                 'referral_destination_code' => $referral->fhudTo,
                 'referral_destination_name' => optional($referral->facility_to)->facility_name,
-                'referral_reason_code' =>$referral->referralReason,
+                'referral_reason_code' => $referral->referralReason,
                 'referral_reason_description' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
-                'referral_type_code' =>$referral->typeOfReferral,
-                'referral_type_description'=>ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
-                'referral_date' => date('m/d/Y', strtotime($referral->refferalDate)),
-                'referral_time' => date('h:i A', strtotime($referral->refferalTime)),
-                'referral_category' => $referral->referralCategory == 'ER'?'Emergency':'Outpatient',
+                'referral_type_code' => $referral->typeOfReferral,
+                'referral_type_description' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+                'referral_date' => \Carbon\Carbon::parse($referral->refferalDate)->format('m/d/Y'),
+                'referral_time' => \Carbon\Carbon::parse($referral->refferalTime)->format('h:i A'),
+                'referral_category' => $referral->referralCategory == 'ER' ? 'Emergency' : 'Outpatient',
                 'referring_provider' => $referral->referringProvider,
                 'contact_number' => $referral->referringProviderContactNumber,
             ];
         });
     
+        // Return paginated response
         return response()->json([
             'data' => $transformedList,
             'total' => $paginated->total(),
