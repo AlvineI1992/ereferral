@@ -12,6 +12,7 @@ class ReferralController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+  
         $role = $user?->getRoleNames()->first() ?? 'guest'; // for spatie roles
     
         $perPage = $request->input('per_page', 5); // default to 5
@@ -21,24 +22,24 @@ class ReferralController extends Controller
             ->whereDoesntHave('track'); // This ensures you get referrals without a track
     
         // Handle role-based query adjustments
-        $emr_id = $user->emr_id ?? null;
+        $emr_id = $user->access_id ?? null;
         $hfhudcode = $user->hfhudcode ?? null;
     
-        if ($role === 'EMR') {
+        if ($role === 'EMR') {  
             // Use whereHas to filter by the destination relationship
             $query->whereHas('facility_to', function($query) use ($emr_id) {
                 $query->where('emr_id', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
             });
-        } elseif ($role === 'region') {
+        } elseif ($role === 'Region') {
             // Use whereHas to filter by the destination relationship
             $query->whereHas('facility_to', function($query) use ($emr_id) {
-                $query->where('emr_id', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
+                $query->where('region_code', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
             });
             // Define region-specific logic here if applicable
-        } elseif ($role === 'hospital') {
+        } elseif ($role === 'Hospital') {
             // Use whereHas to filter by the destination relationship
-            $query->whereHas('facility_to', function($query) use ($hfhudcode) {
-                $query->where('hfhudcode', $hfhudcode); // This will filter based on hfhudcode in the related RefFacilitiesModel
+            $query->whereHas('facility_to', function($query) use ($emr_id) {
+                $query->where('hfhudcode', $emr_id); // This will filter based on hfhudcode in the related RefFacilitiesModel
             });
         }
     
@@ -62,7 +63,6 @@ class ReferralController extends Controller
                 'LogID' => $referral->LogID,
                 'patient_name' => $referral->patientinformation->patientFirstName.' '.$referral->patientinformation->patientMiddlename.' '.$referral->patientinformation->patientLastname,
                 'patient_sex' => $referral->patientinformation->patientSex === 'M' ? 'Male' : 'Female',
-                'patient_birthdate' => \Carbon\Carbon::parse($referral->patientinformation->patientBirthDate)->format('m/d/Y'),
                 'patient_civilstatus' => $referral->patientinformation->patientCivilStatus,
                 'referral_origin_code' => $referral->fhudFrom,
                 'referral_origin_name' => optional($referral->facility_from)->facility_name,
@@ -73,7 +73,7 @@ class ReferralController extends Controller
                 'referral_type_code' => $referral->typeOfReferral,
                 'referral_type_description' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
                 'referral_date' => \Carbon\Carbon::parse($referral->refferalDate)->format('m/d/Y'),
-                'referral_time' => \Carbon\Carbon::parse($referral->refferalTime)->format('h:i A'),
+                'referral_time' => \Carbon\Carbon::parse($referral->refferalTime)->format('h:i a'),
                 'referral_category' => $referral->referralCategory == 'ER' ? 'Emergency' : 'Outpatient',
                 'referring_provider' => $referral->referringProvider,
                 'contact_number' => $referral->referringProviderContactNumber,
