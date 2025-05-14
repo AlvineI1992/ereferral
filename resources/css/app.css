@@ -110,7 +110,19 @@
   --sidebar-hover: hsl(145, 65%, 85%);
   --sidebar-hover-foreground: hsl(145, 30%, 25%);
   --sidebar-selected: hsl(145, 40%, 70%);
-  --sidebar-selected-foreground: hsl(145, 25%, 20%);
+  --sidebar-selected-foreground: hsl(145, 25%, 20%);/* Base teal sidebar theme (light mode) */
+  --sidebar: hsl(180, 60%, 90%);
+  --sidebar-foreground: hsl(180, 30%, 25%);
+  --sidebar-primary: hsl(180, 50%, 70%);
+  --sidebar-primary-foreground: hsl(180, 30%, 20%);
+  --sidebar-accent: hsl(180, 60%, 80%);
+  --sidebar-accent-foreground: hsl(180, 25%, 25%);
+  --sidebar-border: hsl(180, 45%, 75%);
+  --sidebar-ring: hsl(180, 70%, 80%);
+  --sidebar-hover: hsl(180, 65%, 85%);
+  --sidebar-hover-foreground: hsl(180, 30%, 25%);
+  --sidebar-selected: hsl(180, 40%, 70%);
+  --sidebar-selected-foreground: hsl(180, 25%, 20%);
 }
 
 .dark {
@@ -141,18 +153,19 @@
   --chart-4: oklch(0.7 0.2 180);
   --chart-5: oklch(0.8 0.1 180);
 
-  --sidebar: hsl(145, 20%, 25%);
-  --sidebar-foreground: #fff;
-  --sidebar-primary: hsl(145, 30%, 35%);
-  --sidebar-primary-foreground: #fff;
-  --sidebar-accent: hsl(145, 30%, 40%);
-  --sidebar-accent-foreground: #fff;
-  --sidebar-border: hsl(145, 30%, 30%);
-  --sidebar-ring: hsl(145, 30%, 40%);
-  --sidebar-hover: hsl(145, 30%, 35%);
-  --sidebar-hover-foreground: #fff;
-  --sidebar-selected: hsl(145, 35%, 30%);
-  --sidebar-selected-foreground: #fff;
+  /* Teal sidebar theme (dark mode) */
+  --sidebar: hsl(180, 20%, 25%);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: hsl(180, 30%, 35%);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: hsl(180, 30%, 40%);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: hsl(180, 30%, 30%);
+  --sidebar-ring: hsl(180, 30%, 40%);
+  --sidebar-hover: hsl(180, 30%, 35%);
+  --sidebar-hover-foreground: #ffffff;
+  --sidebar-selected: hsl(180, 35%, 30%);
+  --sidebar-selected-foreground: #ffffff;
 }
 
 @layer base {

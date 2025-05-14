@@ -1,72 +1,81 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Info, UserCircle2Icon } from 'lucide-react';
+import { Info, Ambulance,HospitalIcon  } from 'lucide-react';
 
 type Referral = {
-  logid: string;
-  date_ref: string;
+  LogID: string;
+  date: string;
   reason: string;
   type: string;
   category: string;
 };
 
-type ReferralDemographics = {
-  strt: string;
-  region: string;
-  province?: string;
-  city?: string;
-  barangay?: string;
-  streetaddress?: string;
-  zipcode?: string;
+type ReferralOrigin = {
+  facility_name:string;
+  hfhudcode:string;
+ 
+};
+
+
+type ReferralDest = {
+  facility_name:string;
+  hfhudcode:string;
+ 
 };
 
 type Props = {
   referral: Referral | null;
-  demographics: ReferralDemographics | null;
+  referral_origin: ReferralOrigin | null;
+  referral_dest: ReferralDest | null;
 };
-
-export default function ReferralInfo({ referral }: Props) {
+export default function ReferralInfo({ referral, referral_origin, referral_dest }: Props) {
   if (!referral) {
     return <p className="text-sm text-muted-foreground">Loading referral...</p>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="p-3">
+      {/* Border box wrapper */}
+      <div className="border rounded-xl p-5 shadow-sm">
         {/* Header */}
-        <div className="flex items-center mb-2">
-          <UserCircle2Icon size={24} className="text-primary mr-2" />
-          <h2 className="text-xl">Referral Information</h2>
+        <div className="flex items-center mb-4">
+          <Ambulance size={24} className="text-primary mr-2" />
+          <div className="text-lg font-semibold">Referral Information</div>
         </div>
 
         {/* Referral Info */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-5 mb-4">
           <div className="space-y-2 text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
-              <p><span className="font-medium">Reference:</span> {referral.logid || 'N/A'}</p>
-              <p><span className="font-medium">Referral Date:</span> {referral.date_ref || 'N/A'}</p>
-              <p><span className="font-medium">Type:</span> {referral.type || 'N/A'}</p>
-              <p><span className="font-medium">Reason:</span> {referral.reason || 'N/A'}</p>
-              <p><span className="font-medium">Category:</span> {referral.category || 'N/A'}</p>
+              <p className="text-lg">{referral.LogID || 'N/A'}</p>
+              <p><span className="font-bold">Referral Date:</span> {referral.date || 'N/A'}</p>
+              <p><span className="font-bold">Type:</span> {referral.type || 'N/A'}</p>
+              <p><span className="font-bold">Reason:</span> {referral.reason || 'N/A'}</p>
+              <p><span className="font-bold">Category:</span> {referral.category || 'N/A'}</p>
             </div>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t my-4" />
-
-        {/* Demographics Info */}
-        <div>
-          <div className="flex items-center mb-2">
-            <Info size={18} className="text-primary mr-2" />
-            <h3 className="text-md">Origin</h3>
+        {/* Origin Info */}
+        <div className="mb-4">
+          <div className="flex items-center mb-1">
+            <HospitalIcon size={18} className="text-primary mr-1" />
+            <h3 className="text-sm font-medium">Origin</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0 text-sm">
-            <p><span className="font-medium">Street:</span> {demographics?.streetaddress || 'N/A'}</p>
-            <p><span className="font-medium">Barangay:</span> {demographics?.barangay || 'N/A'}</p>
-            <p><span className="font-medium">City:</span> {demographics?.city || 'N/A'}</p>
-            <p><span className="font-medium">Province:</span> {demographics?.province || 'N/A'}</p>
-            <p><span className="font-medium">Region:</span> {demographics?.region || 'N/A'}</p>
-            <p><span className="font-medium">Zipcode:</span> {demographics?.zipcode || 'N/A'}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <p><span className="font-bold">Facility code:</span> {referral_origin?.hfhudcode || 'N/A'}</p>
+            <p><span className="font-bold">Facility name:</span> {referral_origin?.facility_name || 'N/A'}</p>
+          </div>
+        </div>
+
+        {/* Destination Info */}
+        <div>
+          <div className="flex items-center mb-1">
+            <HospitalIcon size={18} className="text-primary mr-1" />
+            <h3 className="text-sm font-medium">Destination</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <p><span className="font-bold">Facility code:</span> {referral_dest?.hfhudcode || 'N/A'}</p>
+            <p><span className="font-bold">Facility name:</span> {referral_dest?.facility_name || 'N/A'}</p>
           </div>
         </div>
       </div>

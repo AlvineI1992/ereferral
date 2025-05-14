@@ -111,15 +111,34 @@ class ReferralController extends Controller
     // Display the specified resource
     public function show($LogID)
     {
-        $decodedID = $LogID;
-       /*  $patient = ReferralInformationModel::findOrFail($LogID); */
-       $query =ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to'])
-       ->whereHas('patientinformation', function ($q) use ($decodedID) {
-           $q->where('id', $decodedID); // Adjust 'id' to the actual column you are checking
-       });
-
-        return response()->json($query);
+        $decodedID = base64_decode($LogID);
+    
+        $referral = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to'])
+            ->whereHas('patientinformation', function ($q) use ($decodedID) {
+                $q->where('LogID', $decodedID); 
+            })
+            ->first(); 
+    
+        if (!$referral) {
+            return response()->json(['message' => 'Referral not found.'], 404);
+        }
+    
+        $data = [
+            'patient' => $referral->patientinformation,
+            'origin' => $referral->facility_from,
+            'destination' => $referral->facility_to,
+            'referral_info' => [
+                'LogID' => $referral->LogID,
+                'date' => $referral->refferalDate,
+                'category' => $referral->referralCategory,
+                'reason' =>  ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
+                'type' =>  ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+            ],
+        ];
+    
+        return response()->json($data);
     }
+    
 
     // Show the form for editing the specified resource
     public function edit($LogID)

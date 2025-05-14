@@ -22,7 +22,7 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
     const { name, quote } = usePage<SharedData>().props;
     const [currentSlide, setCurrentSlide] = useState(0);
 
-    const images = ['doh.jpg','herbosa.jpg', 'bbm.jpg','8point.png',];
+    const images = ['doh.jpg','herbosa.jpg', 'bbm.jpg',];
 
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev + 1) % images.length);

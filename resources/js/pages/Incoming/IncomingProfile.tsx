@@ -36,12 +36,26 @@ type Demographics = {
 };
 
 type Referral = {
-  logid: string;
+  LogID: string;
   reason: string;
   type: string;
   category: string;
-  date_ref: string;
+  date: string;
 };
+
+type ReferralOrigin = {
+  facility_name:string;
+  hfhudcode:string;
+ 
+};
+
+
+type ReferralDest = {
+  facility_name:string;
+  hfhudcode:string;
+ 
+};
+
 
 type ListProps = {
   refreshKey: any;
@@ -53,7 +67,8 @@ type ListProps = {
 const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [demographics, setDemographics] = useState<Demographics | null>(null);
-
+  const [referral_origin, setOrigin] = useState<ReferralOrigin | null>(null);
+  const [referral_dest, setDestination] = useState<ReferralDest | null>(null);
   const [referral, setReferral] = useState<Referral | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'notes' | 'activity'>('overview');
@@ -66,7 +81,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
       const res = await axios.get(`/patient-profile/${LogID}`);
       setProfile(res.data.profile);
       setDemographics(res.data.demographics);
-      setReferral(res.data.referral); // Ensure your backend returns this
+  
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to load patient information", "error");
@@ -75,10 +90,6 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
     }
   };
 
-  useEffect(() => {
-    fetchPatientInfo();
-    fetchReferralInfo();
-  }, [LogID]);
 
   const fetchReferralInfo = async () => {
     if (!LogID) return;
@@ -86,9 +97,9 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
     try {
       setLoading(true);
       const res = await axios.get(`/referral-information/${LogID}`);
-      setProfile(res.data.profile);
-      setDemographics(res.data.demographics);
-      setReferral(res.data.referral); // Ensure your backend returns this
+      setReferral(res.data.referral_info); // Ensure your backend returns this
+      setOrigin(res.data.origin);
+      setDestination(res.data.destination);
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to load referral information", "error");
@@ -101,28 +112,31 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
     fetchPatientInfo();
   }, [LogID]);
 
+  useEffect(() => {
+    fetchReferralInfo();
+  }, [LogID]);
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <div className="flex flex-col lg:flex-row gap-4 p-4">
         {/* Left: Patient Info */}
-        <div className="w-full lg:w-1/2 space-y-4">
+        <div className="w-full lg:w-1/2 space-y-2">
           <PatientInfo profile={profile} demographics={demographics} />
         </div>
 
-        <div className="border-r my-4" />
+     
 
         {/* Right: Referral Info */}
-        <div className="w-full lg:w-1/2 space-y-4">
-          <ReferralInfo referral={referral} />
+        <div className="w-full lg:w-1/2 space-y-2">
+          <ReferralInfo referral={referral} referral_origin={referral_origin} referral_dest={referral_dest}/>
         </div>
       </div>
 
-      <div className="border-t my-4" />
 
       {/* Tab Menu */}
       <div className="flex flex-col lg:flex-row gap-4 p-4">
-        <div className="border-b">
-          <h3 className="text-sm font-semibold uppercase tracking-wide">Menu</h3>
+        
+          
           <nav className="flex flex-col space-y-2 text-sm font-medium text-gray-600">
             {['overview', 'history', 'notes', 'activity'].map(tab => (
               <button
@@ -138,7 +152,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
               </button>
             ))}
           </nav>
-        </div>
+ 
       </div>
     </AppLayout>
   );

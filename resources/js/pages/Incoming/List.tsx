@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Pencil,
   Trash2,
@@ -8,6 +8,8 @@ import {
   Venus,
   Printer,
   ArrowRightIcon,
+  QrCode,
+  Scan,
 } from "lucide-react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -20,8 +22,14 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar";
 import { Inertia } from "@inertiajs/inertia";
+import { Html5Qrcode } from "html5-qrcode";
 
 const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
+  const [scanned, setScanned] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const scannerRef = useRef<any>(null);
+  const qrBoxRef = useRef(null);
+
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -43,10 +51,51 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
     setLoading(false);
   };
 
-  const handleGoto = (id) => {
+  const handleGoto = (id: string) => {
     if (!id) return;
     const encodedId = btoa(id.toString());
     Inertia.visit(`/incoming/profile/${encodedId}`);
+  };
+
+  const startScanner = async () => {
+    if (isScanning) return;
+    setScanned(null);
+    setIsScanning(true);
+
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    scannerRef.current = html5QrCode;
+
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText: string) => {
+          html5QrCode.stop();
+          setIsScanning(false);
+          setScanned(decodedText);
+          const encodedId = btoa(decodedText.trim());
+          Inertia.visit(`/incoming/profile/${encodedId}`);
+        },
+        (errorMessage: string) => {
+          // optional: console.log("QR Scan error", errorMessage);
+        }
+      );
+    } catch (err: any) {
+      console.error("Failed to start camera:", err);
+      Swal.fire("Camera Error", err.message || "Failed to access camera.", "error");
+      setIsScanning(false);
+    }
+  };
+
+  const stopScanner = () => {
+    if (scannerRef.current) {
+      scannerRef.current.stop().then(() => {
+        setIsScanning(false);
+      });
+    }
   };
 
   useEffect(() => {
@@ -69,19 +118,9 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`/permission/delete/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        await axios.delete(`/permission/delete/${id}`);
         fetchData(page, searchTerm);
-        Swal.fire({
-          title: "Deleted!",
-          text: "The record has been deleted.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        Swal.fire("Deleted!", "The record has been deleted.", "success");
       } catch (error) {
         console.error("Error deleting record:", error);
         Swal.fire("Oops!", "Something went wrong.", "error");
@@ -97,13 +136,40 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
 
   return (
     <div className="p-4 w-full h-full overflow-x-auto">
-      {/* Header */}
-      <div className="flex items-center space-x-2 mb-3">
-        <List size={20} />
-        <h2 className="text-xl">Incoming Referrals</h2>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <List size={20} />
+          <h2 className="text-xl">Incoming Referrals</h2>
+        </div>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            if (isScanning) {
+              stopScanner();
+            } else {
+              startScanner();
+            }
+          }}
+        >
+          {isScanning ? (
+            <>
+              Stop Scan <QrCode className="ml-2 h-4 w-4" />
+            </>
+          ) : (
+            <>
+              Scan QR <Scan className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Controls */}
+      {isScanning && (
+        <div className="border mb-4 p-2 rounded bg-white">
+          <div id="qr-reader" ref={qrBoxRef} className="w-full h-[300px]" />
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-1">
           <label htmlFor="perPage">Rows per page:</label>
@@ -131,7 +197,7 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
         />
       </div>
 
-      {/* Table */}
+      {/* Table Display */}
       {loading ? (
         <div className="flex justify-center items-center py-8">
           <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -187,19 +253,13 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
                               {row.patient_sex}
                             </span>
                           </div>
-                          <div>
-                            <strong>Date of birth:</strong> {row.patient_birthdate}
-                          </div>
-                          <div>
-                            <strong>Civil status:</strong> {row.patient_civilstatus}
-                          </div>
+                          <div><strong>Date of birth:</strong> {row.patient_birthdate}</div>
+                          <div><strong>Civil status:</strong> {row.patient_civilstatus}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-1 py-2">{row.LogID}</td>
-                    <td className="px-1 py-2">
-                      {row.referral_date} {row.referral_time}
-                    </td>
+                    <td className="px-1 py-2">{row.referral_date} {row.referral_time}</td>
                     <td className="px-1 py-2">
                       <div className="flex items-center gap-1">
                         <Hospital size={12} />
@@ -228,18 +288,10 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleDelete(row.LogID)}
-                          className="group hover:bg-green-300"
-                        >
-                          <Trash2 size={16} className="text-red-700 group-hover:text-white" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
                           onClick={() => handleGoto(row.LogID)}
-                          className="group hover:bg-green-400"
+                          className="group hover:bg-green-700"
                         >
-                          <ArrowRightIcon size={16} className="text-blue-300 group-hover:text-white" />
+                          <ArrowRightIcon size={16} className="text-blue-700 group-hover:text-white" />
                         </Button>
                       </div>
                     </td>

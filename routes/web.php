@@ -43,10 +43,14 @@ Route::get('/users/create', function () {
 })->middleware(['auth', 'verified'])->name('users.create');
 
 
-Route::get('/users/assign-roles/{id}', function ($id) {
-    return Inertia::render('Users/UserProfileLayout', [
-        'id' => $id
-    ]);
+Route::get('/users/assign-roles/{id}', function (Request $request,$id) {
+    $permissions = [
+        'user' => $request->user()->load('roles'),
+        'id' => $id,
+        'is_include'=>true
+    ];
+    
+    return Inertia::render('Users/UserProfileLayout',$permissions);
 })->middleware(['auth:sanctum', 'verified']);
 
 Route::get('/users/assigned-roles/{id}', function ($id) {
@@ -82,10 +86,13 @@ Route::get('/roles', function (Request $request) {
     return Inertia::render('Roles/Index',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('roles');
 
-Route::get('roles/assign/{id}', function ($id) {
-    return Inertia::render('Roles/RolesProfileLayout', [
-        'id' => $id 
-    ]);
+Route::get('roles/assign/{id}', function (Request $request,$id) {
+    $permissions = [
+        'user' => $request->user()->load('roles'),
+        'id' => $id,
+        'is_include'=>true
+    ];
+    return Inertia::render('Roles/RolesProfileLayout', $permissions);
 })->middleware(['auth:sanctum', 'verified']);
 
 Route::get('roles/assigned/{id}', function ($id) {
@@ -143,14 +150,12 @@ Route::get('/emr', function (Request $request) {
 
 
 Route::get('emr/profile/{id}', function (Request $request,$id) {
-
     $permissions = [
-        'canAdd' => $request->user()->can('emr assign'),
-    ];
-    return Inertia::render('Emr/ProfileLayout', [
+        'user' => $request->user()->load('roles'),
         'id' => $id,
-        'permission'=>$permissions
-    ]);
+        'is_include'=>true
+    ];
+    return Inertia::render('Emr/ProfileLayout',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('emr.profile');
 
 // API Routes (Sanctum-protected)
@@ -271,18 +276,21 @@ Route::get('/incoming', function (Request $request) {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])->name('incoming.list');
-    Route::get('incoming/profile/{id}', function ($id) {
-        return Inertia::render('Incoming/IncomingProfile', [
+
+    Route::get('incoming/profile/{id}', function (Request $request,$id) {
+        $permissions = [
+            'user' => $request->user()->load('roles'),
             'id' => $id,
             'is_include'=>true
-        ]);
+        ];
+        return Inertia::render('Incoming/IncomingProfile', $permissions);
     })->middleware(['auth:sanctum', 'verified']);
     
 });
 
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/referral-information/{LogID}', [ReferralController::class, 'index'])->name('incoming.list');
+    Route::get('/referral-information/{LogID}', [ReferralController::class, 'show'])->name('incoming.list');
 });
 
 //Patient profile

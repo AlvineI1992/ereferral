@@ -63,8 +63,9 @@ const footerNavItems: NavItem[] = [];
 export function AppSidebar() {
     const { props } = usePage();
     const user = props.auth?.user;
+ 
     const userRoles = user?.roles || [];
-
+    console.log(userRoles);
     return (
         <Sidebar collapsible="offcanvas" variant="inset">
             <SidebarHeader>

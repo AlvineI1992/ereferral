@@ -134,7 +134,7 @@ const UsersListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
   const endEntry = Math.min(startEntry + perPage - 1, totalRows);
 
   return (
-    <div className="p-3 bg-white mr-3 ml-3 mt-3">
+    <div className="p-3 mr-3 ml-3 mt-3">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
@@ -152,7 +152,7 @@ const UsersListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
           <Button
             onClick={handleSubmit}
             disabled={processing}
-            className="flex gap-1 border border-green-700 bg-white text-green-700 hover:bg-green-600 hover:text-white font-semibold py-2 px-3 rounded-sm transition-all"
+            className="flex gap-1 border border-green-700  text-green-700 hover:bg-green-600 hover:text-white font-semibold py-2 px-3 rounded-sm transition-all"
           >
             {processing ? (
               <span className="animate-pulse">Processing...</span>
@@ -186,7 +186,7 @@ const UsersListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }:
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left border-collapse">
-            <thead className="bg-gray-100">
+            <thead >
               <tr>
                 <th className="px-1 py-1 border-b">
                   <Checkbox

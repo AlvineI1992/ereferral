@@ -63,13 +63,13 @@ export default function ProfileLayout({ id, is_include }: ProfileLayoutProps) {
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      {loading && <div className="text-gray-500 text-center py-4">Loading profile...</div>}
+      {loading && <div className="text-center py-4">Loading profile...</div>}
       {!loading && error && <div className="text-red-500 text-center py-4">{error}</div>}
       <Head title="Role Management" />
 
       <div className="flex items-center ml-3 mr-3 mb-3 mt-2">
         <User size={18} />
-        <h1 className="text-2xl font-semibold text-gray-800 ">Role Assignment</h1>
+        <h1 className="text-lg font-semibold">Role Assignment</h1>
       </div>
 
       {!loading && profile && (
@@ -79,7 +79,7 @@ export default function ProfileLayout({ id, is_include }: ProfileLayoutProps) {
             <Separator className="mt-2 mr-1 ml-1 mb-3" />
             <Menu id={id} />
           </div>
-          <div className="hidden md:block bg-gray-200 w-px mx-2" />
+
 
           <div className="w-full md:w-[87%]">
             {isIncludePage && (

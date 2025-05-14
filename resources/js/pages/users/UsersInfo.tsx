@@ -21,7 +21,7 @@ export default function Profileinfo({ profile }: Props) {
     <div className='ml-2 mr-2'>
     <div className="flex items-center space-x-1 mb-2">
       <Info size={15} />
-      <h3 className="text-sm font-semibold text-gray-700">
+      <h3 className="text-sm font-semibold">
         User Details
       </h3>
     </div>
@@ -35,7 +35,7 @@ export default function Profileinfo({ profile }: Props) {
       </Avatar>
   
       <div className="flex flex-col">
-        <h2 className="text-md font-bold text-gray-800">{profile.name}</h2>
+        <h2 className="text-md font-bold ">{profile.name}</h2>
         <p className="text-sm text-gray-800">{profile.email}</p>
         {profile.role && (
           <span className="inline-block mt-1 px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full w-max">

@@ -13,12 +13,14 @@ type ProfileData = {
 
 type ProfileDemographics = {
   strt: string;
-  region: string;
+  regname: string;
+  provname: string;
+  barangay: string;
+  zipcode: string;
+  region?: string;
   province?: string;
   city?: string;
-  barangay?: string;
   streetaddress?: string;
-  zipcode?: string;
 };
 
 type Props = {
@@ -27,22 +29,21 @@ type Props = {
 };
 
 export default function PatientInfo({ profile, demographics }: Props) {
-
-
   const fullName = [profile?.fname, profile?.mname, profile?.lname].filter(Boolean).join(' ');
   const initial = profile?.fname?.charAt(0).toUpperCase() || '?';
 
   return (
     <div className="space-y-6">
-      <div className="p-3 ">
+      {/* Border box wrapper */}
+      <div className="border rounded-xl p-5 shadow-sm ">
         {/* Header */}
         <div className="flex items-center mb-4">
           <UserCircle2Icon size={24} className="text-primary mr-2" />
-          <h2 className="text-xl">Patient Profile</h2>
+          <div className="text-lg font-semibold">Patient Profile</div>
         </div>
 
         {/* Content */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-5 mb-4">
           {/* Avatar */}
           <Avatar className="w-19 h-19 ring-1 ring-primary shadow-sm">
             <AvatarImage
@@ -53,17 +54,17 @@ export default function PatientInfo({ profile, demographics }: Props) {
           </Avatar>
 
           {/* Profile Info */}
-          <div className="space-y-1 text-sm ">
-            <p className="text-lg">{fullName || 'No Name'}</p>
+          <div className="space-y-1 text-sm">
+            <p className="text-lg font-medium">{fullName || 'No Name'}</p>
             <p>Age: {profile?.age || 'Unknown'}</p>
             <p>Birthdate: {profile?.dob || 'Unknown'}</p>
             {profile?.sex ? (
               <div className="flex items-center gap-1">
                 <span>Sex:</span>
                 {profile.sex === 'Male' ? (
-                  <Mars className="text-blue-700" size={12} />
+                  <Mars className="text-blue-700" size={16} />
                 ) : (
-                  <Venus className="text-pink-700" size={12} />
+                  <Venus className="text-pink-700" size={16} />
                 )}
                 <span
                   className={`${
@@ -79,25 +80,23 @@ export default function PatientInfo({ profile, demographics }: Props) {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t my-4" />
-
         {/* Demographics Info */}
         <div>
-          <div className="flex items-center mb-1">
+          <div className="flex items-center mb-2">
             <MapIcon size={18} className="text-primary mr-2" />
-            <h3 className="text-md ">Demographics</h3>
+            <h3 className="text-sm font-medium">Demographics</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0 text-sm ">
-            <p><span className="font-medium ">Street:</span> {demographics?.streetaddress || 'N/A'}</p>
-            <p><span className="font-medium ">Barangay:</span> {demographics?.barangay || 'N/A'}</p>
-            <p><span className="font-medium ">City:</span> {demographics?.city || 'N/A'}</p>
-            <p><span className="font-medium ">Province:</span> {demographics?.province || 'N/A'}</p>
-            <p><span className="font-medium ">Region:</span> {demographics?.region || 'N/A'}</p>
-            <p><span className="font-medium ">Zipcode:</span> {demographics?.zipcode || 'N/A'}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-xs">
+            <p><span className="font-bold">Street:</span> {demographics?.streetaddress || 'N/A'}</p>
+            <p><span className="font-bold">Barangay:</span> {demographics?.barangay || 'N/A'}</p>
+            <p><span className="font-bold">City:</span> {demographics?.city || 'N/A'}</p>
+            <p><span className="font-bold">Province:</span> {demographics?.province || 'N/A'}</p>
+            <p><span className="font-bold">Region:</span> {demographics?.region || 'N/A'}</p>
+            <p><span className="font-bold">Zipcode:</span> {demographics?.zipcode || 'N/A'}</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
