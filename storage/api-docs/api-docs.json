@@ -73,23 +73,246 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "patient_id",
-                                    "facility_code",
-                                    "reason"
-                                ],
                                 "properties": {
-                                    "patient_id": {
-                                        "type": "string",
-                                        "example": "12345"
+                                    "referral": {
+                                        "properties": {
+                                            "facility_from": {
+                                                "type": "string",
+                                                "example": "DOH000000000007520"
+                                            },
+                                            "facility_to": {
+                                                "type": "string",
+                                                "example": "DOH000000000005280"
+                                            },
+                                            "contact_no": {
+                                                "type": "string",
+                                                "example": "1234567810"
+                                            },
+                                            "type_referral": {
+                                                "type": "string",
+                                                "example": "TRANS"
+                                            },
+                                            "category": {
+                                                "type": "string",
+                                                "example": "ER"
+                                            },
+                                            "reason": {
+                                                "type": "string",
+                                                "example": "SEFTA"
+                                            },
+                                            "other_reason": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "remarks": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "contact_person": {
+                                                "type": "string",
+                                                "example": "RECEIVING PERSONNEL"
+                                            },
+                                            "designation": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "refer_date": {
+                                                "type": "string",
+                                                "example": "12-12-2012"
+                                            },
+                                            "refer_time": {
+                                                "type": "string",
+                                                "example": "13:00"
+                                            }
+                                        },
+                                        "type": "object"
                                     },
-                                    "facility_code": {
-                                        "type": "string",
-                                        "example": "FHU123"
+                                    "patient": {
+                                        "properties": {
+                                            "family_number": {
+                                                "type": "string",
+                                                "example": "0001"
+                                            },
+                                            "phic_number": {
+                                                "type": "string",
+                                                "example": "123123123"
+                                            },
+                                            "case_no": {
+                                                "type": "string",
+                                                "example": "2022-000001"
+                                            },
+                                            "last_name": {
+                                                "type": "string",
+                                                "example": "REFERRAL"
+                                            },
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "PATIENT"
+                                            },
+                                            "suffix": {
+                                                "type": "string",
+                                                "example": "N/A"
+                                            },
+                                            "middle_name": {
+                                                "type": "string",
+                                                "example": "TEST"
+                                            },
+                                            "birthdate": {
+                                                "type": "string",
+                                                "example": "12-12-2012"
+                                            },
+                                            "sex": {
+                                                "type": "string",
+                                                "example": "M"
+                                            },
+                                            "civil_status": {
+                                                "type": "string",
+                                                "example": "D"
+                                            },
+                                            "religion": {
+                                                "type": "string",
+                                                "example": "CATHO"
+                                            },
+                                            "blood_type": {
+                                                "type": "string",
+                                                "example": "A"
+                                            },
+                                            "blood_rh": {
+                                                "type": "string",
+                                                "example": "+"
+                                            },
+                                            "contact_no": {
+                                                "type": "string",
+                                                "example": ""
+                                            }
+                                        },
+                                        "type": "object"
                                     },
-                                    "reason": {
-                                        "type": "string",
-                                        "example": "Referral due to medical condition"
+                                    "demographics": {
+                                        "properties": {
+                                            "street": {
+                                                "type": "string",
+                                                "example": "#4"
+                                            },
+                                            "brgy_code": {
+                                                "type": "string",
+                                                "example": "043405061"
+                                            },
+                                            "city_code": {
+                                                "type": "string",
+                                                "example": "043405"
+                                            },
+                                            "prov_code": {
+                                                "type": "string",
+                                                "example": "0434"
+                                            },
+                                            "reg_code": {
+                                                "type": "string",
+                                                "example": "04"
+                                            },
+                                            "zipcode": {
+                                                "type": "string",
+                                                "example": "4027"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "clinical": {
+                                        "properties": {
+                                            "diagnosis": {
+                                                "type": "string",
+                                                "example": "INJURY"
+                                            },
+                                            "history": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "physical_examination": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "chief_complaint": {
+                                                "type": "string",
+                                                "example": "CHIEF COMPLAINT"
+                                            },
+                                            "findings": {
+                                                "type": "string",
+                                                "example": "INJURY"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "ICD": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "S91.0"
+                                        }
+                                    },
+                                    "vital_signs": {
+                                        "properties": {
+                                            "BP": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "temp": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "HR": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "RR": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "O2_sats": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "weight": {
+                                                "type": "string",
+                                                "example": ""
+                                            },
+                                            "height": {
+                                                "type": "string",
+                                                "example": ""
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "patient_providers": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "provider_last_name": {
+                                                    "type": "string",
+                                                    "example": "DOCTOR"
+                                                },
+                                                "provider_first_name": {
+                                                    "type": "string",
+                                                    "example": "DOCTOR"
+                                                },
+                                                "provider_middle_name": {
+                                                    "type": "string",
+                                                    "example": "DOCTOR"
+                                                },
+                                                "provider_suffix": {
+                                                    "type": "string",
+                                                    "example": ""
+                                                },
+                                                "provider_contact_no": {
+                                                    "type": "string",
+                                                    "example": "12345678910"
+                                                },
+                                                "provider_type": {
+                                                    "type": "string",
+                                                    "example": "REFER|CONSU"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"

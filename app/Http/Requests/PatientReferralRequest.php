@@ -17,65 +17,129 @@ class PatientReferralRequest extends FormRequest
     public function rules()
     {
         return [
-            'fhudFrom' => 'required|string',
-            'fhudTo' => 'required|string',
-            'patientLastName' => 'required|string',
-            'patientFirstName' => 'required|string',
-            'patientBirthDate' => 'required|date',
-            'patientSex' => 'required|string|in:M,F,other',
-            'referralDate' => 'required|date',
-            'referralTime' => 'required|date_format:h:iA',
-            'typeOfReferral' => 'required|string',
-            'patientStreetAddress' => 'required|string|max:255',
-            'patientBrgyAddress' => 'required|string|max:255',
-            'patientMunAddress' => 'required|string|max:255',
-            'patientProvAddress' => 'required|string|max:255',
-            'patientRegAddress' => 'required|string|max:255',
-            'patientZipAddress' => 'required|string|max:255',
-            'clinicalDiagnosis' => 'required|string|max:255',
-            'clinicalHistory' => 'required|string|max:255',
-            'vitalSign.BP' => 'required|string|max:50',
-            'vitalSign.Temp' => 'required|string|max:50',
-            'vitalSign.HR' => 'required|string|max:50',
-            'vitalSign.RR' => 'required|string|max:50',
-            'vitalSign.O2Sats' => 'required|string|max:50',
-            'vitalSign.Weight' => 'required|string|max:50',
-            'vitalSign.Height' => 'required|string|max:50',
-            'physicalExamination' => 'required|string|max:255',
-            'chiefComplaint' => 'required|string|max:255',
-            'findings' => 'required|string|max:255',
+            // Referral rules
+            'referral.facility_from' => 'required|string|max:50',
+            'referral.facility_to' => 'required|string|max:50',
+            'referral.phic_pan' => 'nullable|string|max:20',
+            'referral.contact_no' => 'required|digits:10',
+            'referral.type_referral' => 'required|string|max:10',
+            'referral.category' => 'required|string|max:2',
+            'referral.reason' => 'required|string|max:50',
+            'referral.other_reason' => 'nullable|string|max:255',
+            'referral.remarks' => 'nullable|string|max:255',
+            'referral.contact_person' => 'required|string|max:100',
+            'referral.designation' => 'nullable|string|max:100',
+            'referral.refer_date' => 'required|date',
+            'referral.refer_time' => 'required|string|max:5',
+
+            // Patient rules
+            'patient.family_number' => 'nullable|string',
+            'patient.phic_number' => 'nullable|string',
+            'patient.case_no' => 'nullable|string|max:50',
+            'patient.last_name' => 'required|string|max:100',
+            'patient.first_name' => 'required|string|max:100',
+            'patient.middle_name' => 'nullable|string',
+            'patient.suffix' => 'nullable|string',
+            'patient.birthdate' => 'required|date',
+            'patient.sex' => 'required|in:M,F',
+            'patient.civil_status' => 'nullable|string',
+            'patient.religion' => 'required|string|max:50',
+            'patient.contact_no' => 'nullable|string|max:15',
+            'patient.blood_type' => 'nullable|string|max:1',
+            'patient.blood_rh' => 'nullable|string|max:1',
+
+            // Demographics rules
+            'demographics.street' => 'required|string|max:255',
+            'demographics.brgy_code' => 'required|string|max:50',
+            'demographics.city_code' => 'required|string|max:50',
+            'demographics.prov_code' => 'required|string|max:50',
+            'demographics.reg_code' => 'required|string|max:50',
+            'demographics.zipcode' => 'required|numeric|digits:4',
+
+            // Clinical rules
+            'clinical.diagnosis' => 'required|string|max:255',
+            'clinical.chief_complaint' => 'required|string|max:255',
+
+
+            // ICD codes
+            'ICD' => 'required|array',
+            'ICD.*' => 'string|max:10',
+
+            // Vital signs rules
+           /*  'vital_signs.BP' => 'nullable|string|max:20',
+            'vital_signs.temp' => 'nullable|string|max:5',
+            'vital_signs.HR' => 'nullable|string|max:5',
+            'vital_signs.RR' => 'nullable|string|max:5',
+            'vital_signs.O2_sats' => 'nullable|string|max:5',
+            'vital_signs.weight' => 'nullable|numeric',
+            'vital_signs.height' => 'nullable|numeric', */
+
+            // Patient providers rules
+            'patient_providers' => 'required|array',
+            'patient_providers.*.provider_last_name' => 'required|string|max:100',
+            'patient_providers.*.provider_first_name' => 'required|string|max:100',
+            'patient_providers.*.provider_middle_name' => 'nullable|string|max:100',
+            'patient_providers.*.provider_contact_no' => 'required|string',
+            'patient_providers.*.provider_type' => 'required|string|max:10',
         ];
     }
 
     public function messages()
     {
         return [
-            'fhudFrom.required' => 'Referring facility code is required!',
-            'fhudTo.required' => 'Referral facility code is required!',
-            'patientLastName.required' => 'Patient last name is required.',
-            'patientFirstName.required' => 'Patient first name is required!',
-            'patientSex.required' => 'Patient sex is required!',
-            'patientBirthDate.required' => 'Patient birthdate is required!',
-             'patientStreetAddress.required' => 'Street address is required.',
-             'patientBrgyAddress.required' => 'Barangay address is required.',
-             'patientMunAddress.required' => 'Municipality address is required.',
-             'patientProvAddress.required' => 'Province address is required.',
-             'patientRegAddress.required' => 'Region address is required.',
-             'patientZipAddress.required' => 'Zip address is required.',
-             'clinicalDiagnosis.required' => 'Clinical diagnosis is required.',
-             'clinicalHistory.required' => 'Clinical history is required.',
-             'vitalSign.BP.required' => 'Blood pressure is required.',
-             'vitalSign.Temp.required' => 'Temperature is required.',
-             'vitalSign.HR.required' => 'Heart rate is required.',
-             'vitalSign.RR.required' => 'Respiratory rate is required.',
-             'vitalSign.O2Sats.required' => 'Oxygen saturation is required.',
-             'vitalSign.Weight.required' => 'Weight is required.',
-             'vitalSign.Height.required' => 'Height is required.',
-             'physicalExamination.required' => 'Physical examination details are required.',
-             'chiefComplaint.required' => 'Chief complaint is required.',
-             'findings.required' => 'Findings are required.',
+            // Referral rules
+            'referral.facility_from' => 'Referring facility is required!',
+            'referral.facility_to' => 'Referring facility is required!',
+            'referral.phic_pan' => 'Referring facility is required!',
+            'referral.contact_no' => 'Referring facility is required',
+            'referral.type_referral' => 'Type of referral is required',
+            'referral.category' => 'Referral Category is required',
+            'referral.reason' => 'Referral reason is required',
+           /*  'referral.other_reason' => 'nullable|string|max:255', */
+          /*   'referral.remarks' => 'nullable|string|max:255', */
+            'referral.contact_person' => 'Referral contact person is required!',
+         /*    'referral.designation' => 'nullable|string|max:100', */
+            'referral.refer_date' => 'Referral date is required',
+            'referral.refer_time' => 'Referral time is required',
+
+            // Patient rules
+           
+            'patient.case_no' => 'Case no is required',
+            'patient.last_name' => 'Patient last name is required!',
+            'patient.first_name' => 'Patient first name is required!',
+           /*  'patient.middle_name' => 'Patient middle name is re', */
+            'patient.birthdate' => 'Patient birthdate is required!',
+            'patient.sex' =>'Patient sex is required!',
+           /*  'patient.religion' => 'Patient religion is required', */
+           /*  'patient.contact_no' => 'nullable|string|max:15', */
+
+            // Demographics rules
+            'demographics.street' => 'Street address is required',
+            'demographics.brgy_code' => 'Barangay code is required | Please refer to the references',
+            'demographics.city_code' => 'City code is required | Please refer to the references',
+            'demographics.prov_code' => 'Province code is required | Please refer to the references',
+            'demographics.reg_code' => 'Regio code is required | Please refer to the references',
+           /*  'demographics.zipcode' => 'required|numeric|digits:4', */
+
+            // Clinical rules
+            'clinical.diagnosis' => 'Diagnosis is required!',
+            'clinical.chief_complaint' => 'Chief complaint is required!',
+
+            // ICD codes
+            'ICD' => 'ICD 10 code is required!',
+            'ICD.*' => 'string|max:10',
+
+            // Patient providers rules
+            'patient_providers' => 'required|array',
+            'patient_providers.*.provider_last_name' => 'Provider last name is required!',
+            'patient_providers.*.provider_first_name' => 'Provider last name is required!',
+            'patient_providers.*.provider_middle_name' => 'Provider last name is required!',
+            'patient_providers.*.provider_contact_no' => 'Provider last name is required!',
+            'patient_providers.*.provider_type' =>'Provider last name is required!',
         ];
+
+        
     }
+
+   
 }
-
-

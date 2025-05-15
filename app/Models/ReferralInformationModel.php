@@ -83,7 +83,6 @@ class ReferralInformationModel extends Model
         return $this->belongsTo(RefFacilitiesModel::class, 'emr_id', 'emr_id');
     }
 
-
     public function track()
     {
         return $this->belongsTo(ReferralTrackModel::class, 'LogID', 'LogID');

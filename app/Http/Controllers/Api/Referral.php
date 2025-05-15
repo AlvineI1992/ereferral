@@ -15,8 +15,9 @@ use App\Models\RefCityModel;
 use App\Models\RefBarangayModel;
 
 use App\Models\RefFacilitiesModel;
-use App\Helpers\ReferralHelper;
+
 use App\Models\ReferralInformationModel as ReferralModel;
+
 
 
 /**
@@ -91,44 +92,106 @@ class Referral extends Controller
     }
 
     /**
-     * Referral a patient to another facility.
-     *
-     * @OA\Post(
-     *     path="/api/refer_patient",
-     *     tags={"Transactions"},
-     *     summary="Referral a patient to another facility",
-     *     security={{ "sanctum": {} }},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"patient_id", "facility_code", "reason"},
-     *             @OA\Property(property="patient_id", type="string", example="12345"),
-     *             @OA\Property(property="facility_code", type="string", example="FHU123"),
-     *             @OA\Property(property="reason", type="string", example="Referral due to medical condition")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Patient referred successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Patient referred successfully!"),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invalid input data",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="error", type="string", example="Invalid data format")
-     *         )
-     *     )
-     * )
-     */
+ * Referral a patient to another facility.
+ *
+ * @OA\Post(
+ *     path="/api/refer_patient",
+ *     tags={"Transactions"},
+ *     summary="Referral a patient to another facility",
+ *     security={{ "sanctum": {} }},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="referral", type="object",
+ *                 @OA\Property(property="facility_from", type="string", example="DOH000000000007520"),
+ *                 @OA\Property(property="facility_to", type="string", example="DOH000000000005280"),
+ *                 @OA\Property(property="contact_no", type="string", example="1234567810"),
+ *                 @OA\Property(property="type_referral", type="string", example="TRANS"),
+ *                 @OA\Property(property="category", type="string", example="ER"),
+ *                 @OA\Property(property="reason", type="string", example="SEFTA"),
+ *                 @OA\Property(property="other_reason", type="string", example=""),
+ *                 @OA\Property(property="remarks", type="string", example=""),
+ *                 @OA\Property(property="contact_person", type="string", example="RECEIVING PERSONNEL"),
+ *                 @OA\Property(property="designation", type="string", example=""),
+ *                 @OA\Property(property="refer_date", type="string", example="12-12-2012"),
+ *                 @OA\Property(property="refer_time", type="string", example="13:00")
+ *             ),
+ *             @OA\Property(property="patient", type="object",
+ *                 @OA\Property(property="family_number", type="string", example="0001"),
+ *                 @OA\Property(property="phic_number", type="string", example="123123123"),
+ *                 @OA\Property(property="case_no", type="string", example="2022-000001"),
+ *                 @OA\Property(property="last_name", type="string", example="REFERRAL"),
+ *                 @OA\Property(property="first_name", type="string", example="PATIENT"),
+ *                 @OA\Property(property="suffix", type="string", example="N/A"),
+ *                 @OA\Property(property="middle_name", type="string", example="TEST"),
+ *                 @OA\Property(property="birthdate", type="string", example="12-12-2012"),
+ *                 @OA\Property(property="sex", type="string", example="M"),
+ *                 @OA\Property(property="civil_status", type="string", example="D"),
+ *                 @OA\Property(property="religion", type="string", example="CATHO"),
+ *                 @OA\Property(property="blood_type", type="string", example="A"),
+ *                 @OA\Property(property="blood_rh", type="string", example="+"),
+ *                 @OA\Property(property="contact_no", type="string", example="")
+ *             ),
+ *             @OA\Property(property="demographics", type="object",
+ *                 @OA\Property(property="street", type="string", example="#4"),
+ *                 @OA\Property(property="brgy_code", type="string", example="043405061"),
+ *                 @OA\Property(property="city_code", type="string", example="043405"),
+ *                 @OA\Property(property="prov_code", type="string", example="0434"),
+ *                 @OA\Property(property="reg_code", type="string", example="04"),
+ *                 @OA\Property(property="zipcode", type="string", example="4027")
+ *             ),
+ *             @OA\Property(property="clinical", type="object",
+ *                 @OA\Property(property="diagnosis", type="string", example="INJURY"),
+ *                 @OA\Property(property="history", type="string", example=""),
+ *                 @OA\Property(property="physical_examination", type="string", example=""),
+ *                 @OA\Property(property="chief_complaint", type="string", example="CHIEF COMPLAINT"),
+ *                 @OA\Property(property="findings", type="string", example="INJURY")
+ *             ),
+ *             @OA\Property(property="ICD", type="array",
+ *                 @OA\Items(type="string", example="S91.0")
+ *             ),
+ *             @OA\Property(property="vital_signs", type="object",
+ *                 @OA\Property(property="BP", type="string", example=""),
+ *                 @OA\Property(property="temp", type="string", example=""),
+ *                 @OA\Property(property="HR", type="string", example=""),
+ *                 @OA\Property(property="RR", type="string", example=""),
+ *                 @OA\Property(property="O2_sats", type="string", example=""),
+ *                 @OA\Property(property="weight", type="string", example=""),
+ *                 @OA\Property(property="height", type="string", example="")
+ *             ),
+ *             @OA\Property(property="patient_providers", type="array",
+ *                 @OA\Items(type="object",
+ *                     @OA\Property(property="provider_last_name", type="string", example="DOCTOR"),
+ *                     @OA\Property(property="provider_first_name", type="string", example="DOCTOR"),
+ *                     @OA\Property(property="provider_middle_name", type="string", example="DOCTOR"),
+ *                     @OA\Property(property="provider_suffix", type="string", example=""),
+ *                     @OA\Property(property="provider_contact_no", type="string", example="12345678910"),
+ *                     @OA\Property(property="provider_type", type="string", example="REFER|CONSU")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Patient referred successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Patient referred successfully!"),
+ *             @OA\Property(property="data", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid input data",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Invalid data format")
+ *         )
+ *     )
+ * )
+ */
+
     public function patient_referral(PatientReferralRequest $request)
     {
-        // Check if the request contains valid JSON
         $jsonString = $request->getContent(); 
         $data = json_decode($jsonString, true);
 
@@ -138,18 +201,13 @@ class Referral extends Controller
             ], 400);
         }
 
-        // Merge validated data with raw input
         $rawData = $data;
         $validatedData = $request->validated();
         $mergedData = array_merge($rawData, $validatedData);
 
-        // Refer the patient using the service
         $output = $this->referralService->refer_patient($mergedData);
 
-        return response()->json([
-            'message' => 'Patient referred successfully!',
-            'data' => $output
-        ]);
+        return $output;
     }
 
     /**
@@ -597,7 +655,7 @@ public function get_facility_list($id)
     ->first();
 
     if (!$facility) {
-        return response()->json(['error' => 'Barangay not found'], 404);
+        return response()->json(['error' => 'Facility not found'], 404);
     }
 
     return response()->json([

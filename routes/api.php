@@ -30,7 +30,7 @@ Route::post('login', [Referral::class, 'login']);
 
 //Transactions
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/refer-patient', [Referral::class, 'patient_referral'])->name('referral.patient_referral');
+    Route::post('/refer-patient', [Referral::class, 'patient_referral'])->name('referral.patient_referral');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {

@@ -123,9 +123,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
         <div className="w-full lg:w-1/2 space-y-2">
           <PatientInfo profile={profile} demographics={demographics} />
         </div>
-
-     
-
+        
         {/* Right: Referral Info */}
         <div className="w-full lg:w-1/2 space-y-2">
           <ReferralInfo referral={referral} referral_origin={referral_origin} referral_dest={referral_dest}/>

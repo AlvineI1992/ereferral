@@ -33,7 +33,7 @@ class ReferralHelper
         ];
 
         if ($code) {
-            return collect($reasons)->firstWhere('code', strtoupper($code));
+            return collect($reasons)->firstWhere('code', strtoupper($code)) ?? null;
         }
 
         return $reasons;
@@ -58,7 +58,7 @@ class ReferralHelper
             ['code' => 'OTHER', 'description' => 'Others'],
         ];
         if ($type) {
-            return collect($type_array)->firstWhere('code', strtoupper($type));
+            return collect($type_array)->firstWhere('code', strtoupper($type)) ?? null;
         }
 
         return $type_array;
