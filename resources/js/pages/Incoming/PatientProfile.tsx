@@ -35,7 +35,7 @@ export default function PatientInfo({ profile, demographics }: Props) {
   return (
     <div className="space-y-6">
       {/* Border box wrapper */}
-      <div className="border rounded-xl p-5 shadow-sm ">
+    
         {/* Header */}
         <div className="flex items-center mb-4">
           <UserCircle2Icon size={24} className="text-primary mr-2" />
@@ -96,7 +96,7 @@ export default function PatientInfo({ profile, demographics }: Props) {
           </div>
         </div>
       </div>
-    </div>
+
   );
 }
 

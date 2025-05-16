@@ -35,7 +35,7 @@ export default function ReferralInfo({ referral, referral_origin, referral_dest 
   return (
     <div className="space-y-6">
       {/* Border box wrapper */}
-      <div className="border rounded-xl p-5 shadow-sm">
+   
         {/* Header */}
         <div className="flex items-center mb-4">
           <Ambulance size={24} className="text-primary mr-2" />
@@ -78,7 +78,7 @@ export default function ReferralInfo({ referral, referral_origin, referral_dest 
             <p><span className="font-bold">Facility name:</span> {referral_dest?.facility_name || 'N/A'}</p>
           </div>
         </div>
-      </div>
+ 
     </div>
   );
 }
