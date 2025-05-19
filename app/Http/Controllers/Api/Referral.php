@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientReferralRequest;
 use Illuminate\Support\Facades\Auth;
 
+
 use Illuminate\Auth\AuthenticationException;
 use App\Models\RefRegionModel;
 use App\Models\RefProvinceModel;
@@ -17,7 +18,7 @@ use App\Models\RefBarangayModel;
 use App\Models\RefFacilitiesModel;
 
 use App\Models\ReferralInformationModel as ReferralModel;
-
+use App\Models\ReferralTrackModel;
 
 
 /**
@@ -925,7 +926,7 @@ public function referral_reason()
  * @OA\Get(
  *     path="/api/reason-referral-code/{code}",
  *     operationId="getReferralReasonByCode",
- *     tags={"Reference"},
+ *     tags={"References"},
  *     summary="Get specific referral reason by code",
  *     description="Returns a specific referral reason based on the provided code",
  * security={{ "sanctum": {} }},
@@ -955,6 +956,7 @@ public function referral_reason()
  *     )
  * )
  */
+
 public function referral_reason_by_code($code)
 {
     $referral_reason = ReferralHelper::getReferralReasonbyCode($code);
@@ -968,7 +970,135 @@ public function referral_reason_by_code($code)
     ]);
 }
 
+/**
+ * @OA\Post(
+ *     path="/api/referral/received",
+ *     summary="Store received referral data",
+ *     description="Receives referral tracking information and stores it.",
+ *     operationId="storeReceivedReferral",
+ *     tags={"Transactions"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"LogID", "received_date", "received_by"},
+ *             @OA\Property(property="LogID", type="integer", example=123),
+ *             @OA\Property(property="received_date", type="string", format="date-time", example="05/18/2025 14:30:00"),
+ *             @OA\Property(property="received_by", type="string", example="Dr. Smith")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Data saved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Data saved successfully")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid data",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Invalid data")
+ *         )
+ *     )
+ * )
+ */
 
+    public function received(Request $request)
+    {
+        if (empty($request->all())) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
 
- 
+        $validated = $request->validate([
+            'LogID' => 'required',
+            'received_date' => 'required|date_format:m/d/Y H:i:s',
+            'received_by' => 'required'
+        ]);
+
+        ReferralTrackModel::create($validated);
+
+        return response()->json(['message' => 'Data saved successfully'], 200);
+    }
+    /**
+     * @OA\Post(
+     *     path="/api/admit/{id}",
+     *     operationId="admitReferral",
+     *     tags={"Transactions"},
+     *     summary="Admit a referral",
+     *     description="Updates a referral record with LogID, received date, and received by person.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="LogID of the referral to update",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"LogID", "received_date", "received_by"},
+     *             @OA\Property(property="LogID", type="string", example="123456"),
+     *             @OA\Property(property="received_date", type="string", format="date-time", example="05/19/2025 14:30:00"),
+     *             @OA\Property(property="received_by", type="string", example="Dr. John Doe")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Referral updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Referral updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid data",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Invalid data")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Referral not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Referral not found")
+     *         )
+     *     )
+     * )
+     */
+
+    public function admit(Request $request, $id)
+    {
+        if (!Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+        if (empty($request->all())) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+    
+        // Validate the request data
+        $validated = $request->validate([
+            'LogID' => 'required',
+            'received_date' => 'required|date_format:m/d/Y H:i:s',
+            'received_by' => 'required'
+        ]);
+    
+        // Find the referral record
+        $referral = ReferralTrackModel::find($id);
+    
+        if (!$referral) {
+            return response()->json(['error' => 'Referral not found'], 404);
+        }
+    
+        // Update the record with validated data
+        $referral->LogID = $validated['LogID'];
+        $referral->receivedDate = $validated['received_date'];
+        $referral->receivedPerson = $validated['received_by'];
+        $referral->save();
+    
+        return response()->json([
+            'message' => 'Referral updated successfully'
+        ], 200);
+    }
+    
 }
