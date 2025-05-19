@@ -84,6 +84,7 @@ const RolesList = ({ canEdit,canDelete,canAssign,refreshKey, onEdit }: RolesList
 
   const handleEdit = (row) => {
     onEdit?.(row);
+
   };
 
   const handleView = (row) => {
@@ -149,7 +150,7 @@ const RolesList = ({ canEdit,canDelete,canAssign,refreshKey, onEdit }: RolesList
                       <div className="flex justify-center gap-2">
                       {canEdit && (
                         <button
-                          onClick={() => handleEdit(row)}
+                          onClick={() => handleEdit(row.id)}
                           className="p-1 text-blue-500 hover:text-blue-700"
                         >
                           <Pencil size={16} />

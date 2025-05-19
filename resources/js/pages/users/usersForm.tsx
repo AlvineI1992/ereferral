@@ -44,6 +44,7 @@ import {
     X,
 } from 'lucide-react';
 import { RegisterForm } from './types';
+import toastr from "toastr";
 
 type UserFormProps = {
     onUserCreated: () => void;
@@ -76,6 +77,32 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
 
     const [accessType, setAccessType] = useState(data.access_type);
 
+
+ 
+    useEffect(() => {
+    
+        if (user) {
+            
+            setData({
+                name: user.name,
+                email: user.email,
+                password: '',
+                password_confirmation: '',
+                access_id: user.access_id,  
+                access_type: user.access_type,
+            });
+            setAccessType(user.access_type); // ✅ fix here
+            if (user.access_type === 'EMR') {
+                setSelectedProvider(user.access_id);
+            } else if (user.access_type === 'CHD') {
+                setSelectedRegion(user.access_id);
+            } else if (user.access_type === 'HOSP') {
+                setSelectedHospital(user.access_id);
+            }
+        } else {
+            reset();
+        }
+    }, [user]);
 
     useEffect(() => {
       if (user) {
@@ -111,16 +138,38 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('user.store'), {
-            onSuccess: () => {
-                reset();
-                setSelectedProvider('');
-                setSelectedRegion('');
-                setSelectedHospital('');
-                onUserCreated();
-            },
-        });
+    
+        if (user) {
+            axios.put(route("user.update", user.id), data)
+                .then(() => {
+                    reset();
+                    setSelectedProvider('');
+                    setSelectedRegion('');
+                    setSelectedHospital('');
+                    onUserCreated();
+                    toastr.success("User updated!", "Success");
+                })
+                .catch(error => {
+                    toastr.error("Failed to update user", "Error");
+                    console.error(error);
+                });
+        } else {
+            axios.post(route("user.store"), data)
+                .then(() => {
+                    reset();
+                    setSelectedProvider('');
+                    setSelectedRegion('');
+                    setSelectedHospital('');
+                    onUserCreated();
+                    toastr.success("User created!", "Success");
+                })
+                .catch(error => {
+                    toastr.error("Failed to create user", "Error");
+                    console.error(error);
+                });
+        }
     };
+    
   
     const renderProviderSelector = (label: string) => (
         <div className="grid gap-1">

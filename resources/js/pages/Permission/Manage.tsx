@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import Lists from "./List";  
 import Form from "./Form"; 
 import { PermissionProps } from './types';
+import axios from "axios";
 
 interface FormProps {
   canCreate: boolean;
@@ -18,9 +19,14 @@ const Manage = ({canCreate,canEdit,canDelete,canView}: FormProps) => {
   const [selected, setSelected] = useState(null); 
   const [refreshKey, setRefreshKey] = useState(0); 
 
- 
-  const handleEdit = (perm:null) => {
-    setSelected(perm); // Set the role to be edited
+
+  const handleEdit = async (id:null) => {
+    try {
+      const response = await axios.get(`/permission/info/${id}`);
+      setSelected(response.data);
+    } catch (error) {
+      console.error("Failed to fetch role info:", error);
+    }
   };
 
 

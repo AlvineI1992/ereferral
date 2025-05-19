@@ -94,7 +94,7 @@ public function role_has_user(Request $request)
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status'=>'A',
+            'status'=>'I',
             'access_id' => $request->access_id,
             'access_type' => $request->access_type,
         ]);
@@ -106,6 +106,35 @@ public function role_has_user(Request $request)
         
         return redirect()->route('users')->with('success', 'Added successfully.');
     }
+
+
+
+    public function update(Request $request, User $user)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'nullable|string|lowercase|email|max:255|unique:' . User::class,
+        
+        'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+    ]);
+
+    // Update basic info
+    $user->name = $request->name;
+    $user->email = $request->email;
+    $user->status = 'I';
+    $user->access_id = $request->access_id;
+    $user->access_type = $request->access_type;
+
+    // Only update password if provided
+    if ($request->filled('password')) {
+        $user->password = Hash::make($request->password);
+    }
+
+    $user->save();
+
+    return redirect()->route('users')->with('success', 'Updated successfully.');
+}
+
 
     public function show($id)
     {

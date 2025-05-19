@@ -70,7 +70,10 @@ class RoleController extends Controller
             'permissions' => 'array'
         ]);
 
-        $role->update(['name' => $request->name]);
+        $role->update(
+        ['name' => $request->name,
+         'guard_names' => $request->guard_name,  
+        ]);
         //$role->syncPermissions($request->permissions);
 
         return redirect()->route('roles')->with('success', 'Role updated successfully.');

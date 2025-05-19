@@ -42,6 +42,17 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
         nameInputRef.current?.focus();
     }, []);
 
+    useEffect(() => {
+        if (perm) {
+            setData({
+                name: perm.name,
+                guard_name: perm.guard_name,
+            });
+        } else {
+            reset();
+        }
+    }, [perm]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(e.target.name, e.target.value);
     };
@@ -51,7 +62,7 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
 
         if (perm) {
             // If a role is passed (edit mode), we update it using PUT request
-            put(route("roles.update", perm.id), {
+            put(route("permission.update", perm.id), {
                 onSuccess: () => {
                     reset();
                     onCreated();

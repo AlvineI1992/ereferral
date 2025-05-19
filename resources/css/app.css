@@ -110,19 +110,7 @@
   --sidebar-hover: hsl(145, 65%, 85%);
   --sidebar-hover-foreground: hsl(145, 30%, 25%);
   --sidebar-selected: hsl(145, 40%, 70%);
-  --sidebar-selected-foreground: hsl(145, 25%, 20%);/* Base teal sidebar theme (light mode) */
-  --sidebar: hsl(180, 60%, 90%);
-  --sidebar-foreground: hsl(180, 30%, 25%);
-  --sidebar-primary: hsl(180, 50%, 70%);
-  --sidebar-primary-foreground: hsl(180, 30%, 20%);
-  --sidebar-accent: hsl(180, 60%, 80%);
-  --sidebar-accent-foreground: hsl(180, 25%, 25%);
-  --sidebar-border: hsl(180, 45%, 75%);
-  --sidebar-ring: hsl(180, 70%, 80%);
-  --sidebar-hover: hsl(180, 65%, 85%);
-  --sidebar-hover-foreground: hsl(180, 30%, 25%);
-  --sidebar-selected: hsl(180, 40%, 70%);
-  --sidebar-selected-foreground: hsl(180, 25%, 20%);
+  --sidebar-selected-foreground: hsl(145, 25%, 20%);
 }
 
 .dark {

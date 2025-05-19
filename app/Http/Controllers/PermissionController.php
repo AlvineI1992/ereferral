@@ -112,9 +112,10 @@ class PermissionController extends Controller
      * @param  \App\Models\Permission  $permission
      * @return \Illuminate\Http\Response
      */
-    public function show(PermissionModel $permission)
+    public function show($id)
     {
-        return view('admin.permission.show',compact('permission'));
+        $data = PermissionModel::findOrFail($id);
+        return response()->json($data);
     }
 
     /**
@@ -133,13 +134,21 @@ class PermissionController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Permission  $permission
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response    
      */
-    public function update(Request $request, Permission $permission)
+    public function update(Request $request, PermissionModel $permission)
     {
-        $request->validate(['name' => 'required|string|max:255|unique:'.config('permission.table_names.permissions', 'permissions').',name,'.$permission->id,]);
-        $permission->update(['name' => $request->name , 'guard_name'=> 'web' ]);
-        return redirect()->route('permission.index')->with('message','Permission updated successfully.');
+        $request->validate([
+            //'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
+            'name' => 'required|unique:permissions,name,' . $permission->id,
+        ]);
+
+        $permission->update([
+            'name' => $request->name,
+            'guard_name' => 'web',
+        ]);
+
+        return redirect()->route('permission')->with('message', 'Permission updated successfully.');
     }
 
     /**

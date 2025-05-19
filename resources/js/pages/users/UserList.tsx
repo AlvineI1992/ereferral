@@ -6,7 +6,14 @@ import { Inertia } from "@inertiajs/inertia";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const UserList = ({ refreshKey, onEdit }) => {
+type Props = {
+  refreshKey: () => any;
+  onEdit: () => any;  // Add onCancel prop
+  canDelete:boolean;// Role data for editing
+  canEdit:boolean;// Role data for editing
+};
+
+const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,7 +72,7 @@ const UserList = ({ refreshKey, onEdit }) => {
   };
 
   const handleEdit = (row) => {
-    onEdit(row);
+    onEdit?.(row);
   };
 
   const handleGoto = (id) => {
@@ -122,7 +129,7 @@ const UserList = ({ refreshKey, onEdit }) => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(row)}
+                          onClick={() => handleEdit(row.id)}
                           className="text-blue-500 hover:text-blue-700"
                         >
                           <Pencil size={16} />

@@ -108,7 +108,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/api/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
+    Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
 });
 Route::patch('/api/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
 Route::patch('/api/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
@@ -129,12 +129,12 @@ Route::get('/permission', function (Request $request) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    
     Route::get('/api/permission', [PermissionController::class, 'index']);
-    Route::put('/permission/update/{role}', [PermissionController::class, 'update'])->name('permission.update');
-    Route::delete('/permission/delete/{role}', [PermissionController::class, 'destroy'])->name('permission.destroy');
+    Route::put('/permission/update/{perm}', [PermissionController::class, 'update'])->name('permission.update');
+    Route::delete('/permission/delete/{perm}', [PermissionController::class, 'destroy'])->name('permission.destroy');
     Route::post('/permission/store', [PermissionController::class, 'store'])->name('permission.store');
     Route::get('/permission-has-role', [PermissionController::class, 'permission_has_role'])->name('permission.has.role');
+    Route::get('/permission/info/{id}', [PermissionController::class, 'show'])->name('permission.info');
 });
 
 Route::get('/emr', function (Request $request) {

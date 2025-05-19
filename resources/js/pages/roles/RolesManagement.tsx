@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import RolesList from "./RolesList";  // The component that shows the list of roles
 import RolesForm from "./RolesForm";  // The form for creating or editing roles
 import { PermissionProps } from './types';
-
+import axios from "axios";
 
 
 const RolesManagement = ({
@@ -16,9 +16,13 @@ const RolesManagement = ({
   const [refreshKey, setRefreshKey] = useState(0); // To refresh the role list after create/update
 
 
-  // Handle the edit action and set the selected role
-  const handleEdit = (role) => {
-    setSelectedRole(role); // Set the role to be edited
+  const handleEdit = async (roleId) => {
+    try {
+      const response = await axios.get(`/roles/info/${roleId}`);
+      setSelectedRole(response.data);
+    } catch (error) {
+      console.error("Failed to fetch role info:", error);
+    }
   };
 
   // After a role is created or updated, reset the selected role to null

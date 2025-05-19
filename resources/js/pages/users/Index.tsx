@@ -2,14 +2,20 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import UsersManagement from './UsersManagement';
-
+import { PermissionProps } from './types';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'User accounts',
         href: '/user accounts',
     },
 ];
-export default function UsersList() {
+export default function UsersList({
+    canCreate,
+    canEdit,
+    canDelete,
+    canView,
+    canAssign
+  }: PermissionProps) {
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(true);
     const handleRoleCreated = () => {
@@ -26,7 +32,7 @@ export default function UsersList() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Users" />
             <div className="lg:col-span-1">
-                <UsersManagement onRoleCreated={() => {}} />
+                <UsersManagement canEdit={canEdit} canDelete={canDelete} canAssign={canAssign} onRoleCreated={() => {}} />
             </div>
         </AppLayout>
     );

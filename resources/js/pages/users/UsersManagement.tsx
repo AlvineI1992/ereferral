@@ -1,14 +1,31 @@
+import axios from 'axios';
 import { useState } from 'react';
 import Userlist from './UserList';
 import UsersForm from './UsersForm';
+import { PermissionProps } from './types';
 
-const UsersManagement = () => {
+const UsersManagement = ({
+    canCreate,
+    canEdit,
+    canDelete,
+    canView,
+    canAssign
+  }: PermissionProps) => {
     const [selectedUser, setSelectedUser] = useState(null); // State for the selected user
     const [refreshKey, setRefreshKey] = useState(0); // To refresh the user list after create/update
 
+    const [selectedProvider, setSelectedProvider] = useState(null);
+    const [selectedRegion, setSelectedRegion] = useState(null);
+    const [selectedHospital, setSelectedHospital] = useState(null);
+
     // Handle the edit action and set the selected user
-    const handleEdit = (user) => {
-        setSelectedUser(user); // Set the user to be edited
+    const handleEdit = async (user: null) => {
+        try {
+            const response = await axios.get(`/users/info/${user}`);
+            setSelectedUser(response.data);
+        } catch (error) {
+            console.error('Failed to fetch role info:', error);
+        }
     };
 
     // After a user is created or updated, reset the selected user to null
@@ -17,9 +34,12 @@ const UsersManagement = () => {
         setRefreshKey((prev) => prev + 1); // Trigger refresh for the user list
     };
 
-    // Handle cancel edit action
+    // Handle cancel edit action  
     const handleCancelEdit = () => {
-        setSelectedUser(null); // Reset selected user when canceling the edit
+        setSelectedUser(null); 
+        setSelectedProvider('');// Reset selected user when canceling the edit
+        setSelectedRegion('');
+        setSelectedHospital('');
     };
 
     return (
@@ -33,7 +53,8 @@ const UsersManagement = () => {
                             onUserCreated={handleUserCreated}
                         />
                     ) : (
-                        <UsersForm  onUserCreated={handleUserCreated} />
+                        <UsersForm   onCancel={''} // Pass handleCancelEdit to the form
+                        user={''}  onUserCreated={handleUserCreated} />
                     )}
                 </div>
                 <div className="lg:col-span-3">

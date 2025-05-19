@@ -21,6 +21,8 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
   const [totalRows, setTotalRows] = useState(0);
   const perPage = 10;
 
+  
+
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
     try {
@@ -127,7 +129,7 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(row)}
+                          onClick={() => handleEdit(row.id)}
                           className="text-blue-500 hover:text-blue-700"
                         >
                               <Pencil size={16} />
