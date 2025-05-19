@@ -120,6 +120,7 @@ class ReferralService
                 ];
             }
         }
+
         $logID=$this->generate_code($data['referral']['facility_from']);
         $created =  $this->transaction_refer($data,$logID);
 
@@ -199,5 +200,13 @@ class ReferralService
             DB::rollBack(); 
             return 'Transaction failed: ' . $e->getMessage();
         }
+    }
+
+
+    public function receive_incoming(array $data)
+    {
+
+        
+
     }
 }

@@ -1147,7 +1147,7 @@
         "/api/reason-referral-code/{code}": {
             "get": {
                 "tags": [
-                    "Reference"
+                    "References"
                 ],
                 "summary": "Get specific referral reason by code",
                 "description": "Returns a specific referral reason based on the provided code",
@@ -1208,6 +1208,181 @@
                     }
                 ]
             }
+        },
+        "/api/referral/received": {
+            "post": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Store received referral data",
+                "description": "Receives referral tracking information and stores it.",
+                "operationId": "storeReceivedReferral",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "LogID",
+                                    "received_date",
+                                    "received_by"
+                                ],
+                                "properties": {
+                                    "LogID": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "received_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "05/18/2025 14:30:00"
+                                    },
+                                    "received_by": {
+                                        "type": "string",
+                                        "example": "Dr. Smith"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data saved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data saved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admit/{id}": {
+            "post": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Admit a referral",
+                "description": "Updates a referral record with LogID, received date, and received by person.",
+                "operationId": "admitReferral",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "LogID of the referral to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "LogID",
+                                    "received_date",
+                                    "received_by"
+                                ],
+                                "properties": {
+                                    "LogID": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "received_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "05/19/2025 14:30:00"
+                                    },
+                                    "received_by": {
+                                        "type": "string",
+                                        "example": "Dr. John Doe"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Referral updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Referral updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Invalid data"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Referral not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Referral not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -1234,10 +1409,6 @@
         {
             "name": "References",
             "description": "References"
-        },
-        {
-            "name": "Reference",
-            "description": "Reference"
         }
     ]
 }

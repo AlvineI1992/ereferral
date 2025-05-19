@@ -45,7 +45,7 @@ class RoleController extends Controller
             'name' => 'required|unique:roles,name',
             'guard_name' => 'required',
         ]);
-        
+     
         $role = RoleModel::create([
             'name' => ucfirst($request->input('name')),
             'guard_name' => $request->input('guard_name'),
