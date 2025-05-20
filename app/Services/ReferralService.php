@@ -205,13 +205,28 @@ class ReferralService
             ReferralPatientDemoModel::create($demographics);
 
 
-            $consu=[
+            $referring_provider=[
                 'LogID'=>$LogID,
                 'provider_last'=>$data['patient_providers'][0]['provider_last_name'],
-                'provider_first'=>$data['patient_providers'][0]['provider_last_name'],
-                'provider_middle'=>$data['patient_providers'][0]['provider_last_name'],
-                'provider_suffix'=>$data['patient_providers'][0]['provider_last_name']
+                'provider_first'=>$data['patient_providers'][0]['provider_fist_name'],
+                'provider_middle'=>$data['patient_providers'][0]['provider_middle_name'],
+                'provider_suffix'=>$data['patient_providers'][0]['provider_suffix_name'],
+                'provider_type'=>$data['patient_providers'][0]['provider_type'],
             ];
+            
+            DB::table('referral_provider')->insert($referring_provider);
+
+            $consulting_provider=[
+                'LogID'=>$LogID,
+                'provider_last'=>$data['patient_providers'][1]['provider_last_name'],
+                'provider_first'=>$data['patient_providers'][1]['provider_fist_name'],
+                'provider_middle'=>$data['patient_providers'][1]['provider_middle_name'],
+                'provider_suffix'=>$data['patient_providers'][1]['provider_suffix_name'],
+                'provider_type'=>$data['patient_providers'][1]['provider_type'],
+            ];
+
+            DB::table('referral_provider')->insert($consulting_provider);
+
 
             DB::commit();
 
