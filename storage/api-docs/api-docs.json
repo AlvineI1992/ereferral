@@ -1069,6 +1069,10 @@
                                                     "contact_number": {
                                                         "type": "string",
                                                         "example": "09171234567"
+                                                    },
+                                                    "emr": {
+                                                        "type": "string",
+                                                        "example": "Facility A"
                                                     }
                                                 },
                                                 "type": "object"
@@ -1209,7 +1213,7 @@
                 ]
             }
         },
-        "/api/referral/received": {
+        "/api/received": {
             "post": {
                 "tags": [
                     "Transactions"
@@ -1382,6 +1386,243 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/discharge": {
+            "post": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Discharge a patient",
+                "description": "Submits discharge information including medicine and follow-up schedule. Requires authentication.",
+                "operationId": "dischargePatient",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "LogID",
+                                    "admDate",
+                                    "dischDate",
+                                    "disposition",
+                                    "condition",
+                                    "hasFollowUp",
+                                    "hasMedicine"
+                                ],
+                                "properties": {
+                                    "LogID": {
+                                        "type": "string",
+                                        "example": "HOSP-2071422083643"
+                                    },
+                                    "admDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2022-02-02 13:03:13"
+                                    },
+                                    "dischDate": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2022-02-03 13:03:13"
+                                    },
+                                    "disposition": {
+                                        "type": "string",
+                                        "example": "DISCH"
+                                    },
+                                    "condition": {
+                                        "type": "string",
+                                        "example": "IMPRO"
+                                    },
+                                    "diagnosis": {
+                                        "type": "string",
+                                        "example": "Diagnosis not specified"
+                                    },
+                                    "remarks": {
+                                        "type": "string",
+                                        "example": "REMARKS"
+                                    },
+                                    "disnotes": {
+                                        "type": "string",
+                                        "example": "Discharge notes here."
+                                    },
+                                    "hasFollowUp": {
+                                        "type": "string",
+                                        "example": "Y"
+                                    },
+                                    "hasMedicine": {
+                                        "type": "string",
+                                        "example": "Y"
+                                    },
+                                    "drugs": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "LogID",
+                                                "generic",
+                                                "instruction",
+                                                "drugcode"
+                                            ],
+                                            "properties": {
+                                                "LogID": {
+                                                    "type": "string",
+                                                    "example": "HOSP-2071422032507"
+                                                },
+                                                "generic": {
+                                                    "type": "string",
+                                                    "example": "AMOXICILLIN"
+                                                },
+                                                "instruction": {
+                                                    "type": "string",
+                                                    "example": "INUMIN ARAW ARAW"
+                                                },
+                                                "drugcode": {
+                                                    "type": "string",
+                                                    "example": "130182083180928321"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "schedule": {
+                                        "properties": {
+                                            "LogID": {
+                                                "type": "string",
+                                                "example": "HOSP-2071422032507"
+                                            },
+                                            "date": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2022-02-04 13:03:13"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Discharge successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "status": "success",
+                                    "message": "Patient discharged successfully",
+                                    "data": {
+                                        "LogID": "HOSP-2071422083643",
+                                        "dischargeSummary": "Details..."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "error": "Invalid data"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "message": "Unauthenticated."
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/discharged-data/{logID}": {
+            "get": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Get discharged patient data",
+                "description": "Retrieves discharged patient data by the provided log ID. Requires authentication.",
+                "operationId": "getDischargedData",
+                "parameters": [
+                    {
+                        "name": "logID",
+                        "in": "path",
+                        "description": "The log ID of the patient",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "patient_name": "John Doe",
+                                    "discharge_date": "2025-05-10",
+                                    "diagnosis": "Acute appendicitis"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "error": "Invalid data"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "message": "Unauthenticated."
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },

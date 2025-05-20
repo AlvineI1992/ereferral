@@ -124,12 +124,16 @@ class ReferralService
         $logID=$this->generate_code($data['referral']['facility_from']);
         $created =  $this->transaction_refer($data,$logID);
 
-    
+    if($created)
+    {
         return [
             'code' =>$logID,
-            'message' => 'Referral successfully transmitted',
-            'data' =>$created,
+            'message' => 'Referral successfully transmitted'
         ];
+    }else{
+
+    }
+      
     }
     
 
@@ -143,33 +147,41 @@ class ReferralService
                 'fhudFrom' => $data['referral']['facility_from'] ?? null,
                 'fhudTo' => $data['referral']['facility_to'] ?? null,
                 'typeOfReferral' => $data['referral']['type_referral']  ?? null,
+                'referralCategory' => $data['referral']['category'] ?? null,
                 'referralReason' =>$data['referral']['reason'] ?? null,
+                'referralContactPerson' => $data['referral']['contact_person'] ?? null,
+                'referralContactPersonDesignation' => $data['referral']['designation'] ?? 'N/A',
+                'referringProvider' =>'N/A',
+                'referringProviderContactNumber' => $data['referral']['contact_no'] ?? null,
                 'otherReasons' =>$data['referral']['other_reason'] ?? null,
-                'remarks' =>$data['referral']['other_reason'] ?? null,
-                'referringProvider' => $data['referral']['other_reason'] ?? null,
-                'referralCategory' => $data['referral']['other_reason'] ?? null,
-                'referringProviderContactNumber' => $data['referral']['other_reason'] ?? null,
-                'referralContactPerson' => $data['referral']['other_reason'] ?? null,
-                'referralContactPersonDesignation' => $data['referral']['other_reason'] ?? null,
+                'remarks' =>$data['referral']['remarks'] ?? null,
                 'refferalDate' => $data['referral']['refer_date'] ?? null,
                 'refferalTime' =>$data['referral']['refer_time'] ?? null,
-                'logDate' => $logDate ?? null,
-                'tdcode' => $tdcode ?? null,
-                'licno' => $licno ?? null,
-                'patientPan' => $data['referral']['refer_date'],
-                'specialinstruct' => $specialinstruct ?? null,
-                'created_at' => now(), // or Carbon::now(), depending on your use case
+                'logDate' => date('Y-m-d H:i:s'),
+                'created_at' => now(), 
             ];
-            
+
+
+       /*      
+            'referralContactPerson' => $data['referral']['contact_no'] ?? null,
+            'referringProvider' => $data['patient_providers']['other_reason'] ?? 'N/A',
+            'referringProviderContactNumber' => $data['referral']['other_reason'] ?? null,
+            'referralContactPerson' => $data['referral']['other_reason'] ?? null,
+            'referralContactPersonDesignation' => $data['referral']['other_reason'] ?? null,
+            'refferalDate' => $data['referral']['refer_date'] ?? null,
+            'refferalTime' =>$data['referral']['refer_time'] ?? null, 
+            'specialinstruct' => $specialinstruct ?? null,
+            */
+            ReferralInformationModel::create($referral);
             $patient = [
                 'LogID'=>$LogID,
-                'FamilyID'=>$data['patient']['family_number'],
-                'caseNum'=>$data['patient']['case_no'],
-                'phicNum'=>$data['patient']['phic_number'],
+                'FamilyID'=>($data['patient']['family_number'])?$data['patient']['family_number']: 0 ,
+                'caseNum'=>($data['patient']['case_no'])?(int)$data['patient']['case_no']: 0 ,
+                'phicNum'=>($data['patient']['phic_number'])?(int)$data['patient']['phic_number']: 0 ,
                 'patientLastName'=>$data['patient']['last_name'],
                 'patientFirstName'=>$data['patient']['first_name'],
                 'patientMiddlename'=>$data['patient']['middle_name'],
-                'patientSuffix'=>$data['patient']['suffix'],
+                'patientSuffix'=>($data['patient']['suffix'])?(int)$data['patient']['suffix']: '.' ,
                 'patientBirthDate'=>$data['patient']['birthdate'],
                 'patientSex'=>$data['patient']['sex'],
                 'patientContactNumber'=>$data['patient']['contact_no'],
@@ -192,6 +204,15 @@ class ReferralService
             ];
             ReferralPatientDemoModel::create($demographics);
 
+
+            $consu=[
+                'LogID'=>$LogID,
+                'provider_last'=>$data['patient_providers'][0]['provider_last_name'],
+                'provider_first'=>$data['patient_providers'][0]['provider_last_name'],
+                'provider_middle'=>$data['patient_providers'][0]['provider_last_name'],
+                'provider_suffix'=>$data['patient_providers'][0]['provider_last_name']
+            ];
+
             DB::commit();
 
             return true;
@@ -209,4 +230,124 @@ class ReferralService
         
 
     }
+
+
+    public function getDischargeInformation($logId)
+    {
+        try {
+            DB::beginTransaction();
+    
+            $record = DB::table('referral_track')
+                ->whereNotNull('dischDate')
+                ->whereNotNull('admDate')
+                ->where('LogID', $logId)
+                ->first();
+    
+            if (!$record) {
+                return response()->json(['message' => 'No record found!'], 404);
+            }
+    
+            $resultRecord = [
+                'LogID' => $record->LogID,
+                'admDateTime' => date('m/d/Y H:i:s', strtotime($record->admDate)),
+                'dischDateTime' => date('m/d/Y H:i:s', strtotime($record->dischDate)),
+                'diagnosis' => $record->diagnosis ?? 'Diagnosis not specified',
+                'dischDisp' => $record->dischDisp,
+                'dischCond' => $record->dischCond,
+                'disnotes' => $record->disnotes,
+                'hasFollowUp' => $record->hasFollowup,
+                'hasMedicine' => $record->hasMedicine,
+                'remarks' => $record->trackRemarks ?? ''
+            ];
+    
+            $scheduleQuery = null;
+            if ($record->hasFollowup === 'Y') {
+                $scheduleQuery = DB::table('followup_schedule')
+                    ->where('LogID', $logId)
+                    ->value('scheduleDateTime');
+            }
+    
+            $medQuery = [];
+            if ($record->hasMedicine === 'Y') {
+                $medQuery = DB::table('medications')
+                    ->select('drugcode', 'generic', 'instruction')
+                    ->where('LogID', $logId)
+                    ->get();
+            }
+    
+            DB::commit();
+    
+            return response()->json([
+                'dischargeData' => $resultRecord,
+                'drugs' => $medQuery,
+                'schedule' => $scheduleQuery
+            ]);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("DB transaction failed in " . __METHOD__, [
+                'code' => $e->getCode(),
+                'message' => $e->getMessage(),
+                'last_query' => DB::getQueryLog()
+            ]);
+    
+            return response()->json([
+                'code' => $e->getCode(),
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function dischargeTransaction($param)
+    {
+        try {
+            DB::beginTransaction();
+
+      
+            $updated = DB::table('referral_track') 
+                ->where('LogID', $param['LogID'])
+                ->update($param['discharge']);
+
+            if (!$updated) {
+                throw new Exception("Failed to update discharge record.");
+            }
+
+          
+            if ($param['discharge']['hasFollowUp'] === 'Y') {
+                $followupInserted = DB::table('referral_followup')->insert($param['followup']); 
+                if (!$followupInserted) {
+                    throw new Exception("Failed to insert follow-up.");
+                }
+            }
+
+          
+            if ($param['discharge']['hasMedicine'] === 'Y') {
+                $medicineInserted = DB::table('referral_medicine')->insert($param['medicine']); // Replace with actual table
+                if (!$medicineInserted) {
+                    throw new Exception("Failed to insert medicine records.");
+                }
+            }
+
+            DB::commit();
+
+            return [
+                'code' => 200,
+                'message' => 'Success!'
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            Log::error(sprintf(
+                'dischargeTransaction failed: %s in %s on line %d',
+                $e->getMessage(), $e->getFile(), $e->getLine()
+            ));
+
+            return [
+                'code' => $e->getCode() ?: 500,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
 }

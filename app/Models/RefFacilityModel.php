@@ -55,4 +55,9 @@ class RefFacilityModel extends Model
         'region_code' => 'integer',
         'facility_type' => 'integer',
     ];
+
+    public function emr()
+    {
+        return $this->hasOne(RefEmrModel::class, 'emr_id', 'emr_id');
+    }
 }

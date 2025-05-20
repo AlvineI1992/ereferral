@@ -21,7 +21,7 @@ class PatientReferralRequest extends FormRequest
             'referral.facility_from' => 'required|string|max:50',
             'referral.facility_to' => 'required|string|max:50',
             'referral.phic_pan' => 'nullable|string|max:20',
-            'referral.contact_no' => 'required|digits:10',
+            'referral.contact_no' => 'required|string|max:11',
             'referral.type_referral' => 'required|string|max:10',
             'referral.category' => 'required|string|max:2',
             'referral.reason' => 'required|string|max:50',
@@ -30,7 +30,7 @@ class PatientReferralRequest extends FormRequest
             'referral.contact_person' => 'required|string|max:100',
             'referral.designation' => 'nullable|string|max:100',
             'referral.refer_date' => 'required|date',
-            'referral.refer_time' => 'required|string|max:5',
+            'referral.refer_time' => 'required|string|max:12',
 
             // Patient rules
             'patient.family_number' => 'nullable|string',
@@ -89,9 +89,9 @@ class PatientReferralRequest extends FormRequest
         return [
             // Referral rules
             'referral.facility_from' => 'Referring facility is required!',
-            'referral.facility_to' => 'Referring facility is required!',
-            'referral.phic_pan' => 'Referring facility is required!',
-            'referral.contact_no' => 'Referring facility is required',
+            'referral.facility_to' => 'Referral facility is required!',
+            'referral.phic_pan' => 'Phic pan is required!',
+            'referral.contact_no' => 'Contact number is required',
             'referral.type_referral' => 'Type of referral is required',
             'referral.category' => 'Referral Category is required',
             'referral.reason' => 'Referral reason is required',

@@ -4,8 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Referral;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-
-
 Route::get('generate_code/{hfhudcode}', [Referral::class, 'generate_reference'])->middleware('auth:sanctum')->name('referral.reference');
 
 //Reference
@@ -30,7 +28,7 @@ Route::post('login', [Referral::class, 'login']);
 
 //Transactions
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::post('/refer-patient', [Referral::class, 'patient_referral'])->name('referral.patient_referral');
+    Route::post('/refer_patient', [Referral::class, 'patient_referral'])->name('referral.patient_referral');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
@@ -40,6 +38,11 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/get-referral-list/{fhudcode}/{emr_id}', [Referral::class, 'get_referral_list'])->name('referral.get_referral_list');
 });
+
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::post('/received', [Referral::class, 'received'])->name('referral.received');
+});
+
 
 
 

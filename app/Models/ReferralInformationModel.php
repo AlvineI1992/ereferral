@@ -88,4 +88,6 @@ class ReferralInformationModel extends Model
         return $this->belongsTo(ReferralTrackModel::class, 'LogID', 'LogID');
     }
 
+   
+
 }

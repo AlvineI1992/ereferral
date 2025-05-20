@@ -8,14 +8,14 @@ use App\Helpers\ReferralHelper;
 
 class ReferralController extends Controller
 {
-    // Display a listing of the resource
+    
     public function index(Request $request)
     {
         $user = auth()->user();
   
-        $role = $user?->getRoleNames()->first() ?? 'guest'; // for spatie roles
+        $role = $user?->getRoleNames()->first() ?? 'guest'; 
     
-        $perPage = $request->input('per_page', 5); // default to 5
+        $perPage = $request->input('per_page', 5); 
         $page = $request->input('page', 1); // default to page 1
     
         $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to', 'destination', 'track'])

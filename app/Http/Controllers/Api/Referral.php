@@ -19,7 +19,7 @@ use App\Models\RefFacilitiesModel;
 
 use App\Models\ReferralInformationModel as ReferralModel;
 use App\Models\ReferralTrackModel;
-
+use App\Models\RefFacilityModel;
 
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
@@ -205,6 +205,21 @@ class Referral extends Controller
         $rawData = $data;
         $validatedData = $request->validated();
         $mergedData = array_merge($rawData, $validatedData);
+        $check_from =  RefFacilityModel::select('emr_id')->where('hfhudcode', $mergedData['referral']['facility_from'])->first()->facility_name;
+        if($check_from)
+        {
+            return response()->json([
+                'error' =>'Referring facility not registered to any emr provider!'
+            ], 400);
+        }
+        $check_to =  RefFacilityModel::select('emr_id')->where('hfhudcode', $mergedData['referral']['facility_to'])->first()->facility_name;
+
+        if($check_to)
+        {
+            return response()->json([
+                'error' =>'Referral facility not registered to any emr provider!'
+            ], 400);
+        }
 
         $output = $this->referralService->refer_patient($mergedData);
 
@@ -798,13 +813,12 @@ public function get_facility_list($id)
          ]
      ]);
  }
- 
 /**
  * @OA\Get(
  *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
  *     summary="Get referral list by HFHUDCODE and EMR ID",
  *     tags={"Transactions"},
- *      security={{ "sanctum": {} }},
+ *     security={{ "sanctum": {} }},
  *     @OA\Parameter(
  *         name="hfhudcode",
  *         in="path",
@@ -839,7 +853,8 @@ public function get_facility_list($id)
  *                     @OA\Property(property="referral_time", type="string", format="time", example="10:30 AM"),
  *                     @OA\Property(property="referral_category", type="string", example="Routine"),
  *                     @OA\Property(property="referring_provider", type="string", example="Dr. John Doe"),
- *                     @OA\Property(property="contact_number", type="string", example="09171234567")
+ *                     @OA\Property(property="contact_number", type="string", example="09171234567"),
+ *                     @OA\Property(property="emr", type="string", example="Facility A")
  *                 )
  *             )
  *         )
@@ -854,17 +869,21 @@ public function get_facility_list($id)
  *     )
  * )
  */
-public function get_referral_list($hfhudcode, $emr_id)
+public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 {
-
     if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
-    
+
+    if (empty($emr_id)) {
+        return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
+    }
+
     $referrals = ReferralModel::with(['facility_from', 'facility_to'])
-        ->where('fhudTo', $hfhudcode)
-        ->where('emr_id', $emr_id)
+        ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
+            $query->where('emr_id', $emr_id)
+                  ->where('fhudTo', $hfhudcode);
+        })
         ->get();
 
     if ($referrals->isEmpty()) {
@@ -879,11 +898,12 @@ public function get_referral_list($hfhudcode, $emr_id)
             'referral_destination_code' => $referral->fhudTo,
             'referral_destination_name' => optional($referral->facility_to)->facility_name,
             'referral_reason' => $referral->referralReason,
-            'referral_date' => date('m/d/Y', strtotime($referral->refferalDate)),
-            'referral_time' => date('h:i A', strtotime($referral->refferalTime)),
+            'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
+            'referral_time' => date('h:i A', strtotime($referral->referralTime ?? $referral->refferalTime)),
             'referral_category' => $referral->referralCategory,
             'referring_provider' => $referral->referringProvider,
             'contact_number' => $referral->referringProviderContactNumber,
+            'emr' => optional(RefFacilityModel::where('emr_id', $referral->emr_id)->first())->facility_name,
         ];
     });
 
@@ -891,6 +911,8 @@ public function get_referral_list($hfhudcode, $emr_id)
         'data' => $transformedList
     ]);
 }
+
+
 
 /**
  * @OA\Get(
@@ -972,7 +994,7 @@ public function referral_reason_by_code($code)
 
 /**
  * @OA\Post(
- *     path="/api/referral/received",
+ *     path="/api/received",
  *     summary="Store received referral data",
  *     description="Receives referral tracking information and stores it.",
  *     operationId="storeReceivedReferral",
@@ -1100,5 +1122,199 @@ public function referral_reason_by_code($code)
             'message' => 'Referral updated successfully'
         ], 200);
     }
+
+    /**
+ * @OA\Post(
+ *     path="/api/discharge",
+ *     operationId="dischargePatient",
+ *     tags={"Transactions"},
+ *     summary="Discharge a patient",
+ *     description="Submits discharge information including medicine and follow-up schedule. Requires authentication.",
+ *     security={{"bearerAuth":{}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             required={"LogID", "admDate", "dischDate", "disposition", "condition", "hasFollowUp", "hasMedicine"},
+ *             @OA\Property(property="LogID", type="string", example="HOSP-2071422083643"),
+ *             @OA\Property(property="admDate", type="string", format="date-time", example="2022-02-02 13:03:13"),
+ *             @OA\Property(property="dischDate", type="string", format="date-time", example="2022-02-03 13:03:13"),
+ *             @OA\Property(property="disposition", type="string", example="DISCH"),
+ *             @OA\Property(property="condition", type="string", example="IMPRO"),
+ *             @OA\Property(property="diagnosis", type="string", example="Diagnosis not specified"),
+ *             @OA\Property(property="remarks", type="string", example="REMARKS"),
+ *             @OA\Property(property="disnotes", type="string", example="Discharge notes here."),
+ *             @OA\Property(property="hasFollowUp", type="string", example="Y"),
+ *             @OA\Property(property="hasMedicine", type="string", example="Y"),
+ *             @OA\Property(
+ *                 property="drugs",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     required={"LogID", "generic", "instruction", "drugcode"},
+ *                     @OA\Property(property="LogID", type="string", example="HOSP-2071422032507"),
+ *                     @OA\Property(property="generic", type="string", example="AMOXICILLIN"),
+ *                     @OA\Property(property="instruction", type="string", example="INUMIN ARAW ARAW"),
+ *                     @OA\Property(property="drugcode", type="string", example="130182083180928321")
+ *                 )
+ *             ),
+ *             @OA\Property(
+ *                 property="schedule",
+ *                 type="object",
+ *                 @OA\Property(property="LogID", type="string", example="HOSP-2071422032507"),
+ *                 @OA\Property(property="date", type="string", format="date-time", example="2022-02-04 13:03:13")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Discharge successful",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             example={
+ *                 "status": "success",
+ *                 "message": "Patient discharged successfully",
+ *                 "data": {
+ *                     "LogID": "HOSP-2071422083643",
+ *                     "dischargeSummary": "Details..."
+ *                 }
+ *             }
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid data",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             example={"error": "Invalid data"}
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthenticated",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             example={"message": "Unauthenticated."}
+ *         )
+ *     )
+ * )
+ */
+
+
+ public function discharge(Request $request)
+ {
+     if (!Auth::check()) {
+         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+     }
+ 
+     $data = $request->all();
+ 
+     if (empty($data['LogID'])) {
+         return response()->json(['error' => 'Invalid data'], 400);
+     }
+ 
+     $discharge = [
+         'LogID'       => $data['LogID'],
+         'admDate'     => date("Y-m-d H:i:s", strtotime($data['admDate'])),
+         'dischDate'   => date("Y-m-d H:i:s", strtotime($data['dischDate'])),
+         'dischDisp'   => $data['disposition'],
+         'dischCond'   => $data['condition'],
+         'diagnosis'   => $data['diagnosis'] ?? null,
+         'trackRemarks'=> $data['remarks'] ?? null,
+         'disnotes'    => $data['disnotes'] ?? null,
+         'hasFollowUp' => $data['hasFollowUp'],
+         'hasMedicine' => $data['hasMedicine'],
+     ];
+ 
+     $folUp = [
+         'LogID' => $data['schedule']['LogID'] ?? null,
+         'scheduleDateTime' => isset($data['schedule']['date']) 
+             ? date("Y-m-d H:i:s", strtotime($data['schedule']['date'])) 
+             : null,
+     ];
+ 
+     $param = [
+         'LogID'     => $data['LogID'],
+         'discharge' => $discharge,
+         'medicine'  => $data['drugs'] ?? [],
+         'followup'  => $folUp,
+     ];
+ 
+     $output = $this->referralService->getDischargeInformation($param);
+ 
+     return response()->json($output);
+ }
+ 
+
+/**
+ * @OA\Get(
+ *     path="/api/discharged-data/{logID}",
+ *     operationId="getDischargedData",
+ *     tags={"Transactions"},
+ *     summary="Get discharged patient data",
+ *     description="Retrieves discharged patient data by the provided log ID. Requires authentication.",
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="logID",
+ *         in="path",
+ *         required=true,
+ *         description="The log ID of the patient",
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             example={
+ *                 "patient_name": "John Doe",
+ *                 "discharge_date": "2025-05-10",
+ *                 "diagnosis": "Acute appendicitis"
+ *             }
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400,
+ *         description="Invalid data",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             example={
+ *                 "error": "Invalid data"
+ *             }
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthenticated",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             example={
+ *                 "message": "Unauthenticated."
+ *             }
+ *         )
+ *     )
+ * )
+ */
+
+    public function get_discharged_data(Request $request,$logID)
+    {
+
+        if (!Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+  
+        if (empty($logID)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+    
+        $output = $this->referralService->getDischargeInformation($logID);
+        return response()->json($output);
+    }
+
+
+    
+   
+
     
 }
