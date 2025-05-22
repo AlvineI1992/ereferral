@@ -986,13 +986,13 @@
                 ]
             }
         },
-        "/api/get-referral-list/{hfhudcode}/{emr_id}": {
+        "/api/get-referral-list/{hfhudcode}/{cipher}": {
             "get": {
                 "tags": [
                     "Transactions"
                 ],
                 "summary": "Get referral list by HFHUDCODE and EMR ID",
-                "operationId": "b645dabf25fc6aec71ecb3eb947253ba",
+                "operationId": "9f56cbc3ded9c7eb2bd1b23a3e6f7c6d",
                 "parameters": [
                     {
                         "name": "hfhudcode",

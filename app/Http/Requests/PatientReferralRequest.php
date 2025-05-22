@@ -59,26 +59,31 @@ class PatientReferralRequest extends FormRequest
             // Clinical rules
             'clinical.diagnosis' => 'required|string|max:255',
             'clinical.chief_complaint' => 'required|string|max:255',
-
+            'clinical.history' => 'nullable|string|max:255',
+            'clinical.findings' => 'nullable|string|max:255',
+            'clinical.physical_examination' => 'nullable|string|max:255',
+           // 'vital_signs'=>'nullable|string|max:255',
+            'vital_signs.BP' => 'nullable|string|max:20',
+            'vital_signs.temp' => 'nullable|string|max:5',
+            'vital_signs.HR' => 'nullable|string|max:5',
+            'vital_signs.RR' => 'nullable|string|max:5',
+            'vital_signs.O2_sats' => 'nullable|string|max:5',
+            'vital_signs.weight' => 'nullable|numeric',
+            'vital_signs.height' => 'nullable|numeric',
 
             // ICD codes
             'ICD' => 'required|array',
             'ICD.*' => 'string|max:10',
 
             // Vital signs rules
-           /*  'vital_signs.BP' => 'nullable|string|max:20',
-            'vital_signs.temp' => 'nullable|string|max:5',
-            'vital_signs.HR' => 'nullable|string|max:5',
-            'vital_signs.RR' => 'nullable|string|max:5',
-            'vital_signs.O2_sats' => 'nullable|string|max:5',
-            'vital_signs.weight' => 'nullable|numeric',
-            'vital_signs.height' => 'nullable|numeric', */
+          
 
             // Patient providers rules
             'patient_providers' => 'required|array',
             'patient_providers.*.provider_last_name' => 'required|string|max:100',
             'patient_providers.*.provider_first_name' => 'required|string|max:100',
             'patient_providers.*.provider_middle_name' => 'nullable|string|max:100',
+            'patient_providers.*.provider_suffix' => 'nullable|string|max:100',
             'patient_providers.*.provider_contact_no' => 'required|string',
             'patient_providers.*.provider_type' => 'required|string|max:10',
         ];

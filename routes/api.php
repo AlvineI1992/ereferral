@@ -36,12 +36,21 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/get-referral-list/{fhudcode}/{emr_id}', [Referral::class, 'get_referral_list'])->name('referral.get_referral_list');
+    Route::get('/get-referral-list/{fhudcode}/{emd_id}', [Referral::class, 'get_referral_list'])->name('referral.get_referral_list');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::post('/received', [Referral::class, 'received'])->name('referral.received');
 });
+
+
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::post('/admit', [Referral::class, 'admit'])->name('referral.admit');
+});
+
+
+
+
 
 
 

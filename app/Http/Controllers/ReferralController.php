@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ReferralInformationModel;
 use Illuminate\Http\Request;
 use App\Helpers\ReferralHelper;
+use Illuminate\Support\Facades\Crypt;
 
 class ReferralController extends Controller
 {
@@ -167,4 +168,16 @@ class ReferralController extends Controller
 
         return response()->json(['message' => 'Patient record deleted successfully.']);
     }
+
+    public function test()
+    {
+        $plaintext = '1';
+        $encrypted = Crypt::encryptString($plaintext);
+        echo "Encrypted: " . $encrypted;
+
+    $decrypted = Crypt::decryptString($encrypted);
+    //echo "Decrypted: " . $decrypted;
+
+    }
+
 }

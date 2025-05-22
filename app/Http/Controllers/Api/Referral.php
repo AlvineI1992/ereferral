@@ -20,7 +20,7 @@ use App\Models\RefFacilitiesModel;
 use App\Models\ReferralInformationModel as ReferralModel;
 use App\Models\ReferralTrackModel;
 use App\Models\RefFacilityModel;
-
+use Illuminate\Support\Facades\Crypt;
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
  * @OA\SecurityScheme(
@@ -757,6 +757,13 @@ public function get_facility_list($id)
          $transformedDemographics['province'] = $referral->demographics->patientProvCode ?? null;
          $transformedDemographics['region'] = $referral->demographics->patientRegCode ?? null;
          $transformedDemographics['zipcode'] = $referral->demographics->patientZipCode ?? null;
+     }else{
+        $transformedDemographics['address'] = '';
+        $transformedDemographics['barangay'] = '';
+        $transformedDemographics['city'] = '';
+        $transformedDemographics['province'] = '';
+        $transformedDemographics['region'] = '';
+        $transformedDemographics['zipcode'] ='';
      }
  
   
@@ -766,6 +773,11 @@ public function get_facility_list($id)
          $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
          $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
          $transformedClinical['vitals'] = $referral->clinical->vitals ?? null;
+     }else{
+        $transformedClinical['diagnosis'] = '';
+        $transformedClinical['history'] = '';
+        $transformedClinical['chief_complaint'] ='';
+        $transformedClinical['vitals'] = '';
      }
 
       $transformedPatient = [];
@@ -780,14 +792,29 @@ public function get_facility_list($id)
           $transformedPatient['patient_religion'] = $referral->patientinformation->patientReligion ?? null;
           $transformedPatient['patient_blood'] = $referral->patientinformation->patientBloodType ?? null;
           $transformedPatient['patient_bloodRH'] = $referral->patientinformation->patientBloodRH ?? null;
+      }else{
+            $transformedPatient['patient_lastname'] ='';
+            $transformedPatient['patient_firstname'] = '';
+            $transformedPatient['patient_middlename'] ='';
+            $transformedPatient['patient_birthdate'] = '';
+            $transformedPatient['patient_sex'] = '';
+            $transformedPatient['patient_civilstatus'] = '';
+            $transformedPatient['patient_contact'] = '';
+            $transformedPatient['patient_religion'] = '';
+            $transformedPatient['patient_blood'] = '';
+            $transformedPatient['patient_bloodRH'] = '';
       }
 
-     /*  $transformedMedication = [];
+      $transformedMedication = [];
       if ($referral->medications) {
           $transformedMedication['drugcode'] = $referral->medications->drugcode ?? null;
           $transformedMedication['generic_name'] = $referral->medications->generic ?? null;
           $transformedMedication['instructions'] = $referral->medications->instruction ?? null;
-      } */
+      }else{
+          $transformedMedication['drugcode'] = '';
+          $transformedMedication['generic_name'] = '';
+          $transformedMedication['instructions'] ='';
+      }
  
      $transformedReferral = [
          'LogID' => $referral->LogID,
@@ -871,6 +898,9 @@ public function get_facility_list($id)
  */
 public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 {
+    //
+    //$emr_id =Crypt::decryptString($cipher);
+
     if (!Auth::check()) {
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
@@ -882,16 +912,15 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
     $referrals = ReferralModel::with(['facility_from', 'facility_to'])
         ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
             $query->where('emr_id', $emr_id)
-                  ->where('fhudTo', $hfhudcode);
-        })
-        ->get();
+            ->where('fhudTo', $hfhudcode);
+        })->get();
 
     if ($referrals->isEmpty()) {
-        return response()->json(['error' => 'No referrals found'], 404);
+        return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
     }
 
     $transformedList = $referrals->map(function ($referral) {
-        return [
+        return [    
             'LogID' => $referral->LogID,
             'referral_origin_code' => $referral->fhudFrom,
             'referral_origin_name' => optional($referral->facility_from)->facility_name,
@@ -1024,26 +1053,36 @@ public function referral_reason_by_code($code)
  *     )
  * )
  */
-
-    public function received(Request $request)
-    {
-        if (empty($request->all())) {
-            return response()->json(['error' => 'Invalid data'], 400);
-        }
-
-        $validated = $request->validate([
-            'LogID' => 'required',
-            'received_date' => 'required|date_format:m/d/Y H:i:s',
-            'received_by' => 'required'
-        ]);
-
-        ReferralTrackModel::create($validated);
-
-        return response()->json(['message' => 'Data saved successfully'], 200);
+public function received(Request $request)
+{
+    if (empty($request->all())) {
+        return response()->json(['error' => 'Invalid data'], 400);
     }
+
+    $validated = $request->validate([
+        'LogID' => 'required',
+        'received_date' => 'required|date_format:m/d/Y H:i:s',
+        'received_by' => 'required'
+    ]);
+
+        // Prevent duplicate insert
+        $existing = ReferralTrackModel::find($validated['LogID']);
+        if ($existing) {
+            return response()->json(['message' => 'Referral already marked as received.'], 400);
+        }
+      // Insert new record
+      ReferralTrackModel::create([
+        'LogID' => $validated['LogID'],
+        'receivedDate' => $validated['received_date'],
+        'receivedPerson' => $validated['received_by'],
+    ]);
+
+
+    return response()->json(['message' => 'Referral successfully received'], 200);
+}
     /**
      * @OA\Post(
-     *     path="/api/admit/{id}",
+     *     path="/api/admit",
      *     operationId="admitReferral",
      *     tags={"Transactions"},
      *     summary="Admit a referral",
@@ -1060,8 +1099,7 @@ public function referral_reason_by_code($code)
      *         @OA\JsonContent(
      *             required={"LogID", "received_date", "received_by"},
      *             @OA\Property(property="LogID", type="string", example="123456"),
-     *             @OA\Property(property="received_date", type="string", format="date-time", example="05/19/2025 14:30:00"),
-     *             @OA\Property(property="received_by", type="string", example="Dr. John Doe")
+     *             @OA\Property(property="admission_date", type="string", format="date-time", example="05/19/2025 14:30:00")
      *         )
      *     ),
      *     @OA\Response(
@@ -1088,7 +1126,7 @@ public function referral_reason_by_code($code)
      * )
      */
 
-    public function admit(Request $request, $id)
+    public function admit(Request $request)
     {
         if (!Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
@@ -1101,12 +1139,11 @@ public function referral_reason_by_code($code)
         // Validate the request data
         $validated = $request->validate([
             'LogID' => 'required',
-            'received_date' => 'required|date_format:m/d/Y H:i:s',
-            'received_by' => 'required'
+            'admission_date' => 'required|date_format:m/d/Y H:i:s'
         ]);
     
         // Find the referral record
-        $referral = ReferralTrackModel::find($id);
+        $referral = ReferralTrackModel::find($request->LogID);
     
         if (!$referral) {
             return response()->json(['error' => 'Referral not found'], 404);
@@ -1114,12 +1151,11 @@ public function referral_reason_by_code($code)
     
         // Update the record with validated data
         $referral->LogID = $validated['LogID'];
-        $referral->receivedDate = $validated['received_date'];
-        $referral->receivedPerson = $validated['received_by'];
+        $referral->admDate = $validated['admission_date'];
         $referral->save();
     
         return response()->json([
-            'message' => 'Referral updated successfully'
+            'message' => 'Patient admitted successfully'
         ], 200);
     }
 
@@ -1200,50 +1236,70 @@ public function referral_reason_by_code($code)
  * )
  */
 
-
  public function discharge(Request $request)
  {
      if (!Auth::check()) {
          return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
      }
  
-     $data = $request->all();
+     $validated = $request->validate([
+         'LogID' => 'required|exists:referral_track,LogID',
+         'admDate' => 'required|date',
+         'dischDate' => 'required|date|after_or_equal:admDate',
+         'disposition' => 'required|string',
+         'condition' => 'required|string',
+         'diagnosis' => 'nullable|string',
+         'remarks' => 'nullable|string',
+         'disnotes' => 'nullable|string',
+         'hasFollowUp' => 'required|boolean',
+         'hasMedicine' => 'required|boolean',
+         'schedule.date' => 'nullable|date',
+         'schedule.LogID' => 'nullable|string',
+         'drugs' => 'nullable|array'
+     ]);
  
-     if (empty($data['LogID'])) {
-         return response()->json(['error' => 'Invalid data'], 400);
-     }
- 
+
      $discharge = [
-         'LogID'       => $data['LogID'],
-         'admDate'     => date("Y-m-d H:i:s", strtotime($data['admDate'])),
-         'dischDate'   => date("Y-m-d H:i:s", strtotime($data['dischDate'])),
-         'dischDisp'   => $data['disposition'],
-         'dischCond'   => $data['condition'],
-         'diagnosis'   => $data['diagnosis'] ?? null,
-         'trackRemarks'=> $data['remarks'] ?? null,
-         'disnotes'    => $data['disnotes'] ?? null,
-         'hasFollowUp' => $data['hasFollowUp'],
-         'hasMedicine' => $data['hasMedicine'],
+         'LogID'        => $validated['LogID'],
+         'admDate'      => date("Y-m-d H:i:s", strtotime($validated['admDate'])),
+         'dischDate'    => date("Y-m-d H:i:s", strtotime($validated['dischDate'])),
+         'dischDisp'    => $validated['disposition'],
+         'dischCond'    => $validated['condition'],
+         'diagnosis'    => $validated['diagnosis'] ?? null,
+         'trackRemarks' => $validated['remarks'] ?? null,
+         'disnotes'     => $validated['disnotes'] ?? null,
+         'hasFollowUp'  => $validated['hasFollowUp'],
+         'hasMedicine'  => $validated['hasMedicine'],
      ];
  
      $folUp = [
-         'LogID' => $data['schedule']['LogID'] ?? null,
-         'scheduleDateTime' => isset($data['schedule']['date']) 
-             ? date("Y-m-d H:i:s", strtotime($data['schedule']['date'])) 
+         'LogID' => $validated['schedule']['LogID'] ?? null,
+         'scheduleDateTime' => isset($validated['schedule']['date'])
+             ? date("Y-m-d H:i:s", strtotime($validated['schedule']['date']))
              : null,
      ];
  
      $param = [
-         'LogID'     => $data['LogID'],
+         'LogID'     => $validated['LogID'],
          'discharge' => $discharge,
-         'medicine'  => $data['drugs'] ?? [],
+         'medicine'  => $validated['drugs'] ?? [],
          'followup'  => $folUp,
      ];
  
-     $output = $this->referralService->getDischargeInformation($param);
- 
-     return response()->json($output);
+     $referral = ReferralTrackModel::find($validated['LogID']);
+
+     if ($referral) {
+         $referral->dischDate = $discharge['dischDate'];
+         $referral->dischDisp = $discharge['disposition'];
+         $referral->dischCond = $discharge['condition'];
+         $referral->save();
+     }
+    
+     return response()->json([
+        'message' => 'Patient discharged successfully'
+    ], 200);
  }
+ 
  
 
 /**
@@ -1311,8 +1367,9 @@ public function referral_reason_by_code($code)
         $output = $this->referralService->getDischargeInformation($logID);
         return response()->json($output);
     }
+  
 
-
+  
     
    
 

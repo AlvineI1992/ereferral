@@ -308,5 +308,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/patient-profile/{LogID}', [ReferralPatientInfoController::class, 'show'])->name('patient_profile.show');
 });
 
+Route::middleware([])->group(function () {
+    Route::get('/test', [ReferralController::class, 'test'])->name('referral.test');
+});
+
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
