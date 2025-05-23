@@ -1,5 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import React, { Suspense, lazy, useState, useEffect } from "react";
+import { Timeline } from "@/components/timeline";
 import axios from "axios";
 import Swal from "sweetalert2";
 import PatientInfo from './PatientProfile';
@@ -150,6 +151,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
             </button>
           ))}
         </nav>
+     
 
       </div>
     </AppLayout>

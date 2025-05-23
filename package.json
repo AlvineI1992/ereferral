@@ -52,6 +52,7 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "concurrently": "^9.0.1",
+        "framer-motion": "^12.12.1",
         "globals": "^15.14.0",
         "html5-qrcode": "^2.3.8",
         "laravel-vite-plugin": "^1.0",

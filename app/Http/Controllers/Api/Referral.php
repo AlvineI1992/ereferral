@@ -1272,7 +1272,7 @@ public function received(Request $request)
          'hasMedicine'  => $validated['hasMedicine'],
      ];
  
-     $folUp = [
+     $folUp = [  
          'LogID' => $validated['schedule']['LogID'] ?? null,
          'scheduleDateTime' => isset($validated['schedule']['date'])
              ? date("Y-m-d H:i:s", strtotime($validated['schedule']['date']))
@@ -1298,6 +1298,7 @@ public function received(Request $request)
      return response()->json([
         'message' => 'Patient discharged successfully'
     ], 200);
+
  }
  
  
