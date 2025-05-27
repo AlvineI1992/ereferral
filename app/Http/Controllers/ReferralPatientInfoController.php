@@ -12,24 +12,60 @@ class ReferralPatientInfoController extends Controller
     // Display a listing of the resource
     public function index(Request $request)
     {
-        $query = ReferralInformationModel::query();
-
+        $user = auth()->user();
+  
+        $role = $user?->getRoleNames()->first() ?? 'guest'; 
+        $query = ReferralPatientInfoModel::query();
+    
         if ($search = $request->input('search')) {
-            $query->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('guard_name', 'LIKE', "%{$search}%")
-                  ->orderBy('id', 'desc');
+            $query->where('patientLastname', 'LIKE', "%{$search}%")
+                  ->orWhere('patientFirstName', 'LIKE', "%{$search}%");
         }
     
-        $patient = $query->paginate(10); // Paginate results
+        // Handle role-based query adjustments
+        $emr_id = $user->access_id ?? null;
+        $hfhudcode = $user->hfhudcode ?? null;
     
-       return response()->json([
-            'data' => $patient->items(),
-            'total' => $patient->total(),
-            'current_page' => $patient->currentPage(),
-            'last_page' => $patient->lastPage(),
-        ]); 
+        if ($role === 'EMR') {  
+            // Use whereHas to filter by the destination relationship
+            $query->whereHas('facility_to', function($query) use ($emr_id) {
+                $query->where('emr_id', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
+            });
+        } elseif ($role === 'Region') {
+            // Use whereHas to filter by the destination relationship
+            $query->whereHas('facility_to', function($query) use ($emr_id) {
+                $query->where('region_code', $emr_id); // This will filter based on emr_id in the related RefFacilitiesModel
+            });
+            // Define region-specific logic here if applicable
+        } elseif ($role === 'Hospital') {
+            // Use whereHas to filter by the destination relationship
+            $query->whereHas('facility_to', function($query) use ($emr_id) {
+                $query->where('hfhudcode', $emr_id); // This will filter based on hfhudcode in the related RefFacilitiesModel
+            });
+        }
+      
+        $query->orderBy('LogID', 'desc');
+    
+        $paginated = $query->paginate(10);
+    
+        $transformedList = $paginated->getCollection()->map(function ($patient) {
+            return [
+                'LogID' => $patient->LogID,
+                'patient_name' => $patient->patientFirstName.' '.$patient->patientMiddlename.' '.$patient->patientLastname,
+                'sex' => ($patient->patientSex === 'M')? 'Male' : 'Female',
+                'birthdate' => date('m/d/Y',strtotime($patient->patientBirthDate)),
+                'civil_status' => $patient->patientCivilStatus,
+            ];
+        });
+    
+        return response()->json([
+            'data' =>$transformedList,
+            'total' => $paginated->total(),
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+        ]);
     }
-
+    
     // Show the form for creating a new resource
     public function create()
     {

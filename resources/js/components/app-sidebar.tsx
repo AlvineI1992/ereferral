@@ -33,7 +33,7 @@ const mainNavItems: NavItem[] = [
     { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
     { title: 'Incoming', href: '/incoming', icon: Inbox },
     { title: 'Outgoing', href: '/dashboard', icon: ExternalLink },
-    { title: 'Patient', href: '/dashboard', icon: BriefcaseMedical },
+    { title: 'Patient', href: '/patient_registry', icon: BriefcaseMedical },
     { title: 'Records', href: '/dashboard', icon: FileBadge },
     { title: 'Appointments', href: '/dashboard', icon: Calendar1 },
     { title: 'Bed Tracker', href: '/dashboard', icon: BedDouble },

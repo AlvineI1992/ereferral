@@ -986,13 +986,13 @@
                 ]
             }
         },
-        "/api/get-referral-list/{hfhudcode}/{cipher}": {
+        "/api/get-referral-list/{hfhudcode}/{emr_id}": {
             "get": {
                 "tags": [
                     "Transactions"
                 ],
                 "summary": "Get referral list by HFHUDCODE and EMR ID",
-                "operationId": "9f56cbc3ded9c7eb2bd1b23a3e6f7c6d",
+                "operationId": "b645dabf25fc6aec71ecb3eb947253ba",
                 "parameters": [
                     {
                         "name": "hfhudcode",
@@ -1287,7 +1287,7 @@
                 }
             }
         },
-        "/api/admit/{id}": {
+        "/api/admit": {
             "post": {
                 "tags": [
                     "Transactions"
@@ -1321,14 +1321,10 @@
                                         "type": "string",
                                         "example": "123456"
                                     },
-                                    "received_date": {
+                                    "admission_date": {
                                         "type": "string",
                                         "format": "date-time",
                                         "example": "05/19/2025 14:30:00"
-                                    },
-                                    "received_by": {
-                                        "type": "string",
-                                        "example": "Dr. John Doe"
                                     }
                                 },
                                 "type": "object"

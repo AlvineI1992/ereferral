@@ -12,6 +12,8 @@ use App\Http\Controllers\DemographicController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ReferralPatientInfoController;
 
+use App\Http\Controllers\ReferralClinicalController;
+
 use Illuminate\Http\Request;
 
 
@@ -272,7 +274,7 @@ Route::get('/incoming', function (Request $request) {
     ];
 
     return Inertia::render('Incoming/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('facilities'); 
+})->middleware(['auth:sanctum', 'verified'])->name('incoming'); 
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])->name('incoming.list');
@@ -302,16 +304,39 @@ Route::get('/patient', function (Request $request) {
         'canVie' => $request->user()->can('incoming list'),
     ];
     return Inertia::render('Incoming/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('facilities'); 
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/patient-profile/{LogID}', [ReferralPatientInfoController::class, 'show'])->name('patient_profile.show');
-});
+})->middleware(['auth:sanctum', 'verified'])->name('patient'); 
 
 Route::middleware([])->group(function () {
     Route::get('/test', [ReferralController::class, 'test'])->name('referral.test');
 });
 
+//Clinical
+Route::middleware(['auth:sanctum', 'verified'])
+    ->get('/referral-clinical/{LogID}', [ReferralClinicalController::class, 'show']);
+
+
+//Patient
+
+
+ Route::get('/patient_registry', function (Request $request) {
+
+    $permissions = [
+        'canCreate' => $request->user()->can('patient create'),
+        'canEdit' => $request->user()->can('patient edit'),
+        'canDelete' => $request->user()->can('patient delete'),
+        'canVie' => $request->user()->can('patient list'),
+    ];
+
+    return Inertia::render('Patient/Index',$permissions);
+})->middleware(['auth:sanctum', 'verified'])->name('patient_list');
+
+/* Route::get('/patient-list', [ReferralPatientInfoController::class, 'index'])->name('patient_profile.list'); */
+
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::get('/patient-profile/{LogID}', [ReferralPatientInfoController::class, 'show'])->name('patient_profile.show');
+    Route::get('/patient-list', [ReferralPatientInfoController::class, 'index'])->name('patient_profile.list');
+    
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

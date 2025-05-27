@@ -6,6 +6,9 @@ import Swal from "sweetalert2";
 import PatientInfo from './PatientProfile';
 import ReferralInfo from './ReferralInfo';
 import { BreadcrumbItem } from './types';
+import ClinicalInfo from './Clinical';
+
+import { Stethoscope } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Incoming Referral', href: '/incoming' },
@@ -70,7 +73,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
   const [referral_dest, setDestination] = useState<ReferralDest | null>(null);
   const [referral, setReferral] = useState<Referral | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'notes' | 'activity'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'clinical' | 'attachments' | 'activity'>('overview');
 
   const fetchPatientInfo = async () => {
     if (!LogID) return;
@@ -117,44 +120,73 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-   <div className="border rounded-xl shadow-xl space-y-6 m-2">
+      <div className="space-y-6 m-2">
 
-        <div className="flex flex-col lg:flex-row gap-2 p-4 ">
-
-          {/* Left: Patient Info */}
+        {/* Top Section: Patient + Referral Info */}
+        <div className="flex flex-col lg:flex-row gap-2 p-4">
           <div className="w-full lg:w-1/2 space-y-2">
             <PatientInfo profile={profile} demographics={demographics} />
           </div>
 
-          {/* Right: Referral Info */}
           <div className="w-full lg:w-1/2 space-y-2">
             <ReferralInfo referral={referral} referral_origin={referral_origin} referral_dest={referral_dest} />
           </div>
         </div>
-      </div>
 
-      {/* Tab Menu */}
-      <div className="flex flex-col lg:flex-row gap-4 p-4">
+        {/* Tab Section */}
+        <div className="flex flex-col lg:flex-row gap-2 p-4">
+          {/* Tab Menu */}
+          <nav className="flex flex-col space-y-2 text-sm font-medium text-gray-600 w-40">
+            {['overview', 'clinical', 'attachments', 'activity'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as typeof activeTab)}
+                className={`text-left px-4 py-2 rounded transition-colors ${activeTab === tab ? 'bg-secondary text-white' : 'hover:bg-gray-100'
+                  } capitalize`}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
 
+          {/* Tab Content Container */}
+          <div className="flex-1">
+            {activeTab === 'overview' && (
+              <div className="rounded-lg border p-4 shadow-sm bg-white">
+                <h2 className="text-lg font-semibold mb-2">Overview</h2>
+                <p>Display overview content here...</p>
+              </div>
+            )}
 
-        <nav className="flex flex-col space-y-2 text-sm font-medium text-gray-600">
-          {['overview', 'history', 'notes', 'activity'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as typeof activeTab)}
-              className={`text-left px-4 py-2 rounded-sm transition-colors ${activeTab === tab
-                  ? 'bg-secondary text-white'
-                  : 'hover:bg-gray-100'
-                } capitalize`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-     
+            {activeTab === 'clinical' && (
+              <div className="rounded-lg border p-4 shadow-sm bg-white">
+                <h2 className="text-lg font-semibold mb-2 flex items-center">
+                  <Stethoscope className="mr-2" />
+                  Clinical
+                </h2>
 
+                <ClinicalInfo logID={LogID ? String(LogID) : ''} />
+              </div>
+            )}
+
+            {activeTab === 'notes' && (
+              <div className="rounded-lg border p-4 shadow-sm bg-white">
+                <h2 className="text-lg font-semibold mb-2">Notes</h2>
+                <p>Display notes here...</p>
+              </div>
+            )}
+
+            {activeTab === 'attachments' && (
+              <div className="rounded-lg border p-4 shadow-sm bg-white">
+                <h2 className="text-lg font-semibold mb-2">Attachments</h2>
+                <Timeline />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </AppLayout>
+
   );
 };
 
