@@ -112,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
     Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
 });
+
 Route::patch('/api/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
 Route::patch('/api/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
 
@@ -276,8 +277,23 @@ Route::get('/incoming', function (Request $request) {
     return Inertia::render('Incoming/Index',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('incoming'); 
 
+
+Route::get('/referrals/create', function (Request $request) {
+
+    $permissions = [
+        'canCreate' => $request->user()->can('incoming create'),
+        'canEdit' => $request->user()->can('incoming edit'),
+        'canDelete' => $request->user()->can('incoming delete'),
+        'canVie' => $request->user()->can('incoming list'),
+    ];
+
+    return Inertia::render('Incoming/Form',$permissions);
+})->middleware(['auth:sanctum', 'verified'])->name('incoming'); 
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])->name('incoming.list');
+
+
 
     Route::get('incoming/profile/{id}', function (Request $request,$id) {
         $permissions = [

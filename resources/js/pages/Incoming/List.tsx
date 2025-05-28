@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from '@inertiajs/react';
 import {
   Pencil,
   Trash2,
@@ -8,6 +9,7 @@ import {
   Venus,
   Printer,
   ArrowRightIcon,
+  Plus,
   QrCode,
   Scan,
 } from "lucide-react";
@@ -141,34 +143,16 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
           <List size={20} />
           <h2 className="text-xl">Incoming Referrals</h2>
         </div>
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => {
-            if (isScanning) {
-              stopScanner();
-            } else {
-              startScanner();
-            }
-          }}
-        >
-          {isScanning ? (
-            <>
-              Stop Scan <QrCode className="ml-2 h-4 w-4" />
-            </>
-          ) : (
-            <>
-              Scan QR <Scan className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
+        <Link href="/referrals/create">
+  <Button variant="outline">
+    <Plus className="mr-2" /> Add Referral
+  </Button>
+</Link>
+
+        
       </div>
 
-      {isScanning && (
-        <div className="border mb-4 p-2 rounded bg-white">
-          <div id="qr-reader" ref={qrBoxRef} className="w-full h-[300px]" />
-        </div>
-      )}
+      
 
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-1">

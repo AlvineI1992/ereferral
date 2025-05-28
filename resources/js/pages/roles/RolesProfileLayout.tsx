@@ -1,7 +1,8 @@
+import AppLayout from '@/layouts/app-layout';
 import { useEffect, useState } from 'react';
 import { Head,usePage } from '@inertiajs/react';
 import axios from 'axios';
-import AppLayout from '@/layouts/app-layout';
+
 import RolesInfo from '../Roles/RolesInfo';
 import RolesListAssign from '../Roles/RolesListAssign';
 import Menu from '../Roles/Menu';
@@ -40,7 +41,7 @@ export default function ProfileLayout({ id ,is_include}: ProfileLayoutProps) {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`/api/roles/info/${id}`);
+        const res = await axios.get(`/roles/info/${id}`);
         setProfile(res.data);
       } catch (err) {
         console.error('Failed to fetch profile:', err);
