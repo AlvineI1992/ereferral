@@ -159,7 +159,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
             )}
 
             {activeTab === 'clinical' && (
-              <div className="rounded-lg border p-4 shadow-sm bg-white">
+              <div className="rounded-lg border p-4 shadow-sm">
                 <h2 className="text-lg font-semibold mb-2 flex items-center">
                   <Stethoscope className="mr-2" />
                   Clinical
@@ -170,7 +170,7 @@ const IncomingProfile = ({ onSave, refreshKey, id: LogID, is_include }: ListProp
             )}
 
             {activeTab === 'notes' && (
-              <div className="rounded-lg border p-4 shadow-sm bg-white">
+              <div className="rounded-lg  p-4 shadow-sm">
                 <h2 className="text-lg font-semibold mb-2">Notes</h2>
                 <p>Display notes here...</p>
               </div>
