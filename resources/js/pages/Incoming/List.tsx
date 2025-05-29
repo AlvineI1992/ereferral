@@ -144,10 +144,10 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
           <h2 className="text-xl">Incoming Referrals</h2>
         </div>
         <Link href="/referrals/create">
-  <Button variant="outline">
-    <Plus className="mr-2" /> Add Referral
-  </Button>
-</Link>
+          <Button variant="outline">
+            <Plus className="mr-2" /> Add Referral
+          </Button>
+      </Link>
 
         
       </div>
