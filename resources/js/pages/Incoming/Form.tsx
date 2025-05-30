@@ -1,4 +1,4 @@
-import { useRef,useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 
 import AppLayout from '@/layouts/app-layout';
@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Map, User } from 'lucide-react';
 
 import DemographicSelector from '../Demographics/Demographics_selector';
+
 import ReferralForm from './ReferralForm';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -70,9 +71,9 @@ const ProfileForm = () => {
         nameInputRef.current?.focus();
     }, []);
 
-    
 
-   
+
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setData(e.target.id, e.target.value);
     };
@@ -85,13 +86,19 @@ const ProfileForm = () => {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <form onSubmit={handleSubmit} className="p-4 space-y-3 max-w-6xl ml-1">
+            <form onSubmit={handleSubmit} className="p-4 space-y-3 max-w-6xl ml-1 border-0.5 shadow-lg rounded-sm m-4">
                 <Head title="Referral Form" />
-                <h1 className="flex items-center gap-2 text-md font-semibold md:col-span-1 mb-2">
-                    <User className="w-5 h-5" />
-                    Referral form
-                </h1>
-                <div></div>
+                <div className="grid grid-cols-2 items-center gap-4 mb-4">
+                    <h1 className="flex items-center gap-2 text-md font-semibold">
+                        <User className="w-5 h-5" />
+                        Referral form
+                    </h1>
+                    <div className="flex justify-end">
+                        <Button type="submit" disabled={processing}>
+                            Submit
+                        </Button>
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 gap-1 sm:grid-cols-4 items-start">
                     <Card className="sm:col-span-1">
@@ -276,12 +283,9 @@ const ProfileForm = () => {
                     <ReferralForm />
                 </div>
 
-                <div className="md:col-span-2">
-                    <Button type="submit" disabled={processing}>
-                        Submit
-                    </Button>
-                </div>
+
             </form>
+        
         </AppLayout>
     );
 };

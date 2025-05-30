@@ -55,11 +55,11 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
   };
 
   return (
-    <div className="w-full ml-2 mt-2 mr-3">
+    <div className="w-full">
       <Head title="Register" />
       <div className="flex items-center mb-2">
         <User size={18} />
-        <h1 className="text-lg font-semibold  ml-2">
+        <h1 className="text-lg font-semibold ">
           {emr ? 'Edit Provider' : 'Create Provider'}
         </h1>
       </div>
@@ -101,7 +101,7 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
           <InputError message={errors.remarks} className="mt-1" />
 
           {/* Buttons */}
-          <div className="mt-4 flex justify-between gap-4">
+          <div className="flex justify-between gap-4">
             <Button
               type="submit"
               className="flex-1 flex justify-center items-center gap-2 border border-green-600 bg-white text-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 rounded-md transition-all"

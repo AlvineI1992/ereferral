@@ -21,20 +21,22 @@ const Manage = () => {
 
     return (
         <div className="roles-management">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-                <div className="lg:col-span-1">
-                    <Form
-                        onCancel={selectedId ? handleCancelEdit : undefined}
-                        emr={selectedId}
-                        onCreated={handleCreatedOrUpdated}
-                    />
-                </div>
-                <div className="lg:col-span-3">
-                    <div className="mb-4">
-                        <Lists refreshKey={refreshKey} onEdit={handleEdit} />
-                    </div>
-                </div>
-            </div>
+          <div className="relative grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="lg:col-span-3 p-4 relative">
+        <div className="mb-4">
+          <Lists refreshKey={refreshKey} onEdit={handleEdit} />
+        </div>
+        <div className="hidden lg:block absolute top-0 right-0 h-full w-px bg-gray-300"></div>
+      </div>
+
+      <div className="lg:col-span-1 p-4">
+        <Form
+          onCancel={selectedId ? handleCancelEdit : undefined}
+          emr={selectedId}
+          onCreated={handleCreatedOrUpdated}
+        />
+      </div>
+    </div>
         </div>
     );
 };

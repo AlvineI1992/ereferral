@@ -67,7 +67,7 @@ export function AppSidebar() {
     const userRoles = user?.roles || [];
     console.log(userRoles);
     return (
-        <Sidebar collapsible="offcanvas" variant="inset">
+        <Sidebar collapsible="offcanvas" variant="sidebar">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>

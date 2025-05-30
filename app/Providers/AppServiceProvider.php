@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use ParagonIE\CipherSweet\CipherSweet;
+use ParagonIE\CipherSweet\Backend\FIPSCrypto;
+use ParagonIE\CipherSweet\KeyProvider\StringProvider;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -12,7 +15,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(CipherSweet::class, function ($app) {
+            $key = base64_decode(str_replace('base64:', '', env('CIPHERSWEET_KEY')));
+            $provider = new StringProvider($key);
+            $backend = new FIPSCrypto();
+    
+            return new CipherSweet($provider, $backend);
+        });
     }
 
     /**
