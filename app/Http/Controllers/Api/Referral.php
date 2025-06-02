@@ -20,6 +20,7 @@ use App\Models\RefFacilitiesModel;
 use App\Models\ReferralInformationModel as ReferralModel;
 use App\Models\ReferralTrackModel;
 use App\Models\RefFacilityModel;
+use App\Models\ReferralPatientInfoModel;
 use Illuminate\Support\Facades\Crypt;
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
@@ -920,6 +921,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
     }
 
     $transformedList = $referrals->map(function ($referral) {
+        $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
         return [    
             'LogID' => $referral->LogID,
             'referral_origin_code' => $referral->fhudFrom,
@@ -927,9 +929,11 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
             'referral_destination_code' => $referral->fhudTo,
             'referral_destination_name' => optional($referral->facility_to)->facility_name,
             'referral_reason' => $referral->referralReason,
+            'referral_patient'=> $fullName = $patient->patientFirstName . ' ' . $patient->patientMiddleName . ' ' . $patient->patientLastName,
             'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
             'referral_time' => date('h:i A', strtotime($referral->referralTime ?? $referral->refferalTime)),
             'referral_category' => $referral->referralCategory,
+            'referring_type' => $referral->referringProvider,
             'referring_provider' => $referral->referringProvider,
             'contact_number' => $referral->referringProviderContactNumber,
             'emr' => optional(RefFacilityModel::where('emr_id', $referral->emr_id)->first())->facility_name,
