@@ -922,6 +922,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 
     $transformedList = $referrals->map(function ($referral) {
         $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
+        $fullName = $patient->patientFirstName . ' ' . $patient->patientMiddleName . ' ' . $patient->patientLastName;
         return [    
             'LogID' => $referral->LogID,
             'referral_origin_code' => $referral->fhudFrom,
@@ -929,12 +930,18 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
             'referral_destination_code' => $referral->fhudTo,
             'referral_destination_name' => optional($referral->facility_to)->facility_name,
             'referral_reason' => $referral->referralReason,
-            'referral_patient'=> $fullName = $patient->patientFirstName . ' ' . $patient->patientMiddleName . ' ' . $patient->patientLastName,
+            'referral_patient'=>strtoupper($fullName),
+            'referral_patient_sex'=>strtoupper($patient->patientSex),
+            'referral_patSex'=>($patient->patientSex=="M")? 'Male': 'Female' ,
             'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
             'referral_time' => date('h:i A', strtotime($referral->referralTime ?? $referral->refferalTime)),
             'referral_category' => $referral->referralCategory,
-            'referring_type' => $referral->referringProvider,
+            'referral_contact_person' => $referral->referraContactPerson,
+            'referral_contact_person_designation' => $referral->referraContactPersonDesignation,
+            'referral_remarks'=>$referral->remarks,
+            'referring_type' => $referral->typeOfReferral,
             'referring_provider' => $referral->referringProvider,
+            'patient_pan'=>$referral->patientPan,
             'contact_number' => $referral->referringProviderContactNumber,
             'emr' => optional(RefFacilityModel::where('emr_id', $referral->emr_id)->first())->facility_name,
         ];

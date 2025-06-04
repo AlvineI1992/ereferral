@@ -1,12 +1,39 @@
+
+
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
+import { z } from "zod"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+
+const FormSchema = z.object({
+  dob: z.date({
+    required_error: "A date of birth is required.",
+  }),
+})
+
 import { useRef, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import React from 'react';
 
 import AppLayout from '@/layouts/app-layout';
-
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Card,
@@ -19,6 +46,13 @@ import { Map, User } from 'lucide-react';
 import DemographicSelector from '../Demographics/Demographics_selector';
 
 import ReferralForm from './ReferralForm';
+
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+  } from "@/components/ui/popover";
+
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Incoming', href: '/incoming' },
@@ -83,7 +117,7 @@ const ProfileForm = () => {
         e.preventDefault();
         post(route('profile.store'), { forceFormData: true });
     };
-
+    const [date, setDate] = React.useState<Date | undefined>(new Date());
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <form onSubmit={handleSubmit} className="p-4 space-y-3 max-w-6xl ml-1 border-0.5 shadow-lg rounded-sm m-4">
@@ -183,13 +217,57 @@ const ProfileForm = () => {
 
                         <div>
                             <Label htmlFor="patientBirthDate">Date of Birth</Label>
-                            <Input
+                            {/* <Input
                                 type="date"
                                 id="patientBirthDate"
                                 name="patientBirthDate"
                                 value={data.patientBirthDate}
                                 onChange={handleChange}
-                            />
+                            /> */}
+                               <FormField
+          control={form.control}
+          name="dob"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Date of birth</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormDescription>
+                Your date of birth is used to calculate your age.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
                             {errors.patientBirthDate && (
                                 <p className="text-xs text-red-500 mt-1">{errors.patientBirthDate}</p>
                             )}
