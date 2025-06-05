@@ -13,9 +13,6 @@ class PermissionController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-
-   
-
     public function index(Request $request)
     {
         $query = PermissionModel::query();
@@ -99,7 +96,11 @@ class PermissionController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|string|max:255|unique:'.config('permission.table_names.permissions', 'permissions').',name']);
+        $request->validate(
+            [
+            'name' => 'required|string|max:255|unique:'.config('permission.table_names.permissions', 
+            'permissions').',name'
+          ]);
        
         PermissionModel::create(['name' => $request->name , 'guard_name'=> 'web' ]);
         
