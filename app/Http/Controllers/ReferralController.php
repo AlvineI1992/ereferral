@@ -60,6 +60,9 @@ class ReferralController extends Controller
     
         // Transform the data for response
         $transformedList = $paginated->getCollection()->map(function ($referral) {
+
+           $referral_reason_desc  =  ReferralHelper::getReferralReasonbyCode($referral->referralReason);
+           $referral_type_desc  =  ReferralHelper::getReferralTypebyCode($referral->typeOfReferral);
             return [
                 'LogID' => $referral->LogID,
                 'patient_name' => $referral->patientinformation->patientFirstName.' '.$referral->patientinformation->patientMiddlename.' '.$referral->patientinformation->patientLastname,
@@ -70,9 +73,9 @@ class ReferralController extends Controller
                 'referral_destination_code' => $referral->fhudTo,
                 'referral_destination_name' => optional($referral->facility_to)->facility_name,
                 'referral_reason_code' => $referral->referralReason,
-                'referral_reason_description' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
+                'referral_reason_description' => ($referral_reason_desc)?$referral_reason_desc['description']: $referral->otherReason,
                 'referral_type_code' => $referral->typeOfReferral,
-                'referral_type_description' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+                'referral_type_description' => ($referral_type_desc)?$referral_type_desc['description']:  $referral->otherReason,
                 'referral_date' => \Carbon\Carbon::parse($referral->refferalDate)->format('m/d/Y'),
                 'referral_time' => \Carbon\Carbon::parse($referral->refferalTime)->format('h:i a'),
                 'referral_category' => $referral->referralCategory == 'ER' ? 'Emergency' : 'Outpatient',
@@ -101,12 +104,14 @@ class ReferralController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-          
+            'patientFirstName' => 'required|string|max:50',
+            'patientLastName' => 'required|string|max:50',
+            'patientMiddleName' => 'required|string|max:50',
+            'patientBirthDate' => 'required',
+            'patientSuffix' => 'nullable',
+            'patientSex' => 'required',
         ]);
-
-        $patient = ReferralInformationModel::create($validated);
-
-        return response()->json($patient, 201);
+        return response()->json($validated, 201);
     }
 
     // Display the specified resource

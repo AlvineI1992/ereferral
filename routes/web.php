@@ -292,8 +292,7 @@ Route::get('/referrals/create', function (Request $request) {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])->name('incoming.list');
-
-
+    Route::post('store', [ReferralController::class, 'store'])->name('referral.store');
 
     Route::get('incoming/profile/{id}', function (Request $request,$id) {
         $permissions = [
