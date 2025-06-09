@@ -6,9 +6,16 @@ use App\Models\ReferralInformationModel;
 use Illuminate\Http\Request;
 use App\Helpers\ReferralHelper;
 use Illuminate\Support\Facades\Crypt;
+use App\Services\ReferralService;
 
 class ReferralController extends Controller
 {
+    protected $referralService;
+
+    public function __construct(ReferralService $referralService)
+    {
+        $this->referralService = $referralService;
+    }
     
     public function index(Request $request)
     {
@@ -108,8 +115,16 @@ class ReferralController extends Controller
             'patientLastName' => 'required|string|max:50',
             'patientMiddleName' => 'required|string|max:50',
             'patientBirthDate' => 'required',
-            'patientSuffix' => 'nullable',
+            'patientSuffix' => 'required',
             'patientSex' => 'required',
+            'patientCivilStatus'=>'required',
+            'region' => 'required',
+            'province' => 'required',
+            'city' => 'required',
+            'barangay' => 'required',
+            'typeOfReferral'=>'required',
+            'calledDate'=>'required',
+            'refferalDate'=>'required'
         ]);
         return response()->json($validated, 201);
     }
@@ -174,6 +189,27 @@ class ReferralController extends Controller
         return response()->json(['message' => 'Patient record deleted successfully.']);
     }
 
+    public function generate_hfhudcode(Request $request)
+    {
+        try {
+            // Get hfhudcode from query string (?hfhudcode=XXXX), default to empty string if not provided
+            $hfhudcode = $request->query('hfhudcode', '');
+    
+            // Generate the transaction code via service
+            $transaction_code = $this->referralService->generate_code($hfhudcode);
+    
+            return response()->json([
+                'hfhudcode' => $transaction_code,
+            ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to generate HFHUD code.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
     public function test()
     {
         $plaintext = '1';

@@ -1,3 +1,5 @@
+/* resources/css/app.css */
+
 @import 'tailwindcss';
 @plugin 'tailwindcss-animate';
 
@@ -6,6 +8,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Custom CSS Variables */
 @theme {
   --font-sans: 'Inter', 'Arial', sans-serif, system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
@@ -58,10 +61,19 @@
 
 @layer base {
   * {
-    @apply border-gray-200; /* fallback to Tailwind’s default border color */
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16px;
+    font-weight: 400;
   }
 }
 
+/* Light theme (default) */
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -91,21 +103,22 @@
 
   --radius: 0.625rem;
 
-  /* Elegant light green sidebar theme */
-  --sidebar: hsl(145, 60%, 90%);
-  --sidebar-foreground: hsl(145, 30%, 25%);
-  --sidebar-primary: hsl(145, 50%, 70%);
-  --sidebar-primary-foreground: hsl(145, 30%, 20%);
-  --sidebar-accent: hsl(145, 60%, 80%);
-  --sidebar-accent-foreground: hsl(145, 25%, 25%);
-  --sidebar-border: hsl(145, 45%, 75%);
-  --sidebar-ring: hsl(145, 70%, 80%);
-  --sidebar-hover: hsl(145, 65%, 85%);
-  --sidebar-hover-foreground: hsl(145, 30%, 25%);
-  --sidebar-selected: hsl(145, 40%, 70%);
-  --sidebar-selected-foreground: hsl(145, 25%, 20%);
+  /* Dark green sidebar theme (light mode) */
+  --sidebar: hsl(150, 20%, 20%);
+  --sidebar-foreground: hsl(150, 30%, 90%);
+  --sidebar-primary: hsl(150, 25%, 25%);
+  --sidebar-primary-foreground: hsl(150, 40%, 95%);
+  --sidebar-accent: hsl(150, 30%, 25%);
+  --sidebar-accent-foreground: hsl(150, 45%, 90%);
+  --sidebar-border: hsl(150, 20%, 30%);
+  --sidebar-ring: hsl(150, 20%, 35%);
+  --sidebar-hover: hsl(150, 25%, 30%);
+  --sidebar-hover-foreground: hsl(150, 50%, 95%);
+  --sidebar-selected: hsl(150, 30%, 25%);
+  --sidebar-selected-foreground: hsl(150, 50%, 90%);
 }
 
+/* Dark Theme */
 .dark {
   --background: oklch(0.15 0.05 180);
   --foreground: oklch(0.985 0 0);
@@ -133,7 +146,7 @@
   --chart-4: oklch(0.7 0.2 180);
   --chart-5: oklch(0.8 0.1 180);
 
-  /* Teal sidebar theme (dark mode) */
+  /* Dark Teal Sidebar */
   --sidebar: hsl(180, 20%, 25%);
   --sidebar-foreground: #ffffff;
   --sidebar-primary: hsl(180, 30%, 35%);
@@ -148,12 +161,17 @@
   --sidebar-selected-foreground: #ffffff;
 }
 
-@layer base {
-  body {
-    @apply bg-background text-foreground font-sans;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-size: 16px;
-    font-weight: 400;
+/* Sidebar Components */
+@layer components {
+  .sidebar {
+    @apply bg-[var(--sidebar)] text-[var(--sidebar-foreground)] border-r border-[var(--sidebar-border)];
+  }
+
+  .sidebar-link {
+    @apply block px-4 py-2 rounded transition-colors duration-200 hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-hover-foreground)];
+  }
+
+  .sidebar-link-active {
+    @apply bg-[var(--sidebar-selected)] text-[var(--sidebar-selected-foreground)];
   }
 }

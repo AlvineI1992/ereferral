@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Assuming you use a utility like clsx or cn
 /* import InputError from '@/components/InputError'; // Adjust the import path if needed */
+
 export type Hospital = {
     hfhudcode: string;
     facility_name: string;
 };
+
 export type HospitalSelectorProps = {
     label?: string;
     hospitals: Hospital[];
@@ -23,6 +25,7 @@ export type HospitalSelectorProps = {
         [key: string]: string | undefined;
     };
 };
+
 const HospitalSelector:React.FC<HospitalSelectorProps>= ({
     label = 'Hospital',
     hospitals = [],
@@ -35,8 +38,7 @@ const HospitalSelector:React.FC<HospitalSelectorProps>= ({
 }) => {
     return (
         <div className="grid gap-1">
-          {/*   <Label htmlFor="hospital-selector">{label}</Label> */}
-            {/* <input type="hidden" name="hfhudcode" id="hfhudcode" value={selectedHospital} /> */}
+         
             <Popover open={hospitalPopoverOpen} onOpenChange={setHospitalPopoverOpen}>
                 <PopoverTrigger asChild>
                     <Button
