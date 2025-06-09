@@ -310,6 +310,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/referral-information/{LogID}', [ReferralController::class, 'show'])->name('incoming.list');
 });
 
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/generate-code/{hfhudcode}', [ReferralController::class, 'generate_hfhudcode'])->name('generate.hfhudcode');
+});
+
 //Patient profile
 Route::get('/patient', function (Request $request) {
     $permissions = [
