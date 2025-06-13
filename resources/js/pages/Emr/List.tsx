@@ -40,7 +40,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/emr?page=${pageNumber}&search=${search}`);
+      const res = await axios.get(`/emr/list?page=${pageNumber}&search=${search}`);
       setData(res.data.data);
       setTotalRows(res.data.total);
     } catch (err) {

@@ -21,6 +21,7 @@ use App\Models\ReferralInformationModel as ReferralModel;
 use App\Models\ReferralTrackModel;
 use App\Models\RefFacilityModel;
 use App\Models\ReferralPatientInfoModel;
+use App\Helpers\ReferralHelper;
 use Illuminate\Support\Facades\Crypt;
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
@@ -381,7 +382,7 @@ class Referral extends Controller
  * Get a specific region by ID.
  *
  * @OA\Get(
- *     path="api/region/{id}",
+ *     path="/api/region/{id}",
  *     tags={"References"},
  *     summary="Get a specific region by ID",
  *     description="Returns a region with the given ID",
@@ -553,7 +554,7 @@ public function city($id)
  * Get a specific barangay by ID.
  *
  * @OA\Get(
- *     path="api/barangay/{id}",
+ *     path="/api/barangay/{id}",
  *     tags={"References"},
  *     summary="Get a specific barangay by ID",
  *     description="Returns a barangay with the given ID",
@@ -610,6 +611,9 @@ public function barangay($id)
 
 
 /**
+ * 
+ *  Get facility information by fhudcode/facility code.
+ *
  * @OA\Get(
  *     path="/api/facility/{id}",
  *     tags={"References"},
@@ -619,7 +623,7 @@ public function barangay($id)
  *         name="id",
  *         in="path",
  *         required=true,
- *         description="Facility HFH UDCODE",
+ *         description="Facility HFHUDCODE",
  *         @OA\Schema(type="string")
  *     ),
  *     @OA\Response(
@@ -922,7 +926,12 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 
     $transformedList = $referrals->map(function ($referral) {
         $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
-        $fullName = $patient->patientFirstName . ' ' . $patient->patientMiddleName . ' ' . $patient->patientLastName;
+        
+        $fullName = strtoupper($patient->patientFirstName) . ' ' .
+        strtoupper($patient->patientMiddlename) . ' ' .
+        strtoupper($patient->patientLastName) . ' ' .
+        (($patient->patientSuffix === 'NOTAP') ? '' : strtoupper($patient->patientSuffix));
+        
         return [    
             'LogID' => $referral->LogID,
             'referral_origin_code' => $referral->fhudFrom,
@@ -930,7 +939,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
             'referral_destination_code' => $referral->fhudTo,
             'referral_destination_name' => optional($referral->facility_to)->facility_name,
             'referral_reason' => $referral->referralReason,
-            'referral_patient'=>strtoupper($fullName),
+            'referral_patient'=>$fullName, 
             'referral_patient_sex'=>strtoupper($patient->patientSex),
             'referral_patSex'=>($patient->patientSex=="M")? 'Male': 'Female' ,
             'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
@@ -947,9 +956,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         ];
     });
 
-    return response()->json([
-        'data' => $transformedList
-    ]);
+    return response()->json($transformedList);
 }
 
 
@@ -1029,6 +1036,87 @@ public function referral_reason_by_code($code)
 
     return response()->json([
         'data' => $referral_reason
+    ]);
+}
+
+
+/**
+ * @OA\Get(
+ *     path="/api/referral-type",
+ *     operationId="getReferralTypes",
+ *     tags={"References"},
+ *     summary="Get Referral Types",
+ *     description="Returns a list of available referral types.",
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful operation",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="string",
+ *                     example="TRANS"
+ *                 )
+ *             )
+ *         )
+ *     )
+ * )
+ */
+public function referral_type()
+{
+    $referral_type = ReferralHelper::getReferralType();
+
+    return response()->json([
+        'data' => $referral_type
+    ]);
+}
+
+/**
+ * @OA\Get(
+ *     path="/api/referral-type-code/{code}",
+ *     operationId="getReferralTypeByCode",
+ *     tags={"References"},
+ *     summary="Get Referral Type by Code",
+ *     description="Returns details of a referral type by its code.",
+ *     @OA\Parameter(
+ *         name="code",
+ *         in="path",
+ *         required=true,
+ *         description="Referral type code",
+ *         @OA\Schema(
+ *             type="string",
+ *             example="TRANS"
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful operation",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 example={
+ *                     "code": "TRANS",
+ *                     "description": "Transfer"
+ *                 }
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Referral type not found"
+ *     )
+ * )
+ */
+public function referral_type_code($code)
+{
+    $referral_type = ReferralHelper::getReferralTypebyCode($code);
+    
+    return response()->json([
+        'data' => $referral_type
     ]);
 }
 
