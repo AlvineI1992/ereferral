@@ -24,7 +24,7 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/users?page=${pageNumber}&search=${search}`);
+      const response = await axios.get(`/users/list?page=${pageNumber}&search=${search}`);
       setData(response.data.data);
       setTotalRows(response.data.total);
     } catch (error) {

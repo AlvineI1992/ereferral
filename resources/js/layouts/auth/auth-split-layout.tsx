@@ -83,7 +83,7 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
 
                     {children}
                     {/* Watermark background image */}
-                    <div className="absolute    justify-start  h-full w-full">
+                    <div className="absolute justify-center ">
                             <img
                                 src="/bagong_pilipinas.png"
                                 alt="Watermark"

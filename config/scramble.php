@@ -44,7 +44,7 @@ return [
         /*
          * Define the theme of the documentation. Available options are `light` and `dark`.
          */
-        'theme' => 'dark',
+        'theme' => 'light',
 
         /*
          * Hide the `Try It` feature. Enabled by default.
@@ -54,17 +54,17 @@ return [
         /*
          * Hide the schemas in the Table of Contents. Enabled by default.
          */
-        'hide_schemas' => false,
+        'hide_schemas' => true,
 
         /*
          * URL to an image that displays as a small square logo next to the title, above the table of contents.
          */
-        'logo' => '',
+        'logo' => '/doh-logo.png',
 
         /*
          * Use to fetch the credential policy for the Try It feature. Options are: omit, include (default), and same-origin
          */
-        'try_it_credentials_policy' => 'include',
+        'try_it_credentials_policy' => 'omit',
 
         /*
          * There are three layouts for Elements:
@@ -93,6 +93,8 @@ return [
             'Local' => env('APP_URL') . '/api/',
         ],
 
+     
+
 
     /**
      * Determines how Scramble stores the descriptions of enum cases.
@@ -103,12 +105,27 @@ return [
      *    @see https://redocly.com/docs-legacy/api-reference-docs/specification-extensions/x-enum-descriptions
      * - false - Case descriptions are ignored.
      */
-    'enum_cases_description_strategy' => 'description',
+    'enum_cases_description_strategy' => 'false',
 
     'middleware' => [
         'web',
         RestrictedDocsAccess::class,
     ],
 
-    'extensions' => [],
+    'extensions' => [
+        'components' => [
+        'securitySchemes' => [
+            'sanctumAuth' => [
+                'type' => 'http',
+                'scheme' => 'bearer',
+                'bearerFormat' => 'Bearer',
+                'description' => 'Laravel Sanctum Bearer Token Authentication',
+            ],
+        ],
+    ],
+    // Optionally, enable security globally
+    'security' => [
+        ['sanctumAuth' => []],
+    ],
+    ],
 ];
