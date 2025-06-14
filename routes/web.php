@@ -37,7 +37,7 @@ Route::get('/users', function (Request $request) {
         'canAssign' => $request->user()->can('user assign'),
     ];
     return Inertia::render('Users/Index',$permissions);
-})->middleware(['auth', 'verified'])->name('users');
+})->middleware(['auth', 'verified'])->name('/users');
 
 
 Route::get('/users/create', function () {
@@ -64,7 +64,7 @@ Route::get('/users/assigned-roles/{id}', function ($id) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/api/users', [RegisteredUserController::class, 'index']);
+    Route::get('/users/list', [RegisteredUserController::class, 'index'])->name('user.list');
     Route::put('/users/update/{role}', [RegisteredUserController::class, 'update'])->name('user.update');
     Route::delete('/users/delete/{role}', [RegisteredUserController::class, 'destroy'])->name('user.destroy');
     Route::post('/users/store', [RegisteredUserController::class, 'store'])->name('user.store');
@@ -86,7 +86,7 @@ Route::get('/roles', function (Request $request) {
         'canAssignRole' => $request->user()->can('role assign'),
     ];
     return Inertia::render('Roles/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('roles');
+})->middleware(['auth:sanctum', 'verified'])->name('/roles');
 
 Route::get('roles/assign/{id}', function (Request $request,$id) {
     $permissions = [
@@ -106,15 +106,15 @@ Route::get('roles/assigned/{id}', function ($id) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/api/roles', [RoleController::class, 'index']);
+  /*   Route::get('/roles', [RoleController::class, 'index']); */
     Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
     Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
     Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
 });
 
-Route::patch('/api/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
-Route::patch('/api/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
+Route::patch('/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
+Route::patch('/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
 
 
 // Inertia Page Route (Web, uses session-based auth)
@@ -127,12 +127,12 @@ Route::get('/permission', function (Request $request) {
         'canViewPermission' => $request->user()->can('permission list'),
     ];
     return Inertia::render('Permission/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('permission');
+})->middleware(['auth:sanctum', 'verified'])->name('/permission');
 
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/api/permission', [PermissionController::class, 'index']);
+   /*  Route::get('/permission', [PermissionController::class, 'index']); */
     Route::put('/permission/update/{perm}', [PermissionController::class, 'update'])->name('permission.update');
     Route::delete('/permission/delete/{perm}', [PermissionController::class, 'destroy'])->name('permission.destroy');
     Route::post('/permission/store', [PermissionController::class, 'store'])->name('permission.store');
@@ -149,7 +149,7 @@ Route::get('/emr', function (Request $request) {
         'canAssign' => $request->user()->can('provider assign'),
     ];
     return Inertia::render('Emr/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('emr');
+})->middleware(['auth:sanctum', 'verified'])->name('/emr');
 
 
 Route::get('emr/profile/{id}', function (Request $request,$id) {
@@ -163,7 +163,7 @@ Route::get('emr/profile/{id}', function (Request $request,$id) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/api/emr', [RefEmrController::class, 'index']);
+    Route::get('/emr/list', [RefEmrController::class, 'index'])->name('emr.list');
     Route::put('/emr/update/{id}', [RefEmrController::class, 'update'])->name('emr.update');
     Route::delete('/emr/delete/{id}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
     Route::post('/emr/store', [RefEmrController::class, 'store'])->name('emr.store');
@@ -178,8 +178,8 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('emr/profile_form');
 
 });
-Route::get('/emr/list', [RefEmrController::class, 'list'])->name('emr.list');
-
+/* Route::get('/emr/list', [RefEmrController::class, 'list'])->name('emr.list');
+ */
 
 
 // API Routes (Sanctum-protected)
@@ -217,7 +217,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('can:facility create')
         ->name('facility.store');
 
-    Route::get('/api/emr/info/{id}', [RefFacilitiesController::class, 'show'])
+    Route::get('/emr/info/{id}', [RefFacilitiesController::class, 'show'])
         ->middleware('can:facility view')
         ->name('facility.info');
 
@@ -247,7 +247,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         ->name('facility_type.store');
 
-    Route::get('/api/facility_type/info/{id}', [RefFacilitytypeController::class, 'show'])
+    Route::get('/facility_type/info/{id}', [RefFacilitytypeController::class, 'show'])
         ->middleware('can:view facility_type')
         ->name('facility_type.info');
 });
@@ -288,7 +288,7 @@ Route::get('/referrals/create', function (Request $request) {
     ];
 
     return Inertia::render('Incoming/Form',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('incoming'); 
+})->middleware(['auth:sanctum', 'verified'])->name('create.referral'); 
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])->name('incoming.list');
@@ -307,7 +307,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/referral-information/{LogID}', [ReferralController::class, 'show'])->name('incoming.list');
+    Route::get('/referral-information/{LogID}', [ReferralController::class, 'show'])->name('incoming.show');
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {

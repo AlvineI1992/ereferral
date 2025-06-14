@@ -541,14 +541,14 @@
                 ]
             }
         },
-        "api/region/{id}": {
+        "/api/region/{id}": {
             "get": {
                 "tags": [
                     "References"
                 ],
                 "summary": "Get a specific region by ID",
                 "description": "Returns a region with the given ID",
-                "operationId": "22972dba9624297d7326be61e379ae4c",
+                "operationId": "2987b35bdbbb8784ed82b826d469f6d8",
                 "parameters": [
                     {
                         "name": "id",
@@ -748,14 +748,14 @@
                 ]
             }
         },
-        "api/barangay/{id}": {
+        "/api/barangay/{id}": {
             "get": {
                 "tags": [
                     "References"
                 ],
                 "summary": "Get a specific barangay by ID",
                 "description": "Returns a barangay with the given ID",
-                "operationId": "f7c7c524c209049ccc043c5241b7009c",
+                "operationId": "1726b0d34b7087250a4a59d3af80f727",
                 "parameters": [
                     {
                         "name": "id",
@@ -1211,6 +1211,83 @@
                         "sanctum": []
                     }
                 ]
+            }
+        },
+        "/api/referral-type": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get Referral Types",
+                "description": "Returns a list of available referral types.",
+                "operationId": "getReferralTypes",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "TRANS"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/referral-type-code/{code}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get Referral Type by Code",
+                "description": "Returns details of a referral type by its code.",
+                "operationId": "getReferralTypeByCode",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "description": "Referral type code",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "TRANS"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "example": {
+                                                "code": "TRANS",
+                                                "description": "Transfer"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Referral type not found"
+                    }
+                }
             }
         },
         "/api/received": {
