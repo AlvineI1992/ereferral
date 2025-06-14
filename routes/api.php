@@ -18,8 +18,15 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 /* Reason for Referral */
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/reason-referral', [Referral::class, 'referral_reason'])->name('referral.reason');
-    Route::get('/reason-referral-code/{code}', [Referral::class, 'referral_reason_by_code'])->name('referral.reason');
+    Route::get('/reason-referral-code/{code}', [Referral::class, 'referral_reason_by_code'])->name('referral.reason.code');
    // Route::get('/region/{id}', [Referral::class, 'region'])->name('referral.region');
+});
+
+/* Referral type */
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::get('/referral-type', [Referral::class, 'referral_type'])->name('referral.type');
+    Route::get('/referral-type-code/{code}', [Referral::class, 'referral_type_code'])->name('referral.type.code');
+  
 });
 
 Route::get('facility/{id}', [Referral::class, 'get_facility_list'])->middleware('auth:sanctum')->name('referral.get_facility_list');
@@ -36,7 +43,7 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/get-referral-list/{fhudcode}/{emd_id}', [Referral::class, 'get_referral_list'])->name('referral.get_referral_list');
+    Route::get('/get-referral-list/{fhudcode}/{emr_id}', [Referral::class, 'get_referral_list'])->name('referral.get_referral_list');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {

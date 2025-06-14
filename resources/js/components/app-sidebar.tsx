@@ -50,10 +50,10 @@ const adminNavItems: NavItem[] = [
         href: '#',
         icon: User,
         submenu: [
-            { title: 'Manage Provider', href: 'emr', icon: CircleChevronRight },
-            { title: 'Manage Users', href: 'users', icon: CircleChevronRight },
-            { title: 'Roles', href: 'roles', icon: CircleChevronRight },
-            { title: 'Permissions', href: 'permission', icon: CircleChevronRight },
+            { title: 'Manage Provider', href: '/emr', icon: CircleChevronRight },
+            { title: 'Manage Users', href: '/users', icon: CircleChevronRight },
+            { title: 'Roles', href: '/roles', icon: CircleChevronRight },
+            { title: 'Permissions', href: '/permission', icon: CircleChevronRight },
         ],
     },
 ];
@@ -82,13 +82,9 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
-                 {/* Only show admin section for users with admin role */}
-                    {userRoles.some(role => role.name === 'Admin') && (
-                        <>
-                            <NavReference items={navReferences} />
-                            <NavAdministrator items={adminNavItems} />
-                        </>
-                    )}
+                <NavReference items={navReferences} />
+                <NavAdministrator items={adminNavItems} />
+                 
             </SidebarContent>
 
             <SidebarFooter>
