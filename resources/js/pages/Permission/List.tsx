@@ -26,7 +26,7 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/permission?page=${pageNumber}&search=${search}`);
+      const response = await axios.get(`/permission/list?page=${pageNumber}&search=${search}`);
       setData(response.data.data);
       setTotalRows(response.data.total);
     } catch (error) {

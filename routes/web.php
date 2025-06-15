@@ -132,7 +132,7 @@ Route::get('/permission', function (Request $request) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-   /*  Route::get('/permission', [PermissionController::class, 'index']); */
+    Route::get('/permission/list', [PermissionController::class, 'index']);
     Route::put('/permission/update/{perm}', [PermissionController::class, 'update'])->name('permission.update');
     Route::delete('/permission/delete/{perm}', [PermissionController::class, 'destroy'])->name('permission.destroy');
     Route::post('/permission/store', [PermissionController::class, 'store'])->name('permission.store');
