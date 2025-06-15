@@ -23,11 +23,11 @@ class PermissionController extends Controller
                   ->orderBy('id', 'desc');
         }
     
-        $roles = $query->paginate(10); // Paginate results
+        $data = $query->paginate(10); // Paginate results
     
        return response()->json([
-            'data' => $roles->items(),
-            'total' => $roles->total(),
+            'data' => $data->items(),
+            'total' => $data->total(),
         ]); 
     }
 
@@ -104,7 +104,7 @@ class PermissionController extends Controller
        
         PermissionModel::create(['name' => $request->name , 'guard_name'=> 'web' ]);
         
-        return redirect()->route('permission')->with('message','Permission created successfully.');
+        return redirect()->route('/permission')->with('message','Permission created successfully.');
     }
 
     /**
@@ -149,7 +149,7 @@ class PermissionController extends Controller
             'guard_name' => 'web',
         ]);
 
-        return redirect()->route('permission')->with('message', 'Permission updated successfully.');
+        return redirect()->route('/permission')->with('message', 'Permission updated successfully.');
     }
 
     /**
