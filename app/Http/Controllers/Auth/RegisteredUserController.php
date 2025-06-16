@@ -14,6 +14,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\RoleModel;
 use Spatie\Permission\Models\Role;
+use Illuminate\Validation\Rule;
+
 
 class RegisteredUserController extends Controller
 {
@@ -113,8 +115,15 @@ public function role_has_user(Request $request)
 {
     $request->validate([
         'name' => 'required|string|max:255',
-        'email' => 'nullable|string|lowercase|email|max:255|unique:' . User::class,
-        
+     
+        'email' => [
+            'nullable',
+            'string',
+            'lowercase',
+            'email',
+            'max:255',
+            Rule::unique('users')->ignore($user->id),
+        ],
         'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
     ]);
 
@@ -134,6 +143,7 @@ public function role_has_user(Request $request)
 
     return redirect()->route('users')->with('success', 'Updated successfully.');
 }
+
 
 
     public function show($id)

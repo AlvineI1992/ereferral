@@ -51,12 +51,12 @@ class RoleController extends Controller
             'guard_name' => $request->input('guard_name'),
         ]);
         
-        return redirect()->route('roles')->with('success', 'Role created successfully.');
+        return redirect()->route('/roles')->with('success', 'Role created successfully.');
     }
 
     public function edit(RoleModel $role)
     {
-        $permissions = Permission::all();
+        $permissions = RoleModel::all();
         return Inertia::render('Roles/Edit', [
             'role' => $role->load('permissions'),
             'permissions' => $permissions
@@ -76,7 +76,7 @@ class RoleController extends Controller
         ]);
         //$role->syncPermissions($request->permissions);
 
-        return redirect()->route('roles')->with('success', 'Role updated successfully.');
+        return redirect()->route('/roles')->with('success', 'Role updated successfully.');
     }
 
     public function show($id)

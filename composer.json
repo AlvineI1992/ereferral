@@ -20,6 +20,7 @@
         "owen-it/laravel-auditing": "^14.0",
         "paragonie/ciphersweet": "^4.7",
         "predis/predis": "^3.0",
+        "spatie/laravel-csp": "^3.13",
         "spatie/laravel-permission": "^6.16",
         "tightenco/ziggy": "^2.4"
     },
