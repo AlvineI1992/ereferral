@@ -56,11 +56,7 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`/permission/delete/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        await axios.delete(`/permission/delete/${id}`);
         fetchData(page, searchTerm);
         Swal.fire({
           title: "Deleted!",

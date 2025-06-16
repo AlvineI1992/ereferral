@@ -20,9 +20,9 @@ import {
 
 type PermissionFormProps = {
     onCreated: () => void;
-    onCancel: () => void;  // Add onCancel prop
+    onCancel: () => void;  
     perm?: { id: number; name: string; guard_name: string }; 
-    canCreate:boolean;// Role data for editing
+    canCreate:boolean;
 };
 
 type PermissionForm = {
@@ -32,8 +32,8 @@ type PermissionForm = {
 
 export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: PermissionFormProps) {
     const { data, setData, post, processing, errors, reset, put } = useForm<PermissionForm>({
-        name: perm?.name || "", // Set initial values based on the role prop
-        guard_name: perm?.guard_name || "", // Set initial guard name
+        name: perm?.name || "", 
+        guard_name: perm?.guard_name || "", 
     });
 
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +61,7 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
         e.preventDefault();
 
         if (perm) {
-            // If a role is passed (edit mode), we update it using PUT request
+           
             put(route("permission.update", perm.id), {
                 onSuccess: () => {
                     reset();
@@ -70,7 +70,7 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
                 },
             });
         } else {
-            // Otherwise, create a new role
+           
             post(route("permission.store"), {
                 onSuccess: () => {
                     reset();
@@ -129,7 +129,6 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
                         <SelectContent>
                             <SelectItem value="web">Web</SelectItem>
                             <SelectItem value="api">API</SelectItem>
-                            <SelectItem value="sanctum">Sanctum</SelectItem>
                         </SelectContent>
                     </Select>
                     <InputError id="guard_name-error" message={errors.guard_name} aria-live="polite" className="text-xs text-red-500" />
@@ -159,7 +158,7 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
                     {perm && (
                         <Button
                             type="button"
-                            onClick={onCancel} // Trigger the onCancel function passed from parent
+                            onClick={onCancel} 
                             className="flex-1 flex justify-center items-center gap-2 border-1 border-red-400 bg-white text-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 rounded-md transition-all"
                         >
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
