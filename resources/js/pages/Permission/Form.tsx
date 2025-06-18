@@ -89,7 +89,7 @@ export default function PermissionForm({ canCreate,onCreated, onCancel, perm }: 
             <div className="flex items-center mb-2">
                 
                 {perm ? <Edit size={18}/>: <User size={18} />}
-                <h1 className="text-lg font-semibold ml-2">{perm ? 'Edit  Permission' : 'Create Permission'} </h1>
+                <h1 className="text-lg font-semibold ml-2">{perm ? 'Edit Permission' : 'Create Permission'} </h1>
             </div>
             <HeadingSmall title={perm ? "Edit Permission" : "Create Permission"} description={perm ? "Edit the permission details below." : "Enter the permission details below."} />
 

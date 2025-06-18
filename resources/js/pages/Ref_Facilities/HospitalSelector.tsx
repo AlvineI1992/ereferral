@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import {
+    Command,
+    CommandInput,
+    CommandList,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+} from '@/components/ui/command';
 import { Label } from '@/components/ui/label';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Assuming you use a utility like clsx or cn
-/* import InputError from '@/components/InputError'; // Adjust the import path if needed */
+import { cn } from '@/lib/utils';
+import axios from 'axios';
 
 export type Hospital = {
     hfhudcode: string;
@@ -14,7 +21,7 @@ export type Hospital = {
 
 export type HospitalSelectorProps = {
     label?: string;
-    hospitals: Hospital[];
+    hospitals?: Hospital[];
     selectedHospital: string;
     setSelectedHospital: (hfhudcode: string) => void;
     setData: (field: string, value: any) => void;
@@ -26,7 +33,7 @@ export type HospitalSelectorProps = {
     };
 };
 
-const HospitalSelector:React.FC<HospitalSelectorProps>= ({
+const HospitalSelector: React.FC<HospitalSelectorProps> = ({
     label = 'Hospital',
     hospitals = [],
     selectedHospital,
@@ -34,11 +41,31 @@ const HospitalSelector:React.FC<HospitalSelectorProps>= ({
     setData,
     hospitalPopoverOpen,
     setHospitalPopoverOpen,
-    errors = {}
+    errors = {},
 }) => {
+    const [localHospitals, setLocalHospitals] = useState<Hospital[]>(hospitals);
+
+    useEffect(() => {
+        if (hospitals.length === 0) {
+            axios
+                .get('/facilities-list')
+                .then((res) => setLocalHospitals(res.data.data))
+                .catch((err) => console.error(err));
+        }
+    }, [hospitals]);
+
+    const handleSelect = (facility_name: string) => {
+        const selected = localHospitals.find(h => h.facility_name === facility_name);
+        if (selected) {
+            setSelectedHospital(selected.hfhudcode);
+            setHospitalPopoverOpen(false);
+        }
+    };
+
     return (
         <div className="grid gap-1">
-         
+           
+
             <Popover open={hospitalPopoverOpen} onOpenChange={setHospitalPopoverOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -48,27 +75,28 @@ const HospitalSelector:React.FC<HospitalSelectorProps>= ({
                         aria-expanded={hospitalPopoverOpen}
                         className="w-full justify-between"
                     >
-                        {hospitals.find(f => f.hfhudcode === selectedHospital)?.facility_name || 'Select hospital...'}
+                        {localHospitals.find(f => f.hfhudcode === selectedHospital)?.facility_name || 'Select hospital...'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-100 p-0">
+                <PopoverContent className="w-full p-0">
                     <Command>
                         <CommandInput placeholder="Search hospital..." />
                         <CommandList>
                             <CommandEmpty>No hospital found.</CommandEmpty>
                             <CommandGroup>
-                                {hospitals.map(hospital => (
+                                {localHospitals.map((hospital) => (
                                     <CommandItem
                                         key={hospital.hfhudcode}
                                         value={hospital.facility_name}
-                                        onSelect={() => {
-                                            setSelectedHospital(hospital.hfhudcode);
-                                            setData('access_id', hospital.hfhudcode);
-                                            setHospitalPopoverOpen(false);
-                                        }}
+                                        onSelect={handleSelect}
                                     >
-                                        <Check className={cn('mr-2 h-4 w-4', selectedHospital === hospital.hfhudcode ? 'opacity-100' : 'opacity-0')} />
+                                        <Check
+                                            className={cn(
+                                                'mr-2 h-4 w-4',
+                                                selectedHospital === hospital.hfhudcode ? 'opacity-100' : 'opacity-0'
+                                            )}
+                                        />
                                         {hospital.facility_name}
                                     </CommandItem>
                                 ))}
@@ -77,7 +105,10 @@ const HospitalSelector:React.FC<HospitalSelectorProps>= ({
                     </Command>
                 </PopoverContent>
             </Popover>
-        
+
+            {errors.hfhudcode && (
+                <p className="text-sm text-red-600 mt-1">{errors.hfhudcode}</p>
+            )}
         </div>
     );
 };

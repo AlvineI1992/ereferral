@@ -20,18 +20,19 @@ import {
 type ListProps = {
   refreshKey: any; 
   onEdit: (id: number) => void;
-  canEdit: boolean; 
+  canEdit: boolean; onEdit
   canDelete: boolean; 
 };
 
 const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
-  console.log(canEdit);
+  
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const perPage = 10;
+  
   const [visibleColumns, setVisibleColumns] = useState({
     id: true,
     name: true,
@@ -42,10 +43,10 @@ const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
 
   function getAbbreviation(name:string) {
     return name
-      .split(' ')                    // split by space
-      .map(word => word[0])         // take the first letter of each word
-      .join('')                     // join them together
-      .toUpperCase();               // make sure it's uppercase
+      .split(' ')                   
+      .map(word => word[0])         
+      .join('')                  
+      .toUpperCase();             
   }
 
   const fetchData = async (pageNumber = 1, search = "") => {
@@ -95,7 +96,10 @@ const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
     }
   };
 
-  const handleEdit = (row:string) => onEdit?.(row);
+  const handleEdit = (row) => {
+    onEdit?.(row);
+
+  };
 
   const handleGoto = (id:string) => {
     if (!id) {
