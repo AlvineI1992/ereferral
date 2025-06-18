@@ -6,22 +6,27 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Head, useForm } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Hospital, LoaderCircle, Save, X } from 'lucide-react';
-import { FormEventHandler, useEffect, useRef } from 'react';
+import { Check, ChevronsUpDown, Hospital, LoaderCircle, Save, X, Edit } from 'lucide-react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import DemographicSelector from '../Demographics/Demographics_selector';
-
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import axios from 'axios';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList
+} from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
-import { useState } from 'react';
 
 type Props = {
     onCreated: () => void;
     onCancel: () => void;
     formval?: any;
-    canCreate:boolean;
+    canCreate: boolean;
 };
 
 type Formtype = {
@@ -33,16 +38,17 @@ type Formtype = {
     province: string;
     city: string;
     barangay: string;
+    status: boolean;
 };
 
-export default function Form({ onCreated, onCancel, formval, canCreate }: Props) {
+export default function FacilityForm({ onCreated, onCancel, formval, canCreate }: Props) {
     const nameInputRef = useRef<HTMLInputElement>(null);
 
     const [factypes, setFacilitytype] = useState([]);
-    const [value, setValue] = useState('');
+    const [value, setValue] = useState(formval?.factype_code || '');
     const [open, setOpen] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
+    const { data, setData, post, put, processing, errors, reset } = useForm<Formtype>({
         hfhudcode: formval?.hfhudcode || '',
         facility_name: formval?.facility_name || '',
         fhudaddress: formval?.fhudaddress || '',
@@ -51,22 +57,41 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
         province: formval?.province || '',
         city: formval?.city || '',
         barangay: formval?.barangay || '',
+        status: formval?.status ?? true,
     });
 
     useEffect(() => {
-        axios
-            .get('/facility_type/list')
+        axios.get('/facility_type/list')
             .then((response) => {
                 setFacilitytype(response.data);
             })
             .catch((error) => {
-                console.error('Error fetching frameworks:', error);
+                console.error('Error fetching facility types:', error);
             });
     }, []);
 
     useEffect(() => {
         nameInputRef.current?.focus();
     }, []);
+
+    useEffect(() => {
+        if (formval) {
+            setData({
+                hfhudcode: formval.hfhudcode || '',
+                facility_name: formval.facility_name || '',
+                fhudaddress: formval.fhudaddress || '',
+                factype_code: formval.factype_code || '',
+                region: formval.region || '',
+                province: formval.province || '',
+                city: formval.city || '',
+                barangay: formval.barangay || '',
+                status: formval.status ?? true,
+            });
+            setValue(formval.factype_code || '');
+        } else {
+            reset();
+        }
+    }, [formval]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setData(e.target.id, e.target.value);
@@ -78,29 +103,48 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('facility.store'), {
-            onSuccess: () => {
-                reset();
-                onCreated();
-                toast.success('Record saved!');
-            },
-        });
+
+        if (formval) {
+            put(route('facility.update', formval.id), {
+                onSuccess: () => {
+                    reset();
+                    onCreated();
+                    toast.success('Facility updated!');
+                },
+            });
+        } else {
+            post(route('facility.store'), {
+                onSuccess: () => {
+                    reset();
+                    onCreated();
+                    toast.success('Facility created!');
+                },
+            });
+        }
     };
+
+    useEffect(() => {
+
+        axios.get('/facilities-list')
+            .then(res => setHospital(res.data.data))
+            .catch(err => console.error(err));
+
+        nameInputRef.current?.focus();
+    }, []);
 
     return (
         <div className="mt-2 mr-3 ml-2 w-full">
-            <Head title="Register" />
+            <Head title={formval ? 'Edit Facility' : 'Register Facility'} />
             <div className="mb-2 flex items-center">
-                <Hospital size={18} />
-                <h1 className="ml-2 text-lg font-semibold text-gray-800">{formval ? 'Edit Facility' : 'Create Facility'}</h1>
+                {formval ? <Edit size={18} /> : <Hospital size={18} />}
+                <h1 className="ml-2 text-lg font-semibold text-gray-800">
+                    {formval ? 'Edit Facility' : 'Create Facility'}
+                </h1>
             </div>
             <HeadingSmall title="Facility Information" description="Enter your details below." />
             <form className="mt-4 flex flex-col gap-4" onSubmit={submit}>
                 <div className="grid gap-1">
-                    {/* Name */}
-                    <Label htmlFor="hfhudcode" className="text-sm">
-                        Code:
-                    </Label>
+                    <Label htmlFor="hfhudcode">Code:</Label>
                     <Input
                         id="hfhudcode"
                         ref={nameInputRef}
@@ -109,7 +153,7 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                         onChange={handleChange}
                         className="mt-1 block h-8 w-full px-2 py-1 text-xs"
                         autoComplete="off"
-                        disabled={!canCreate} // Disable if canCreate is false
+                        disabled={!canCreate}
                     />
                     <InputError message={errors.hfhudcode} className="mt-1 text-xs" />
 
@@ -121,20 +165,22 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                         onChange={handleChange}
                         className="mt-1 block h-8 w-full px-2 py-1 text-sm"
                         autoComplete="off"
-                        disabled={!canCreate} // Disable if canCreate is false
+                        disabled={!canCreate}
                     />
                     <InputError message={errors.facility_name} className="mt-1 text-xs" />
 
-                    {/* Status */}
                     <div className="mb-2 flex items-center space-x-4">
                         <Label htmlFor="status">Status:</Label>
-                        <Switch id="status" checked={data.status} onCheckedChange={handleSwitchChange} disabled={!canCreate} />
+                        <Switch
+                            id="status"
+                            checked={data.status}
+                            onCheckedChange={handleSwitchChange}
+                            disabled={!canCreate}
+                        />
                     </div>
                     <InputError message={errors.status} className="mt-1 text-xs" />
-            
-                    <Label htmlFor="provider-selector">Facility type</Label>
 
-                    {/* Hidden input to submit the selected value */}
+                    <Label htmlFor="provider-selector">Facility type</Label>
                     <input type="hidden" name="fac_code" id="fac_code" value={value || ''} />
 
                     <Popover open={open} onOpenChange={setOpen}>
@@ -145,13 +191,12 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                                 role="combobox"
                                 aria-expanded={open}
                                 className="w-full justify-between"
-                                disabled={!canCreate} // Disable if canCreate is false
+                                disabled={!canCreate}
                             >
                                 {value ? factypes.find((f) => f.factype_code === value)?.description : 'Select Facility type...'}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-
                         <PopoverContent className="w-100 p-0" id="provider-popover-content">
                             <Command>
                                 <CommandInput placeholder="Search Facility type..." />
@@ -163,8 +208,8 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                                                 key={factype.factype_code}
                                                 value={factype.description}
                                                 onSelect={() => {
-                                                    setValue(factype.factype_code); // Update internal state for display
-                                                    setData('factype_code', factype.factype_code); // Sync with Inertia form data
+                                                    setValue(factype.factype_code);
+                                                    setData('factype_code', factype.factype_code);
                                                     setOpen(false);
                                                 }}
                                             >
@@ -178,19 +223,21 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                         </PopoverContent>
                         {errors.factype_code && <div className="mt-1 text-xs text-red-500">{errors.factype_code}</div>}
                     </Popover>
+
                     <p>Demographics</p>
-                    {/* Remarks */}
+
                     <Label htmlFor="fhudaddress">Address:</Label>
                     <Textarea
                         id="fhudaddress"
                         value={data.fhudaddress}
                         onChange={handleChange}
-                        className="mt-1 block h-8 w-full px-2 py-1 text-sm"
+                        className="mt-1 block w-full px-2 py-1 text-sm"
                         placeholder="Address"
                         autoComplete="off"
-                        disabled={!canCreate} // Disable if canCreate is false
+                        disabled={!canCreate}
                     />
                     <InputError message={errors.fhudaddress} className="mt-1 text-xs" />
+
                     <DemographicSelector
                         variant="vertical"
                         value={{
@@ -205,26 +252,17 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                             setData('city', val.city || '');
                             setData('barangay', val.barangay || '');
                         }}
-                        canCreate={canCreate}// Disable if canCreate is false
+                        canCreate={canCreate}
                     />
 
-                    {/* Buttons */}
                     <div className="mt-4 flex justify-between gap-4">
                         <Button
                             type="submit"
                             className="flex flex-1 items-center justify-center gap-2 rounded-md border border-green-600 bg-white py-2 font-semibold text-green-600 transition-all hover:bg-green-600 hover:text-white"
-                            disabled={processing || !canCreate} // Disable if processing or canCreate is false
+                            disabled={processing || !canCreate}
                         >
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            <span>
-                                {processing ? (
-                                    'Processing...'
-                                ) : (
-                                    <>
-                                        <Save size={12} />{' '}
-                                    </>
-                                )}
-                            </span>
+                            {processing ? 'Processing...' : <><Save size={12} /></>}
                         </Button>
 
                         {formval && (
@@ -232,18 +270,10 @@ export default function Form({ onCreated, onCancel, formval, canCreate }: Props)
                                 type="button"
                                 onClick={onCancel}
                                 className="flex flex-1 items-center justify-center gap-2 rounded-md border border-red-400 bg-white py-2 font-semibold text-red-600 transition-all hover:bg-red-600 hover:text-white"
-                                disabled={!canCreate} // Disable if canCreate is false
+                                disabled={!canCreate}
                             >
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                <span>
-                                    {processing ? (
-                                        'Processing...'
-                                    ) : (
-                                        <>
-                                            <X size={12} />{' '}
-                                        </>
-                                    )}
-                                </span>
+                                {processing ? 'Processing...' : <><X size={12} /></>}
                             </Button>
                         )}
                     </div>

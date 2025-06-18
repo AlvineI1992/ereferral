@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 type Props = {
   refreshKey: () => any;
   onEdit: () => any;  // Add onCancel prop
-  canDelete:boolean;// Role data for editing
-  canEdit:boolean;// Role data for editing
+  canDelete: boolean;// Role data for editing
+  canEdit: boolean;// Role data for editing
 };
 
 
-const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
+const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: Props) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
   const [totalRows, setTotalRows] = useState(0);
   const perPage = 10;
 
-  
+
 
   const fetchData = async (pageNumber = 1, search = "") => {
     setLoading(true);
@@ -72,7 +72,7 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
     }
   };
 
-  const handleEdit = (row:any) => {
+  const handleEdit = (row: any) => {
     onEdit?.(row);
   };
 
@@ -121,26 +121,26 @@ const Lists = ({ canEdit,canDelete,refreshKey, onEdit }:Props) => {
                     <td className="px-2 py-1">{row.guard_name}</td>
                     <td className="px-2 py-1 text-right">
                       <div className="flex justify-end space-x-1">
-                      {canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(row.id)}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                              <Pencil size={16} />
-                           </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(row.id)}
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            <Pencil size={16} />
+                          </Button>
                         )}
-      
-      {canDelete && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(row.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(row.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
                         )}
                       </div>
                     </td>

@@ -29,27 +29,13 @@ const ReferralForm = ({
   errors: pageErrors = {},
 }: ReferralFormProps) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [hfhudcode, setHfhudcode] = useState('');
+  const [referringFacilityCode, setReferringFacilityCode] = useState('');
+  const [referralFacilityCode, setReferralFacilityCode] = useState('');
   const [responseCode, setResponseCode] = useState(null);
   const [error, setError] = useState(null);
-
-
-  const handleSetFhudcode = async (e:any) => {
-    e.preventDefault();
-
-    try {
-      const response = await axios.get('/api/generate-hfhudcode', {
-        params: { hfhudcode }
-      });
-
-      setResponseCode(response.data.hfhudcode);
-      setError(null);
-    } catch (err:any) {
-      setError(err.response?.data?.message || 'An error occurred');
-      setResponseCode(null);
-    }
-  };
-
+  const [hospitals, setHospitals] = useState([]);
+  const [referringPopoverOpen, setReferringPopoverOpen] = useState(false);
+  const [referralPopoverOpen, setReferralPopoverOpen] = useState(false);
 
   const { data, setData, post, processing, errors } = useForm({
     LogID,
@@ -59,7 +45,24 @@ const ReferralForm = ({
     otherTypeOfReferral,
     otherReferralReason,
     refferalDate,
+    referringFacility: '',
+    referralFacility: '',
   });
+
+  useEffect(() => {
+    axios.get('/facilities-list')
+      .then(res => setHospitals(res.data.data))
+      .catch(err => console.error(err));
+
+    nameInputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post(route('profile.store'), {
+      forceFormData: true,
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, files } = e.target as HTMLInputElement;
@@ -70,18 +73,6 @@ const ReferralForm = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('profile.store'), {
-      forceFormData: true,
-    });
-  };
-
-  useEffect(() => {
-    nameInputRef.current?.focus();
-  }, []);
-
-  // Helper to get combined errors from useForm and pageErrors
   const getError = (field: string) => errors[field] || pageErrors[field];
 
   return (
@@ -91,14 +82,13 @@ const ReferralForm = ({
         Referral Information
       </h1>
 
-        <div className="md:col-span-1">
-        <Label htmlFor="datetime" className="text-semibold">Datetime called</Label>
+      <div className="md:col-span-1">
+        <Label htmlFor="calledDate" className="text-semibold">Datetime called</Label>
         <Input
           type="datetime-local"
           id="calledDate"
           name="calledDate"
           value={data.LogID}
-          placeholder="Transaction code"
           onChange={handleChange}
           ref={nameInputRef}
         />
@@ -119,21 +109,35 @@ const ReferralForm = ({
       </div>
 
       <div className="md:col-span-1">
-        <Label htmlFor="referringFacility" className="text-semibold">Referring Facility</Label>
-        <HospitalSelector />
+        <Label className="text-semibold">Referring Facility</Label>
+        <HospitalSelector
+          hospitals={hospitals}
+          selectedHospital={referringFacilityCode}
+          setSelectedHospital={(code) => {
+            setReferringFacilityCode(code);
+            setData('referringFacility', code);
+          }}
+          setData={setData}
+          hospitalPopoverOpen={referringPopoverOpen}
+          setHospitalPopoverOpen={setReferringPopoverOpen}
+          errors={errors}
+        />
       </div>
 
       <div className="md:col-span-1">
-        <Label htmlFor="referralFacility" className="text-semibold">Referral Facility</Label>
-        <Input
-          type="text"
-          id="referralFacility"
-          name="referralFacility"
-          value={data.referralCategory}
-          placeholder="Referral Facility"
-          onChange={handleChange}
+        <Label className="text-semibold">Referral Facility</Label>
+        <HospitalSelector
+          hospitals={hospitals}
+          selectedHospital={referralFacilityCode}
+          setSelectedHospital={(code) => {
+            setReferralFacilityCode(code);
+            setData('referralFacility', code);
+          }}
+          setData={setData}
+          hospitalPopoverOpen={referralPopoverOpen}
+          setHospitalPopoverOpen={setReferralPopoverOpen}
+          errors={errors}
         />
-        {getError('referralFacility') && <p className="text-[10px] text-red-500 mt-1">{getError('referralFacility')}</p>}
       </div>
 
       <div className="md:col-span-2">
@@ -166,7 +170,6 @@ const ReferralForm = ({
           </SelectContent>
         </Select>
         {getError('typeOfReferral') && <p className="text-[10px] text-red-500 mt-1">{getError('typeOfReferral')}</p>}
-
         {data.typeOfReferral === 'OTHER' && (
           <div className="mt-4">
             <Label htmlFor="otherTypeOfReferral" className="font-semibold">Please specify</Label>
@@ -222,7 +225,6 @@ const ReferralForm = ({
           </SelectContent>
         </Select>
         {getError('referralReason') && <p className="text-xs text-red-500 mt-1">{getError('referralReason')}</p>}
-
         {data.referralReason === 'OTHER' && (
           <div className="mt-4">
             <Label htmlFor="otherReferralReason" className="font-semibold">Please specify</Label>
