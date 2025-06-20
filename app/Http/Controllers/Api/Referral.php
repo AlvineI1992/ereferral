@@ -736,6 +736,8 @@ public function get_facility_list($id)
         // If not authenticated, this will trigger the unauthenticated handler
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
+
+    
      $referral = ReferralModel::with([
          'patientinformation',
          'medication',
