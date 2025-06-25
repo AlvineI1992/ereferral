@@ -841,11 +841,10 @@ public function get_facility_list($id)
      ];
 
      // Return the transformed data in the expected format
-     return response()->json([
-         'data' => [
-            'referral' => $transformedReferral,
-         ]
-     ]);
+     return response()->json(
+        ['referral' => $transformedReferral]
+       
+     );
  }
 /**
  * @OA\Get(
@@ -937,9 +936,9 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         return [    
             'LogID' => $referral->LogID,
             'referral_origin_code' => $referral->fhudFrom,
-            'referral_origin_name' => optional($referral->facility_from)->facility_name,
+            'referral_origin_name' => optional(RefFacilityModel::where('hfhudcode', $referral->fhudFrom)->first())->facility_name,
             'referral_destination_code' => $referral->fhudTo,
-            'referral_destination_name' => optional($referral->facility_to)->facility_name,
+            'referral_destination_name' => $referral->facility_name,
             'referral_reason' => $referral->referralReason,
             'referral_patient'=>$fullName, 
             'referral_patient_sex'=>strtoupper($patient->patientSex),
