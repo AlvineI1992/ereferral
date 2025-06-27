@@ -23,6 +23,7 @@ use App\Models\RefFacilityModel;
 use App\Models\ReferralPatientInfoModel;
 use App\Helpers\ReferralHelper;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
  * @OA\SecurityScheme(
@@ -733,18 +734,29 @@ public function get_facility_list($id)
  public function getReferralData($id)
  {
     if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
 
-    
      $referral = ReferralModel::with([
          'patientinformation',
+         'facility_to',
+         'facility_from',
          'medication',
          'demographics',
-         'clinical'
+         'clinical',
      ])->where('LogID', $id)->first();
- 
+
+
+     $consulting = DB::table('referral_provider')
+     ->where('LogID', $id)
+     ->where('provider_type', 'CONSU')
+     ->first();
+
+      $referring = DB::table('referral_provider')
+     ->where('LogID', $id)
+     ->where('provider_type', 'REFER')
+     ->first();
+
      if (!$referral) {
          return response()->json(['error' => 'Referral not found'], 404);
      }
@@ -779,7 +791,8 @@ public function get_facility_list($id)
          $transformedClinical['diagnosis'] = $referral->clinical->clinicalDiagnosis ?? null;
          $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
          $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
-         $transformedClinical['vitals'] = $referral->clinical->vitals ?? null;
+         $transformedClinical['vitals'] =  json_decode(stripslashes(trim($referral->clinical->vitals , '"'))) ?? null; 
+         $transformedClinical['findings'] = $referral->clinical->findings ?? null;
      }else{
         $transformedClinical['diagnosis'] = '';
         $transformedClinical['history'] = '';
@@ -788,10 +801,12 @@ public function get_facility_list($id)
      }
 
       $transformedPatient = [];
+
       if ($referral->patientinformation) {
-          $transformedPatient['patient_lastname'] = $referral->patientinformation->patientLastName ?? null;
-          $transformedPatient['patient_firstname'] = $referral->patientinformation->patientFirstName ?? null;
-          $transformedPatient['patient_middlename'] = $referral->patientinformation->patientMiddleName ?? null;
+          $transformedPatient['patient_lastname'] = strtoupper($referral->patientinformation->patientLastName ?? null);
+          $transformedPatient['patient_firstname'] = strtoupper($referral->patientinformation->patientFirstName ?? null);
+          $transformedPatient['patient_middlename'] = strtoupper($referral->patientinformation->patientMiddlename ?? null);
+          $transformedPatient['patient_suffix'] = strtoupper($referral->patientinformation->patientSuffix ?? null);
           $transformedPatient['patient_birthdate'] = $referral->patientinformation->patientBirthDate ?? null;
           $transformedPatient['patient_sex'] = $referral->patientinformation->patientSex ?? null;
           $transformedPatient['patient_civilstatus'] = $referral->patientinformation->patientCivilStatus ?? null;
@@ -813,6 +828,7 @@ public function get_facility_list($id)
       }
 
       $transformedMedication = [];
+
       if ($referral->medications) {
           $transformedMedication['drugcode'] = $referral->medications->drugcode ?? null;
           $transformedMedication['generic_name'] = $referral->medications->generic ?? null;
@@ -822,7 +838,21 @@ public function get_facility_list($id)
           $transformedMedication['generic_name'] = '';
           $transformedMedication['instructions'] ='';
       }
- 
+
+      $transformedFacility_origin = [];
+      if ($referral->facility_from) {
+          $transformedFacility_origin['referral_hfhudcode'] = $referral->facility_from->hfhudcode ;
+          $transformedFacility_origin['referral_facility_name'] = $referral->facility_from->facility_name;
+      }
+
+
+      $transformedFacility_destination = [];
+      if ($referral->facility_to) {
+          $transformedFacility_destination['referring_hfhudcode'] = $referral->facility_to->hfhudcode ;
+          $transformedFacility_destination['referring_facility_name'] = $referral->facility_to->facility_name;
+          $transformedFacility_destination['data'] = $referral->facility_to;
+      }
+      
      $transformedReferral = [
          'LogID' => $referral->LogID,
          'referral_origin' => $referral->fhudFrom,
@@ -831,20 +861,20 @@ public function get_facility_list($id)
          'referral_date' => $referral->refferalDate,
          'referral_time' => $referral->refferalTime,
          'referral_category' => $referral->referralCategory,
-         'referring_provider' => $referral->referringProvider,
+         'referring_provider' => $consulting,
+         'referral_provider' => $referring,
          'medications' => $referral->medication,
          'special_instructions' => $referral->specialinstruct,
          'contact_number' => $referral->referringProviderContactNumber,
          'patient_information' => $transformedPatient   ,
          'demographics' => $transformedDemographics,
-         'clinical' => $transformedClinical
+         'clinical' => $transformedClinical,
+         'facility_origin' => $transformedFacility_origin,
+         'facility_destination' => $transformedFacility_destination,
      ];
 
      // Return the transformed data in the expected format
-     return response()->json(
-        ['referral' => $transformedReferral]
-       
-     );
+     return response()->json($transformedReferral);
  }
 /**
  * @OA\Get(
