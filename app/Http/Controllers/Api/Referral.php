@@ -771,18 +771,26 @@ public function get_facility_list($id)
      $transformedDemographics = [];
      if ($referral->demographics) {
          $transformedDemographics['address'] = $referral->demographics->patientStreetAddress ?? null;
-         $transformedDemographics['barangay'] = $referral->demographics->patientBrgyCode ?? null;
-         $transformedDemographics['city'] = $referral->demographics->patientMundCode ?? null;
-         $transformedDemographics['province'] = $referral->demographics->patientProvCode ?? null;
-         $transformedDemographics['region'] = $referral->demographics->patientRegCode ?? null;
-         $transformedDemographics['zipcode'] = $referral->demographics->patientZipCode ?? null;
+         $transformedDemographics['barangay_code'] = $referral->demographics->patientBrgyCode;
+         $transformedDemographics['barangay'] = ReferralHelper::getBarangay($referral->demographics->patientBrgyCode);
+         $transformedDemographics['city_code'] = $referral->demographics->patientMundCode;
+         $transformedDemographics['city'] = ReferralHelper::getCity($referral->demographics->patientMundCode); 
+         $transformedDemographics['province_code'] = $referral->demographics->patientProvCode;
+         $transformedDemographics['province'] = ReferralHelper::getProvince($referral->demographics->patientProvCode); 
+         $transformedDemographics['region_code'] = $referral->demographics->patientRegCode;
+         $transformedDemographics['region'] = ReferralHelper::getRegion($referral->demographics->patientRegCode); 
+         $transformedDemographics['zipcode'] =$referral->demographics->patientZipCode;
      }else{
         $transformedDemographics['address'] = '';
+        $transformedDemographics['barangay_code'] = '';
         $transformedDemographics['barangay'] = '';
+        $transformedDemographics['city_code'] = '';
         $transformedDemographics['city'] = '';
+        $transformedDemographics['province_code'] = '';
         $transformedDemographics['province'] = '';
+        $transformedDemographics['region_code'] = '';
         $transformedDemographics['region'] = '';
-        $transformedDemographics['zipcode'] ='';
+        $transformedDemographics['zipcode'] = '';
      }
  
   
@@ -791,13 +799,14 @@ public function get_facility_list($id)
          $transformedClinical['diagnosis'] = $referral->clinical->clinicalDiagnosis ?? null;
          $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
          $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
-         $transformedClinical['vitals'] =  json_decode(stripslashes(trim($referral->clinical->vitals , '"'))) ?? null; 
+         $transformedClinical['vitalsigns'] = ($vitals = json_decode(stripslashes(trim($referral->clinical->vitals, '"')))) ? $vitals : null;
          $transformedClinical['findings'] = $referral->clinical->findings ?? null;
      }else{
         $transformedClinical['diagnosis'] = '';
-        $transformedClinical['history'] = '';
-        $transformedClinical['chief_complaint'] ='';
-        $transformedClinical['vitals'] = '';
+         $transformedClinical['history'] = '';
+         $transformedClinical['chief_complaint'] = '';
+         $transformedClinical['vitalsigns'] =  [];
+         $transformedClinical['findings'] = '';
      }
 
       $transformedPatient = [];
@@ -807,7 +816,7 @@ public function get_facility_list($id)
           $transformedPatient['patient_firstname'] = strtoupper($referral->patientinformation->patientFirstName ?? null);
           $transformedPatient['patient_middlename'] = strtoupper($referral->patientinformation->patientMiddlename ?? null);
           $transformedPatient['patient_suffix'] = strtoupper($referral->patientinformation->patientSuffix ?? null);
-          $transformedPatient['patient_birthdate'] = $referral->patientinformation->patientBirthDate ?? null;
+          $transformedPatient['patient_birthdate'] = date('m/d/Y',strtotime($referral->patientinformation->patientBirthDate));
           $transformedPatient['patient_sex'] = $referral->patientinformation->patientSex ?? null;
           $transformedPatient['patient_civilstatus'] = $referral->patientinformation->patientCivilStatus ?? null;
           $transformedPatient['patient_contact'] = $referral->patientinformation->patientContactNumber ?? null;
@@ -843,6 +852,13 @@ public function get_facility_list($id)
       if ($referral->facility_from) {
           $transformedFacility_origin['referral_hfhudcode'] = $referral->facility_from->hfhudcode ;
           $transformedFacility_origin['referral_facility_name'] = $referral->facility_from->facility_name;
+          $transformedFacility_origin['referral_facility_type'] = ReferralHelper::getFacilityType($referral->facility_from->facility_type);
+          $transformedFacility_origin['referral_address'] = $referral->facility_from->fhudaddress;
+          $transformedFacility_origin['referral_region'] = ReferralHelper::getRegion($referral->facility_from->region_code);
+          $transformedFacility_origin['referral_province'] = ReferralHelper::getProvince($referral->facility_from->province_code);
+          $transformedFacility_origin['referral_city'] = ReferralHelper::getCity($referral->facility_from->city_code);
+          $transformedFacility_origin['referral_barangay'] = ReferralHelper::getBarangay($referral->facility_from->bgycode);
+          $transformedFacility_origin['referral_zipcode'] = $referral->facility_from->zip_code;
       }
 
 
@@ -850,24 +866,36 @@ public function get_facility_list($id)
       if ($referral->facility_to) {
           $transformedFacility_destination['referring_hfhudcode'] = $referral->facility_to->hfhudcode ;
           $transformedFacility_destination['referring_facility_name'] = $referral->facility_to->facility_name;
-          $transformedFacility_destination['data'] = $referral->facility_to;
+          $transformedFacility_destination['referring_facility_type'] = ReferralHelper::getFacilityType($referral->facility_to->facility_type);
+          $transformedFacility_destination['referring_address'] = $referral->facility_to->fhudaddress;
+          $transformedFacility_destination['referring_region'] = ReferralHelper::getRegion($referral->facility_to->region_code);
+          $transformedFacility_destination['referring_province'] = ReferralHelper::getProvince($referral->facility_to->province_code);
+          $transformedFacility_destination['referring_city'] = ReferralHelper::getCity($referral->facility_to->city_code);
+          $transformedFacility_destination['referring_barangay'] = ReferralHelper::getBarangay($referral->facility_to->bgycode);
+          $transformedFacility_destination['referring_zipcode'] = $referral->facility_to->zip_code;
       }
       
      $transformedReferral = [
          'LogID' => $referral->LogID,
          'referral_origin' => $referral->fhudFrom,
          'referral_destination' => $referral->fhudTo,
-         'referral_reason' => $referral->referralReason,
-         'referral_date' => $referral->refferalDate,
+         'referral_type_code' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['code'],
+         'referral_type' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+         'referral_reason_code' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['code'],
+         'referral_reason' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
+         'referral_date' => date('m/d/Y',strtotime($referral->refferalDate)),
          'referral_time' => $referral->refferalTime,
+         
          'referral_category' => $referral->referralCategory,
-         'referring_provider' => $consulting,
-         'referral_provider' => $referring,
+         'referring_provider' => $consulting ?? '' ,
+         'referral_provider' => $referring ?? '',
          'medications' => $referral->medication,
          'special_instructions' => $referral->specialinstruct,
-         'contact_number' => $referral->referringProviderContactNumber,
-         'patient_information' => $transformedPatient   ,
-         'demographics' => $transformedDemographics,
+         'referral_contact_name'=>$referral->referralContactPerson,
+         'referral_contact_number' => $referral->referringProviderContactNumber,
+         'referral_contact_designation' => $referral->referralPersonDesignation,
+         'patient_information' => $transformedPatient,
+         'patient_demographics' => $transformedDemographics,
          'clinical' => $transformedClinical,
          'facility_origin' => $transformedFacility_origin,
          'facility_destination' => $transformedFacility_destination,
