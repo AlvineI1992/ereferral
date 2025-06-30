@@ -45,7 +45,6 @@ class RefFacilitiesController extends Controller
                 $query->where('ref_facilities.emr_id',"{$request->emr_id}");
             }
         
-        
             if ($request->filled('id')) {
                 $query->where('ref_facilities.hfhudcode', 'like', "%{$request->id}%");
             }
@@ -57,8 +56,6 @@ class RefFacilitiesController extends Controller
             if ($request->filled('region')) {
                 $query->where('ref_region.regname', 'like', "%{$request->region}%");
             }
-    
-        
 
         $facilities = $query->paginate(10); 
 
