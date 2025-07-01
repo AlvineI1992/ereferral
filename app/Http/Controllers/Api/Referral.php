@@ -801,12 +801,14 @@ public function get_facility_list($id)
          $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
          $transformedClinical['vitalsigns'] = ($vitals = json_decode(stripslashes(trim($referral->clinical->vitals, '"')))) ? $vitals : null;
          $transformedClinical['findings'] = $referral->clinical->findings ?? null;
+         $transformedClinical['physical_examination'] = $referral->clinical->physicalExamination ?? null;
      }else{
         $transformedClinical['diagnosis'] = '';
          $transformedClinical['history'] = '';
          $transformedClinical['chief_complaint'] = '';
          $transformedClinical['vitalsigns'] =  [];
          $transformedClinical['findings'] = '';
+         $transformedClinical['physical_examination']='';
      }
 
       $transformedPatient = [];
@@ -962,9 +964,6 @@ public function get_facility_list($id)
  */
 public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 {
-    //
-    //$emr_id =Crypt::decryptString($cipher);
-
     if (!Auth::check()) {
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
@@ -973,11 +972,13 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
     }
 
-    $referrals = ReferralModel::with(['facility_from', 'facility_to'])
-        ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
-            $query->where('emr_id', $emr_id)
-            ->where('fhudTo', $hfhudcode);
-        })->get();
+    $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
+    ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
+        $query->where('emr_id', $emr_id)
+              ->where('fhudTo', $hfhudcode);
+    })
+    ->whereDoesntHave('track') // This excludes referrals with any related track
+    ->get();
 
     if ($referrals->isEmpty()) {
         return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
