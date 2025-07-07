@@ -24,6 +24,9 @@ use App\Models\ReferralPatientInfoModel;
 use App\Helpers\ReferralHelper;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+
+use Illuminate\Support\Facades\Log;
+
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
  * @OA\SecurityScheme(
@@ -194,40 +197,41 @@ class Referral extends Controller
  * )
  */
 
-    public function patient_referral(PatientReferralRequest $request)
-    {
-        $jsonString = $request->getContent(); 
-        $data = json_decode($jsonString, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'error' => 'JSON Decode Error: ' . json_last_error_msg()
-            ], 400);
-        }
-
-        $rawData = $data;
-        $validatedData = $request->validated();
-        $mergedData = array_merge($rawData, $validatedData);
-        $check_from =  RefFacilityModel::select('emr_id')->where('hfhudcode', $mergedData['referral']['facility_from'])->first()->facility_name;
-        if($check_from)
-        {
-            return response()->json([
-                'error' =>'Referring facility not registered to any emr provider!'
-            ], 400);
-        }
-        $check_to =  RefFacilityModel::select('emr_id')->where('hfhudcode', $mergedData['referral']['facility_to'])->first()->facility_name;
-
-        if($check_to)
-        {
-            return response()->json([
-                'error' =>'Referral facility not registered to any emr provider!'
-            ], 400);
-        }
-
-        $output = $this->referralService->refer_patient($mergedData);
-
-        return $output;
-    }
+ public function patient_referral(PatientReferralRequest $request)
+ {
+     // You can get both raw and validated data easily
+ 
+      $validatedData = $request->validated();
+     
+     $rawData = $request->all(); // Already parsed JSON
+ 
+     // Optional: Merge if needed
+     $mergedData = array_merge($rawData, $validatedData);
+ 
+     // Check referring facility
+     $check_from = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_from'])->first();
+ 
+     if (!$check_from || empty($check_from->emr_id)) {
+         return response()->json([
+             'error' => 'Referring facility not registered to any EMR provider!'
+         ], 400);
+     }
+ 
+     // Check referred-to facility
+     $check_to = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_to'])->first();
+ 
+     if (!$check_to || empty($check_to->emr_id)) {
+         return response()->json([
+             'error' => 'Referral facility not registered to any EMR provider!'
+         ], 400);
+     }
+ 
+     // Send to referral service
+     $output = $this->referralService->refer_patient($mergedData);
+ 
+     return $output;
+ }
+ 
 
     /**
      * Generate a reference code.
