@@ -800,10 +800,20 @@ public function get_facility_list($id)
   
      $transformedClinical = [];
      if ($referral->clinical) {
-         $transformedClinical['diagnosis'] = $referral->clinical->clinicalDiagnosis ?? null;
+        $diagnosis = $referral->clinical->clinicalDiagnosis;
+        $transformedClinical['diagnosis'] = is_string($diagnosis) ? trim($diagnosis) : null;
          $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
          $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
-         $transformedClinical['vitalsigns'] = ($vitals = json_decode(stripslashes(trim($referral->clinical->vitals, '"')))) ? $vitals : null;
+
+         $vitalsRaw = $referral->clinical->vitals;
+         $vitalsigns = null;
+         
+         if (is_string($vitalsRaw)) {
+             $decoded = json_decode(stripslashes(trim($vitalsRaw, '"')), true);
+             $vitalsigns = $decoded ?: null;
+         }
+         
+         $transformedClinical['vitalsigns'] = $vitalsigns;
          $transformedClinical['findings'] = $referral->clinical->findings ?? null;
          $transformedClinical['physical_examination'] = $referral->clinical->physicalExamination ?? null;
      }else{
