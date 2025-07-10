@@ -807,11 +807,11 @@ public function get_facility_list($id)
 
          $vitalsRaw = $referral->clinical->vitals;
          $vitalsigns = null;
-         
-         if (is_string($vitalsRaw)) {
-             $decoded = json_decode(stripslashes(trim($vitalsRaw, '"')), true);
-             $vitalsigns = $decoded ?: null;
-         }
+        
+        if (is_string($vitalsRaw)) {
+            $decoded = json_decode(stripslashes(trim($vitalsRaw, '"')), true);
+            $vitalsigns = $decoded ?: null;
+        }
          
          $transformedClinical['vitalsigns'] = $vitalsigns;
          $transformedClinical['findings'] = $referral->clinical->findings ?? null;

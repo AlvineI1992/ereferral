@@ -15,6 +15,7 @@ use Inertia\Response;
 use App\Models\RoleModel;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Crypt;
 
 
 class RegisteredUserController extends Controller
@@ -96,53 +97,50 @@ public function role_has_user(Request $request)
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status'=>'I',
+            'status'=>'A',
             'access_id' => $request->access_id,
             'access_type' => $request->access_type,
         ]);
 
         event(new Registered($user)); 
-
-      /*  /*  Auth::login($user); */
-
-        
+        /*  Auth::login($user); */
         return redirect()->route('users')->with('success', 'Added successfully.');
     }
 
 
 
     public function update(Request $request, User $user)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-     
-        'email' => [
-            'nullable',
-            'string',
-            'lowercase',
-            'email',
-            'max:255',
-            Rule::unique('users')->ignore($user->id),
-        ],
-        'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
-    ]);
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        
+            'email' => [
+                'nullable',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+        ]);
 
-    // Update basic info
-    $user->name = $request->name;
-    $user->email = $request->email;
-    $user->status = 'I';
-    $user->access_id = $request->access_id;
-    $user->access_type = $request->access_type;
+        // Update basic info
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->status = 'I';
+        $user->access_id = $request->access_id;
+        $user->access_type = $request->access_type;
 
-    // Only update password if provided
-    if ($request->filled('password')) {
-        $user->password = Hash::make($request->password);
+        // Only update password if provided
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->save();
+
+        return redirect()->route('users')->with('success', 'Updated successfully.');
     }
-
-    $user->save();
-
-    return redirect()->route('users')->with('success', 'Updated successfully.');
-}
 
 
 
