@@ -272,7 +272,7 @@ Route::get('/incoming', function (Request $request) {
         'canCreate' => $request->user()->can('incoming create'),
         'canEdit' => $request->user()->can('incoming edit'),
         'canDelete' => $request->user()->can('incoming delete'),
-        'canVie' => $request->user()->can('incoming list'),
+        'canView' => $request->user()->can('incoming list'),
     ];
 
     return Inertia::render('Incoming/Index',$permissions);
