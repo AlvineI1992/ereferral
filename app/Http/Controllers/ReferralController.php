@@ -21,7 +21,12 @@ class ReferralController extends Controller
     {
         $user = auth()->user();
   
-        $role = $user?->getRoleNames()->first() ?? 'guest'; 
+        $role = 'guest';
+
+        if ($user && method_exists($user, 'getRoleNames')) {
+            $roleName = $user->getRoleNames()->first();
+            $role = $roleName ?: 'guest';
+        }
     
         $perPage = $request->input('per_page', 5); 
         $page = $request->input('page', 1); // default to page 1
