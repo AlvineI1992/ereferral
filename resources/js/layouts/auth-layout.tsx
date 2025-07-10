@@ -14,11 +14,7 @@ export default function AuthLayout({
     title: string;
     description: string;
 }) {
-    // Init callback for tsparticles
-    const particlesInit = useCallback(async (engine) => {
-        console.log('Particles initialized');
-        await loadFull(engine);
-    }, []);
+  
 
     return (
         <AuthLayoutTemplate title={title} description={description} {...props}>
