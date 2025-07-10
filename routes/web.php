@@ -86,7 +86,7 @@ Route::get('/roles', function (Request $request) {
         'canAssignRole' => $request->user()->can('role assign'),
     ];
     return Inertia::render('Roles/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('/roles');
+})->middleware(['auth:sanctum', 'verified'])->name('roles.index');
 
 Route::get('roles/assign/{id}', function (Request $request,$id) {
     $permissions = [
