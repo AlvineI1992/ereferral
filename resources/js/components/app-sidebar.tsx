@@ -52,7 +52,7 @@ const adminNavItems: NavItem[] = [
         submenu: [
             { title: 'Manage Provider', href: '/emr', icon: CircleChevronRight },
             { title: 'Manage Users', href: '/users', icon: CircleChevronRight },
-            { title: 'Roles', href: '/roles', icon: CircleChevronRight },
+            { title: 'Roles', href: 'roles.index', icon: CircleChevronRight },
             { title: 'Permissions', href: 'permission.index', icon: CircleChevronRight },
         ],
     },
