@@ -125,11 +125,11 @@ class ReferralPatientInfoController extends Controller
                     'avatar' => null, 
                 ],
                 'demographics' =>[
-                    'street'=>$patient->patientStreetAddress,
-                    'region'=>$demographics->region->regname,
+                    'street'=>$patient->patientStreetAddress ?? '',
+                    'region'=>$demographics->region->regname ?? '',
                     'province'=>$demographics->province->provname,
-                    'city'=>$demographics->city->cityname,
-                    'barangay'=>$demographics->barangay->bgyname
+                    'city'=>$demographics->city->cityname ?? '',
+                    'barangay'=>$demographics->barangay->bgyname  ?? ''
                 ]
             ]);
         /* } catch (\Exception $e) {

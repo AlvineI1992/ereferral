@@ -46,12 +46,29 @@ import {
 import { RegisterForm } from './types';
 import toastr from "toastr";
 
+// -------------------- Types --------------------
+type Framework = {
+    emr_id: string;
+    emr_name: string;
+};
+
+type Region = {
+    regcode: string;
+    regname: string;
+};
+
+type Hospital = {
+    hfhudcode: string;
+    facility_name: string;
+};
+
 type UserFormProps = {
     onUserCreated: () => void;
     onCancel: () => void;
     user?: any;
 };
 
+// -------------------- Component --------------------
 export default function UsersForm({ onUserCreated, onCancel, user }: UserFormProps) {
     const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
         name: user?.name || '',
@@ -63,9 +80,9 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
     });
 
     const nameInputRef = useRef<HTMLInputElement>(null);
-    const [frameworks, setFrameworks] = useState([]);
-    const [regions, setRegions] = useState([]);
-    const [hospitals, setHospital] = useState([]);
+    const [frameworks, setFrameworks] = useState<Framework[]>([]);
+    const [regions, setRegions] = useState<Region[]>([]);
+    const [hospitals, setHospital] = useState<Hospital[]>([]);
 
     const [selectedProvider, setSelectedProvider] = useState(data.access_id);
     const [selectedRegion, setSelectedRegion] = useState(data.access_id);
@@ -77,21 +94,17 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
 
     const [accessType, setAccessType] = useState(data.access_type);
 
-
- 
     useEffect(() => {
-    
         if (user) {
-            
             setData({
                 name: user.name,
                 email: user.email,
                 password: '',
                 password_confirmation: '',
-                access_id: user.access_id,  
+                access_id: user.access_id,
                 access_type: user.access_type,
             });
-            setAccessType(user.access_type); // ✅ fix here
+            setAccessType(user.access_type);
             if (user.access_type === 'EMR') {
                 setSelectedProvider(user.access_id);
             } else if (user.access_type === 'CHD') {
@@ -105,29 +118,35 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
     }, [user]);
 
     useEffect(() => {
-      if (user) {
-          if (user.access_type === 'EMR') {
-              setSelectedProvider(user.access_id);
-          } else if (user.access_type === 'CHD') {
-              setSelectedRegion(user.access_id);
-          } else if (user.access_type === 'HOSP') {
-              setSelectedHospital(user.access_id);
-          }
-      }
-  }, [user]);
-  
-    useEffect(() => {
         axios.get('/emr/list')
-            .then(res => setFrameworks(res.data))
-            .catch(err => console.error(err));
+            .then(res => {
+                const emrList = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setFrameworks(emrList);
+            })
+            .catch(err => {
+                console.error('Failed to load EMR providers:', err);
+                setFrameworks([]);
+            });
 
         axios.get('/region/list')
-            .then(res => setRegions(res.data.data))
-            .catch(err => console.error(err));
+            .then(res => {
+                const regionList = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setRegions(regionList);
+            })
+            .catch(err => {
+                console.error('Failed to load regions:', err);
+                setRegions([]);
+            });
 
         axios.get('/facilities-list')
-            .then(res => setHospital(res.data.data))
-            .catch(err => console.error(err));
+            .then(res => {
+                const hospitalList = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setHospital(hospitalList);
+            })
+            .catch(err => {
+                console.error('Failed to load hospitals:', err);
+                setHospital([]);
+            });
 
         nameInputRef.current?.focus();
     }, []);
@@ -138,43 +157,28 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-    
-        if (user) {
-            axios.put(route("user.update", user.id), data)
-                .then(() => {
-                    reset();
-                    setSelectedProvider('');
-                    setSelectedRegion('');
-                    setSelectedHospital('');
-                    onUserCreated();
-                    toastr.success("User updated!", "Success");
-                })
-                .catch(error => {
-                    toastr.error("Failed to update user", "Error");
-                    console.error(error);
-                });
-        } else {
-            axios.post(route("user.store"), data)
-                .then(() => {
-                    reset();
-                    setSelectedProvider('');
-                    setSelectedRegion('');
-                    setSelectedHospital('');
-                    onUserCreated();
-                    toastr.success("User created!", "Success");
-                })
-                .catch(error => {
-                    toastr.error("Failed to create user", "Error");
-                    console.error(error);
-                });
-        }
+        const action = user
+            ? axios.put(route("user.update", user.id), data)
+            : axios.post(route("user.store"), data);
+
+        action
+            .then(() => {
+                reset();
+                setSelectedProvider('');
+                setSelectedRegion('');
+                setSelectedHospital('');
+                onUserCreated();
+                toastr.success(`User ${user ? 'updated' : 'created'}!`, "Success");
+            })
+            .catch(error => {
+                toastr.error(`Failed to ${user ? 'update' : 'create'} user`, "Error");
+                console.error(error);
+            });
     };
-    
-  
+
     const renderProviderSelector = (label: string) => (
         <div className="grid gap-1">
             <Label htmlFor="provider-selector">{label}</Label>
-           
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -220,7 +224,6 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
     const renderRegionSelector = (label: string) => (
         <div className="grid gap-1">
             <Label htmlFor="region-selector">{label}</Label>
-           {/*  <input type="hidden" name="regcode" id="regcode" value={selectedRegion} /> */}
             <Popover open={regionPopoverOpen} onOpenChange={setRegionPopoverOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -266,7 +269,6 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
     const renderHospitalSelector = (label: string) => (
         <div className="grid gap-1">
             <Label htmlFor="hospital-selector">{label}</Label>
-            {/* <input type="hidden" name="hfhudcode" id="hfhudcode" value={selectedHospital} /> */}
             <Popover open={hospitalPopoverOpen} onOpenChange={setHospitalPopoverOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -386,17 +388,17 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
                 {accessType === 'EMR' && renderProviderSelector('EMR Provider')}
                 {accessType === 'CHD' && renderRegionSelector('Region')}
                 {accessType === 'HOSP' && renderHospitalSelector('Hospital')}
+
                 <Input
-                  type="hidden"
-            
-                  id="access_id"
-                  value={
-                    accessType === 'CHD'
-                      ? selectedRegion
-                      : accessType === 'HOSP'
-                      ? selectedHospital
-                      : selectedProvider
-                  }
+                    type="hidden"
+                    id="access_id"
+                    value={
+                        accessType === 'CHD'
+                            ? selectedRegion
+                            : accessType === 'HOSP'
+                                ? selectedHospital
+                                : selectedProvider
+                    }
                 />
 
                 <div className="mt-4 flex gap-2">
