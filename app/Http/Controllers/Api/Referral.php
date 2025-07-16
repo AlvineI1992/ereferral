@@ -212,9 +212,9 @@ class Referral extends Controller
      $check_from = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_from'])->first();
  
      if (!$check_from || empty($check_from->emr_id)) {
-         return response()->json([
-             'error' => 'Referring facility not registered to any EMR provider!'
-         ], 400);
+        return response()->json([
+            'error' => $check_from->facility_name.' '.'is not registered to any EMR/HITP provider!'
+        ], 400);
      }
  
      // Check referred-to facility
@@ -222,7 +222,7 @@ class Referral extends Controller
  
      if (!$check_to || empty($check_to->emr_id)) {
          return response()->json([
-             'error' => 'Referral facility not registered to any EMR provider!'
+             'error' => $check_to->facility_name.' '.'is not registered to any EMR/HITP provider!'
          ], 400);
      }
  
