@@ -25,7 +25,7 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
-    })->name('dashboard');
+    })->name('dashboard.index');
 });
 
 Route::get('/users', function (Request $request) {
@@ -37,7 +37,7 @@ Route::get('/users', function (Request $request) {
         'canAssign' => $request->user()->can('user assign'),
     ];
     return Inertia::render('Users/Index',$permissions);
-})->middleware(['auth', 'verified'])->name('/users');
+})->middleware(['auth', 'verified'])->name('user.index');
 
 
 Route::get('/users/create', function () {
@@ -141,16 +141,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/permission/info/{id}', [PermissionController::class, 'show'])->name('permission.info');
 });
 
-Route::get('/emr', function (Request $request) {
+Route::get('emr', function (Request $request) {
     $permissions = [
         'canCreate' => $request->user()->can('provider create'),
         'canEdit' => $request->user()->can('provider edit'),
         'canDelete' => $request->user()->can('provider delete'),
         'canView' => $request->user()->can('provider list'),
-        'canAssign' => $request->user()->can('provider assign'),
-    ];
+        'canAssign' => $request->user()->can('provider assign')];
     return Inertia::render('Emr/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('/emr');
+})->middleware(['auth:sanctum', 'verified'])->name('emr.index');
 
 
 Route::get('emr/profile/{id}', function (Request $request,$id) {
@@ -276,7 +275,7 @@ Route::get('/incoming', function (Request $request) {
     ];
 
     return Inertia::render('Incoming/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('incoming'); 
+})->middleware(['auth:sanctum', 'verified'])->name('incoming.index'); 
 
 
 Route::get('/referrals/create', function (Request $request) {
@@ -285,7 +284,7 @@ Route::get('/referrals/create', function (Request $request) {
         'canCreate' => $request->user()->can('incoming create'),
         'canEdit' => $request->user()->can('incoming edit'),
         'canDelete' => $request->user()->can('incoming delete'),
-        'canVie' => $request->user()->can('incoming list'),
+        'canView' => $request->user()->can('incoming list'),
     ];
 
     return Inertia::render('Incoming/Form',$permissions);
