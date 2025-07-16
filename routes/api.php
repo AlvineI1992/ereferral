@@ -2,30 +2,31 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Referral;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Api\References;
 
-Route::get('generate_code/{hfhudcode}', [Referral::class, 'generate_reference'])->middleware('auth:sanctum')->name('referral.reference');
+
+Route::get('generate_code/{hfhudcode}', [References::class, 'generate_reference'])->middleware('auth:sanctum')->name('referral.reference');
 
 //Reference
 /* Demographics */
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/demographics', [Referral::class, 'demographic_reference'])->name('referral.demographics');
-    Route::get('/region/{id}', [Referral::class, 'region'])->name('referral.region');
-    Route::get('/province/{id}', [Referral::class, 'province'])->name('referral.province');
-    Route::get('/city/{id}', [Referral::class, 'city'])->name('referral.city');
-    Route::get('/barangay/{id}', [Referral::class, 'barangay'])->name('referral.barangay');
+    Route::get('/demographics', [References::class, 'demographic_reference'])->name('referral.demographics');
+    Route::get('/region/{id}', [References::class, 'region'])->name('referral.region');
+    Route::get('/province/{id}', [References::class, 'province'])->name('referral.province');
+    Route::get('/city/{id}', [References::class, 'city'])->name('referral.city');
+    Route::get('/barangay/{id}', [References::class, 'barangay'])->name('referral.barangay');
 });
 /* Reason for Referral */
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/reason-referral', [Referral::class, 'referral_reason'])->name('referral.reason');
-    Route::get('/reason-referral-code/{code}', [Referral::class, 'referral_reason_by_code'])->name('referral.reason.code');
+    Route::get('/reason-referral', [References::class, 'referral_reason'])->name('referral.reason');
+    Route::get('/reason-referral-code/{code}', [References::class, 'referral_reason_by_code'])->name('referral.reason.code');
    // Route::get('/region/{id}', [Referral::class, 'region'])->name('referral.region');
 });
 
 /* Referral type */
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/referral-type', [Referral::class, 'referral_type'])->name('referral.type');
-    Route::get('/referral-type-code/{code}', [Referral::class, 'referral_type_code'])->name('referral.type.code');
+    Route::get('/referral-type', [References::class, 'referral_type'])->name('referral.type');
+    Route::get('/referral-type-code/{code}', [References::class, 'referral_type_code'])->name('referral.type.code');
   
 });
 
