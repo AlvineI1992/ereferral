@@ -8,6 +8,7 @@ use ParagonIE\CipherSweet\KeyProvider\StringProvider;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Dedoc\Scramble\Scramble;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,5 +34,8 @@ class AppServiceProvider extends ServiceProvider
 		if (config('app.env') === 'production') {
 			URL::forceScheme('https');
 		}
+        
+
+        
     }
 }

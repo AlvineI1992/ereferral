@@ -11,14 +11,14 @@ const UsersManagement = ({
     canView,
     canAssign
   }: PermissionProps) => {
-    const [selectedUser, setSelectedUser] = useState(null); // State for the selected user
-    const [refreshKey, setRefreshKey] = useState(0); // To refresh the user list after create/update
+    const [selectedUser, setSelectedUser] = useState(null); 
+    const [refreshKey, setRefreshKey] = useState(0); 
 
     const [selectedProvider, setSelectedProvider] = useState(null);
     const [selectedRegion, setSelectedRegion] = useState(null);
     const [selectedHospital, setSelectedHospital] = useState(null);
 
-    // Handle the edit action and set the selected user
+   
     const handleEdit = async (user: null) => {
         try {
             const response = await axios.get(`/users/info/${user}`);
@@ -28,16 +28,16 @@ const UsersManagement = ({
         }
     };
 
-    // After a user is created or updated, reset the selected user to null
+    
     const handleUserCreated = () => {
-        setSelectedUser(null); // Reset the selected user after successful creation or update
-        setRefreshKey((prev) => prev + 1); // Trigger refresh for the user list
+        setSelectedUser(null); 
+        setRefreshKey((prev) => prev + 1); 
     };
 
-    // Handle cancel edit action  
+  
     const handleCancelEdit = () => {
         setSelectedUser(null); 
-        setSelectedProvider('');// Reset selected user when canceling the edit
+        setSelectedProvider('');
         setSelectedRegion('');
         setSelectedHospital('');
     };
@@ -48,12 +48,12 @@ const UsersManagement = ({
                 <div className="lg:col-span-1">
                     {selectedUser ? (
                         <UsersForm
-                            onCancel={handleCancelEdit} // Pass handleCancelEdit to the form
+                            onCancel={handleCancelEdit}
                             user={selectedUser}
                             onUserCreated={handleUserCreated}
                         />
                     ) : (
-                        <UsersForm   onCancel={''} // Pass handleCancelEdit to the form
+                        <UsersForm   onCancel={''}
                         user={''}  onUserCreated={handleUserCreated} />
                     )}
                 </div>

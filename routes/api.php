@@ -5,11 +5,6 @@ use App\Http\Controllers\Api\Referral;
 use App\Http\Controllers\Api\References;
 
 
-Route::prefix('/docs/api')->group(function () {
-    Route::post('/referral', [Referral::class, '/docs/api']);
-    Route::post('/reference', [References::class, '/docs/api']);
-});
-
 Route::get('generate_code/{hfhudcode}', [References::class, 'generate_reference'])->middleware('auth:sanctum')->name('referral.reference');
 
 //Reference

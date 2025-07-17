@@ -37,7 +37,7 @@ return [
      */
     'ui' => [
         /*
-         * Define the title of the documentation's website. App name is used when this config is `null`.
+         * Define the title of the documentation's website. App name is used when this configservers `null`.
          */
         'title' => 'eReferral',
 
@@ -73,6 +73,7 @@ return [
          * - stacked - Everything in a single column, making integrations with existing websites that have their own sidebar or other columns already.
          */
         'layout' => 'responsive',
+        'only_if_env' => ['local', 'production', 'staging'],
     ],
 
     /*
@@ -105,11 +106,11 @@ return [
      *    @see https://redocly.com/docs-legacy/api-reference-docs/specification-extensions/x-enum-descriptions
      * - false - Case descriptions are ignored.
      */
-    'enum_cases_description_strategy' => 'false',
+    'enum_cases_description_strategy' => 'description',
 
     'middleware' => [
         'web',
-        RestrictedDocsAccess::class,
+        //RestrictedDocsAccess::class,
     ],
 
     'extensions' => [

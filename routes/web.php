@@ -16,8 +16,6 @@ use App\Http\Controllers\ReferralClinicalController;
 
 use Illuminate\Http\Request;
 
-
-
 Route::get('/', function () {
     return Inertia::render('auth/login');
 })->name('home');
