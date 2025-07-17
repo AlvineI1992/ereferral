@@ -44,7 +44,7 @@ return [
         /*
          * Define the theme of the documentation. Available options are `light` and `dark`.
          */
-        'theme' => 'light',
+        'theme' => 'dark',
 
         /*
          * Hide the `Try It` feature. Enabled by default.
@@ -54,7 +54,7 @@ return [
         /*
          * Hide the schemas in the Table of Contents. Enabled by default.
          */
-        'hide_schemas' => true,
+        'hide_schemas' => false,
 
         /*
          * URL to an image that displays as a small square logo next to the title, above the table of contents.
@@ -64,7 +64,7 @@ return [
         /*
          * Use to fetch the credential policy for the Try It feature. Options are: omit, include (default), and same-origin
          */
-        'try_it_credentials_policy' => 'omit',
+        'try_it_credentials_policy' => 'same-origin',
 
         /*
          * There are three layouts for Elements:
@@ -119,7 +119,7 @@ return [
                 'type' => 'http',
                 'scheme' => 'bearer',
                 'bearerFormat' => 'Bearer',
-                'description' => 'Laravel Sanctum Bearer Token Authentication',
+                'description' => 'Token Authentication',
             ],
         ],
     ],

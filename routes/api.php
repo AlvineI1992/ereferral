@@ -5,6 +5,11 @@ use App\Http\Controllers\Api\Referral;
 use App\Http\Controllers\Api\References;
 
 
+Route::prefix('/docs/api')->group(function () {
+    Route::post('/referral', [Referral::class, '/docs/api']);
+    Route::post('/reference', [References::class, '/docs/api']);
+});
+
 Route::get('generate_code/{hfhudcode}', [References::class, 'generate_reference'])->middleware('auth:sanctum')->name('referral.reference');
 
 //Reference
@@ -20,7 +25,6 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/reason-referral', [References::class, 'referral_reason'])->name('referral.reason');
     Route::get('/reason-referral-code/{code}', [References::class, 'referral_reason_by_code'])->name('referral.reason.code');
-   // Route::get('/region/{id}', [Referral::class, 'region'])->name('referral.region');
 });
 
 /* Referral type */
@@ -53,6 +57,10 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::post('/admit', [Referral::class, 'admit'])->name('referral.admit');
+});
+
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::post('/get-discharged-data', [Referral::class, 'get_discharged_data'])->name('referral.get.discharge.data');
 });
 
 
