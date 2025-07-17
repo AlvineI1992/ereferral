@@ -99,7 +99,7 @@ class Referral extends Controller
     }
 
     /**
- * Referral a patient to another facility.
+ * Patient Referral.
  *
  * @OA\Post(
  *     path="/api/refer_patient",
@@ -617,7 +617,7 @@ public function barangay($id)
 
 /**
  * 
- *  Get facility information by fhudcode/facility code.
+ *  Get Facility Information.
  *
  * @OA\Get(
  *     path="/api/facility/{id}",
@@ -921,6 +921,8 @@ public function get_facility_list($id)
      return response()->json($transformedReferral);
  }
 /**
+ *  Get referral line list/s.
+ *
  * @OA\Get(
  *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
  *     summary="Get referral list by HFHUDCODE and EMR ID",
@@ -1035,58 +1037,9 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 
 
 
-
-
-
-
 /**
- * @OA\Get(
- *     path="/api/referral-type-code/{code}",
- *     operationId="getReferralTypeByCode",
- *     tags={"References"},
- *     summary="Get Referral Type by Code",
- *     description="Returns details of a referral type by its code.",
- *     @OA\Parameter(
- *         name="code",
- *         in="path",
- *         required=true,
- *         description="Referral type code",
- *         @OA\Schema(
- *             type="string",
- *             example="TRANS"
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="data",
- *                 type="object",
- *                 example={
- *                     "code": "TRANS",
- *                     "description": "Transfer"
- *                 }
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Referral type not found"
- *     )
- * )
- */
-public function referral_type_code($code)
-{
-    $referral_type = ReferralHelper::getReferralTypebyCode($code);
-    
-    return response()->json([
-        'data' => $referral_type
-    ]);
-}
-
-/**
+ *  Received patient from the facility.
+ *
  * @OA\Post(
  *     path="/api/received",
  *     summary="Store received referral data",
@@ -1145,7 +1098,11 @@ public function received(Request $request)
 
     return response()->json(['message' => 'Referral successfully received'], 200);
 }
+
     /**
+     *  
+     *  Admit patient on the facility.
+     * 
      * @OA\Post(
      *     path="/api/admit",
      *     operationId="admitReferral",
@@ -1369,8 +1326,10 @@ public function received(Request $request)
  
 
 /**
+ *  Get discharge information
+ * 
  * @OA\Get(
- *     path="/api/discharged-data/{logID}",
+ *     path="/api/get-discharged-data/{logID}",
  *     operationId="getDischargedData",
  *     tags={"Transactions"},
  *     summary="Get discharged patient data",

@@ -66,7 +66,7 @@
                     "Transactions"
                 ],
                 "summary": "Referral a patient to another facility",
-                "description": "Referral a patient to another facility.",
+                "description": "Patient Referral.",
                 "operationId": "1f00e2d08007a4df55970d986e2def76",
                 "requestBody": {
                     "required": true,
@@ -827,12 +827,13 @@
                     "References"
                 ],
                 "summary": "Get facility by ID",
+                "description": "Get Facility Information.",
                 "operationId": "378d68767c80374affa7b6026689bd39",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Facility HFH UDCODE",
+                        "description": "Facility HFHUDCODE",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -992,6 +993,7 @@
                     "Transactions"
                 ],
                 "summary": "Get referral list by HFHUDCODE and EMR ID",
+                "description": "Get referral line list/s.",
                 "operationId": "b645dabf25fc6aec71ecb3eb947253ba",
                 "parameters": [
                     {
@@ -1106,188 +1108,6 @@
                         "sanctum": []
                     }
                 ]
-            }
-        },
-        "/api/reason-referral": {
-            "get": {
-                "tags": [
-                    "References"
-                ],
-                "summary": "Get list of Reason for referral",
-                "description": "Returns a list of predefined codes reason for referral",
-                "operationId": "getOAOptions",
-                "responses": {
-                    "200": {
-                        "description": "List of Referral Reason",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "code": {
-                                                "type": "string",
-                                                "example": "NOEQP"
-                                            },
-                                            "description": {
-                                                "type": "string",
-                                                "example": "No equipment available"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/reason-referral-code/{code}": {
-            "get": {
-                "tags": [
-                    "References"
-                ],
-                "summary": "Get specific referral reason by code",
-                "description": "Returns a specific referral reason based on the provided code",
-                "operationId": "getReferralReasonByCode",
-                "parameters": [
-                    {
-                        "name": "code",
-                        "in": "path",
-                        "description": "Referral reason code",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "NOEQP"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Referral reason details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "code": {
-                                            "type": "string",
-                                            "example": "NOEQP"
-                                        },
-                                        "description": {
-                                            "type": "string",
-                                            "example": "No equipment available"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Referral reason not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Referral reason not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/referral-type": {
-            "get": {
-                "tags": [
-                    "References"
-                ],
-                "summary": "Get Referral Types",
-                "description": "Returns a list of available referral types.",
-                "operationId": "getReferralTypes",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string",
-                                                "example": "TRANS"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/referral-type-code/{code}": {
-            "get": {
-                "tags": [
-                    "References"
-                ],
-                "summary": "Get Referral Type by Code",
-                "description": "Returns details of a referral type by its code.",
-                "operationId": "getReferralTypeByCode",
-                "parameters": [
-                    {
-                        "name": "code",
-                        "in": "path",
-                        "description": "Referral type code",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "TRANS"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "object",
-                                            "example": {
-                                                "code": "TRANS",
-                                                "description": "Transfer"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Referral type not found"
-                    }
-                }
             }
         },
         "/api/received": {
@@ -1629,7 +1449,7 @@
                 ]
             }
         },
-        "/api/discharged-data/{logID}": {
+        "/api/get-discharged-data/{logID}": {
             "get": {
                 "tags": [
                     "Transactions"

@@ -24,9 +24,9 @@ use App\Helpers\ReferralHelper;
  *     securityScheme="sanctum"
  * )
  */
+
 class References extends Controller
 {
-    
 
     public function __construct()
     {
@@ -416,6 +416,7 @@ public function barangay($id)
 
 
 /**
+ * Get referral reason by list
  * @OA\Get(
  *     path="/api/reason-referral",
  *     operationId="getOAOptions",
@@ -449,6 +450,7 @@ public function referral_reason()
 
 
 /**
+ * Get referral reason by code
  * @OA\Get(
  *     path="/api/reason-referral-code/{code}",
  *     operationId="getReferralReasonByCode",
@@ -497,6 +499,7 @@ public function referral_reason()
  }
 
  /**
+  * Get referral type list/s
  * @OA\Get(
  *     path="/api/referral-type",
  *     operationId="getReferralTypes",
@@ -524,6 +527,54 @@ public function referral_type()
 {
     $referral_type = ReferralHelper::getReferralType();
 
+    return response()->json([
+        'data' => $referral_type
+    ]);
+}
+
+/**
+ * Get referral type by code
+ * @OA\Get(
+ *     path="/api/referral-type-code/{code}",
+ *     operationId="getReferralTypeByCode",
+ *     tags={"References"},
+ *     summary="Get Referral Type by Code",
+ *     description="Returns details of a referral type by its code.",
+ *     @OA\Parameter(
+ *         name="code",
+ *         in="path",
+ *         required=true,
+ *         description="Referral type code",
+ *         @OA\Schema(
+ *             type="string",
+ *             example="TRANS"
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful operation",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 example={
+ *                     "code": "TRANS",
+ *                     "description": "Transfer"
+ *                 }
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Referral type not found"
+ *     )
+ * )
+ */
+public function referral_type_code($code)
+{
+    $referral_type = ReferralHelper::getReferralTypebyCode($code);
+    
     return response()->json([
         'data' => $referral_type
     ]);
