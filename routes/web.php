@@ -210,7 +210,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('can:facility delete')
         ->name('facility.destroy');
 
-    Route::get('/facilities-list', [RefFacilitiesController::class, 'facility_list'])
+    Route::get('/facilities-list/{type}', [RefFacilitiesController::class, 'facility_list'])
         ->name('facility.facility_list');
 
         Route::post('/facilities/store', [RefFacilitiesController::class, 'store'])

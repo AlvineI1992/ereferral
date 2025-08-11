@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/react';
 import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/text';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import HospitalSelector from '../Ref_Facilities/HospitalSelector';
 import { InfoIcon } from 'lucide-react';
@@ -16,6 +17,11 @@ type ReferralFormProps = {
   otherReferralReason?: string;
   refferalDate?: string;
   errors?: Record<string, string>;
+};
+
+type Hospital = {
+  hfhudcode: string;
+  facility_name: string;
 };
 
 const ReferralForm = ({
@@ -32,7 +38,7 @@ const ReferralForm = ({
   const [hfhudcode, setHfhudcode] = useState('');
   const [responseCode, setResponseCode] = useState(null);
   const [error, setError] = useState(null);
-
+  const [hospitalPopoverOpen, setHospitalPopoverOpen] = useState(false);
 
   const handleSetFhudcode = async (e:any) => {
     e.preventDefault();
@@ -49,7 +55,17 @@ const ReferralForm = ({
       setResponseCode(null);
     }
   };
-
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  useEffect(() => {
+    axios
+        .get<Hospital[]>('/facilities-list/selector')
+        .then((response) => {
+            setHospitals(response.data);
+        })
+        .catch((error) => {
+            console.error('Error fetching hospitals:', error);
+        });
+}, []);
 
   const { data, setData, post, processing, errors } = useForm({
     LogID,
@@ -91,7 +107,7 @@ const ReferralForm = ({
         Referral Information
       </h1>
 
-        <div className="md:col-span-1">
+    <div className="md:col-span-1">
         <Label htmlFor="datetime" className="text-semibold">Datetime called</Label>
         <Input
           type="datetime-local"
@@ -119,22 +135,79 @@ const ReferralForm = ({
       </div>
 
       <div className="md:col-span-1">
-        <Label htmlFor="referringFacility" className="text-semibold">Referring Facility</Label>
-        <HospitalSelector />
+     
+            <HospitalSelector
+            label="Referring Facility"
+            hospitals={hospitals} // ✅ pass the list, not the setter
+            selectedHospital={data.hfhudcode}
+            setSelectedHospital={(val) => setData('hfhudcode', val)}
+            setData={setData}
+            hospitalPopoverOpen={hospitalPopoverOpen}
+            setHospitalPopoverOpen={setHospitalPopoverOpen}
+            fieldName="referringFacility"
+            errors={errors}
+              />
       </div>
 
       <div className="md:col-span-1">
-        <Label htmlFor="referralFacility" className="text-semibold">Referral Facility</Label>
+        <Label htmlFor="datetime" className="text-semibold">Philhealth Accreditation</Label>
         <Input
           type="text"
-          id="referralFacility"
-          name="referralFacility"
-          value={data.referralCategory}
-          placeholder="Referral Facility"
+          id="philHealthAccreno"
+          name="philHealthAccreno"
+          value={data.LogID}
+          placeholder="Philhealth Accreditation"
           onChange={handleChange}
+          ref={nameInputRef}
         />
-        {getError('referralFacility') && <p className="text-[10px] text-red-500 mt-1">{getError('referralFacility')}</p>}
+        {getError('philHealthAccreno') && <p className="text-[10px] text-red-500 mt-1">{getError('philHealthAccreno')}</p>}
       </div>
+
+
+      <div className="md:col-span-1">
+        <Label htmlFor="datetime" className="text-semibold">Contact person</Label>
+        <Input
+          type="text"
+          id="contactPerson"
+          name="contactPerson"
+          value={data.LogID}
+          placeholder="Contact person"
+          onChange={handleChange}
+          ref={nameInputRef}
+        />
+        {getError('contactPerson') && <p className="text-[10px] text-red-500 mt-1">{getError('contactPerson')}</p>}
+      </div>
+
+      <div className="md:col-span-1">
+        <Label htmlFor="datetime" className="text-semibold">Contact no.</Label>
+        <Input
+          type="text"
+          id="contactNo"
+          name="contactNo"
+          value={data.LogID}
+          placeholder="Contact no"
+          onChange={handleChange}
+          ref={nameInputRef}
+        />
+        {getError('contactNo') && <p className="text-[10px] text-red-500 mt-1">{getError('contactNo')}</p>}
+      </div>
+
+    
+
+      <div className="md:col-span-1">
+        <Label htmlFor="datetime" className="text-semibold">Designation</Label>
+        <Input
+          type="text"
+          id="designation"
+          name="designation"
+          value={data.LogID}
+          placeholder="Designation"
+          onChange={handleChange}
+          ref={nameInputRef}
+        />
+        {getError('designation') && <p className="text-[10px] text-red-500 mt-1">{getError('designation')}</p>}
+      </div>
+
 
       <div className="md:col-span-2">
         <Label htmlFor="transactionCode" className="text-semibold">Transaction code</Label>
@@ -237,6 +310,21 @@ const ReferralForm = ({
           </div>
         )}
       </div>
+
+      <div className="md:col-span-1">
+        <Label htmlFor="datetime" className="text-semibold">Remarks</Label>
+        <Input
+          type="text"
+          id="remarks"
+          name="remarks"
+          value={data.LogID}
+          placeholder="Remarks"
+          onChange={handleChange}
+          ref={nameInputRef}
+        />
+        {getError('designation') && <p className="text-[10px] text-red-500 mt-1">{getError('remarks')}</p>}
+      </div>
+
     </form>
   );
 };

@@ -116,20 +116,20 @@ class ReferralPatientInfoController extends Controller
             // Return the response
             return response()->json([
                 'profile' => [
-                    'fname' => $patient->patientFirstName,
-                    'mname' => $patient->patientMiddlename,
-                    'lname' => $patient->patientLastName,
-                    'dob' => $patient->patientBirthDate,
-                    'sex' => $patient->patientSex === 'M'?'Male':'Female',
-                    'age' => $this->calculateAge($patient->patientBirthDate),
-                    'avatar' => null, 
+                    'fname' => !empty($patient->patientFirstName) ? $patient->patientFirstName : null,
+                    'mname' => !empty($patient->patientMiddlename) ? $patient->patientMiddlename : null,
+                    'lname' => !empty($patient->patientLastName) ? $patient->patientLastName : null,
+                    'dob'   => !empty($patient->patientBirthDate) ? $patient->patientBirthDate : null,
+                    'sex'   => $patient->patientSex === 'M' ? 'Male' : ($patient->patientSex === 'F' ? 'Female' : null),
+                    'age'   => !empty($patient->patientBirthDate) ? $this->calculateAge($patient->patientBirthDate) : null,
+                    'avatar' => null,
                 ],
-                'demographics' =>[
-                    'street'=>$patient->patientStreetAddress,
-                    'region'=>$demographics->region->regname,
-                    'province'=>$demographics->province->provname,
-                    'city'=>$demographics->city->cityname,
-                    'barangay'=>$demographics->barangay->bgyname
+                'demographics' => [
+                    'street'   => !empty($patient->patientStreetAddress) ? $patient->patientStreetAddress : null,
+                    'region'   => !empty($demographics->region->regname) ? $demographics->region->regname : null,
+                    'province' => !empty($demographics->province->provname) ? $demographics->province->provname : null,
+                    'city'     => !empty($demographics->city->cityname) ? $demographics->city->cityname : null,
+                    'barangay' => !empty($demographics->barangay->bgyname) ? $demographics->barangay->bgyname : null,
                 ]
             ]);
         /* } catch (\Exception $e) {

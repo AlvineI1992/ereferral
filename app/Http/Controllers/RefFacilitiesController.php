@@ -70,18 +70,22 @@ class RefFacilitiesController extends Controller
         ]);
     }
 
-    public function facility_list()
+    public function facility_list($type='table')
     {
         $query = RefFacilitiesModel::select([
             'ref_facilities.hfhudcode',
             'ref_facilities.facility_name'
         ])->get();
-        return response()->json([
-            'data' => $query
-        ]);
-    }
 
-    
+        if($type == 'selector'){
+            return response()->json($query);
+        }else{
+            return response()->json([
+                'data' => $query
+            ]);
+        }
+       
+    }
 
 
     /**
