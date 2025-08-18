@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\RoleController;
+
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\RefEmrController;
@@ -15,8 +15,6 @@ use App\Http\Controllers\ReferralPatientInfoController;
 use App\Http\Controllers\ReferralClinicalController;
 
 use Illuminate\Http\Request;
-
-
 
 Route::get('/', function () {
     return Inertia::render('auth/login');
@@ -76,17 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::patch('/users/assign-roles/{id}', [RegisteredUserController::class, 'assignRolesToUser'])->name('user.assign');
 Route::patch('/users/revoke-roles/{id}', [RegisteredUserController::class, 'revokeRolesFromUser'])->name('user.revoke');
 
-// Inertia Page Route (Web, uses session-based auth)
-Route::get('/roles', function (Request $request) {
-    $permissions = [
-        'canCreateRole' => $request->user()->can('role create'),
-        'canEditRole' => $request->user()->can('role edit'),
-        'canDeleteRole' => $request->user()->can('role delete'),
-        'canViewRole' => $request->user()->can('role list'),
-        'canAssignRole' => $request->user()->can('role assign'),
-    ];
-    return Inertia::render('Roles/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('/roles');
+
 
 Route::get('roles/assign/{id}', function (Request $request,$id) {
     $permissions = [
@@ -105,13 +93,6 @@ Route::get('roles/assigned/{id}', function ($id) {
 })->middleware(['auth:sanctum', 'verified']);
 
 // API Routes (Sanctum-protected)
-Route::middleware('auth:sanctum')->group(function () {
-  /*   Route::get('/roles', [RoleController::class, 'index']); */
-    Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
-    Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
-});
 
 Route::patch('/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
 Route::patch('/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
@@ -359,3 +340,4 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/role.php';

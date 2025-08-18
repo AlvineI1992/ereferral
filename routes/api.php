@@ -15,6 +15,7 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/city/{id}', [Referral::class, 'city'])->name('referral.city');
     Route::get('/barangay/{id}', [Referral::class, 'barangay'])->name('referral.barangay');
 });
+
 /* Reason for Referral */
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/reason-referral', [Referral::class, 'referral_reason'])->name('referral.reason');
