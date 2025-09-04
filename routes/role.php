@@ -3,6 +3,8 @@
 use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roles/list', [RoleController::class, 'index']);
@@ -12,7 +14,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
 });
 
-// Inertia Page Route (Web, uses session-based auth)
 Route::get('/roles', function (Request $request) {
     $permissions = [
         'canCreateRole' => $request->user()->can('role create'),

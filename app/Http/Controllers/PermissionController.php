@@ -140,8 +140,7 @@ class PermissionController extends Controller
     public function update(Request $request, PermissionModel $permission)
     {
         $request->validate([
-            //'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
-            'name' => 'required|unique:permissions,name,' . $permission->id,
+            'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
         ]);
 
         $permission->update([
@@ -149,7 +148,7 @@ class PermissionController extends Controller
             'guard_name' => 'web',
         ]);
 
-        return redirect()->route('permission')->with('message', 'Permission updated successfully.');
+        return redirect()->route('permission.index')->with('message', 'Permission updated successfully.');
     }
 
     /**
@@ -158,7 +157,7 @@ class PermissionController extends Controller
      * @param  \App\Models\Permission  $permission
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Permission $permission)
+    public function destroy(PermissionModel $permission)
     {
         $permission->delete();
         return redirect()->route('permission.index')->with('message','Permission deleted successfully');
