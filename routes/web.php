@@ -36,7 +36,7 @@ Route::get('/users', function (Request $request) {
         'canAssign' => $request->user()->can('user assign'),
     ];
     return Inertia::render('Users/Index',$permissions);
-})->middleware(['auth', 'verified'])->name('/users');
+})->middleware(['auth', 'verified'])->name('user.index');
 
 
 Route::get('/users/create', function () {
@@ -63,7 +63,7 @@ Route::get('/users/assigned-roles/{id}', function ($id) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/users/list', [RegisteredUserController::class, 'index'])->name('user.list');
+    Route::get('/users/list', [RegisteredUserController::class, 'index'])->name('user.list  ');
     Route::put('/users/update/{role}', [RegisteredUserController::class, 'update'])->name('user.update');
     Route::delete('/users/delete/{role}', [RegisteredUserController::class, 'destroy'])->name('user.destroy');
     Route::post('/users/store', [RegisteredUserController::class, 'store'])->name('user.store');
@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::patch('/users/assign-roles/{id}', [RegisteredUserController::class, 'assignRolesToUser'])->name('user.assign');
 Route::patch('/users/revoke-roles/{id}', [RegisteredUserController::class, 'revokeRolesFromUser'])->name('user.revoke');
+
 
 Route::get('roles/assign/{id}', function (Request $request,$id) {
     $permissions = [
@@ -93,8 +94,11 @@ Route::get('roles/assigned/{id}', function ($id) {
 
 // API Routes (Sanctum-protected)
 
+
+
 Route::patch('/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
 Route::patch('/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
+
 
 
 
@@ -191,7 +195,7 @@ Route::get('/incoming', function (Request $request) {
     ];
 
     return Inertia::render('Incoming/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('incoming'); 
+})->middleware(['auth:sanctum', 'verified'])->name('incoming.index'); 
 
 
 Route::get('/referrals/create', function (Request $request) {
@@ -200,7 +204,7 @@ Route::get('/referrals/create', function (Request $request) {
         'canCreate' => $request->user()->can('incoming create'),
         'canEdit' => $request->user()->can('incoming edit'),
         'canDelete' => $request->user()->can('incoming delete'),
-        'canVie' => $request->user()->can('incoming list'),
+        'canView' => $request->user()->can('incoming list'),
     ];
 
     return Inertia::render('Incoming/Form',$permissions);

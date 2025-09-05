@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import {
+    Command,
+    CommandInput,
+    CommandList,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+} from '@/components/ui/command';
 import { Label } from '@/components/ui/label';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+import axios from 'axios';
+
 
 export type Hospital = {
     hfhudcode: string;
@@ -13,7 +23,7 @@ export type Hospital = {
 
 export type HospitalSelectorProps = {
     label?: string;
-    hospitals: Hospital[];
+    hospitals?: Hospital[];
     selectedHospital: string;
     setSelectedHospital: (hfhudcode: string) => void;
     setData: (field: string, value: any) => void;
@@ -31,16 +41,38 @@ const HospitalSelector: React.FC<HospitalSelectorProps> = ({
     setData,
     hospitalPopoverOpen,
     setHospitalPopoverOpen,
-    fieldName = 'access_id',
-    errors = {}
+
+    errors = {},
+
 }) => {
+    const [localHospitals, setLocalHospitals] = useState<Hospital[]>(hospitals);
+
+    useEffect(() => {
+        if (hospitals.length === 0) {
+            axios
+                .get('/facilities-list')
+                .then((res) => setLocalHospitals(res.data.data))
+                .catch((err) => console.error(err));
+        }
+    }, [hospitals]);
+
+    const handleSelect = (facility_name: string) => {
+        const selected = localHospitals.find(h => h.facility_name === facility_name);
+        if (selected) {
+            setSelectedHospital(selected.hfhudcode);
+            setHospitalPopoverOpen(false);
+        }
+    };
+
     return (
         <div className="grid gap-1">
+
             {label && (
                 <Label htmlFor="hospital-selector" className="text-semibold">
                     {label}
                 </Label>
             )}
+
 
             <Popover open={hospitalPopoverOpen} onOpenChange={setHospitalPopoverOpen}>
                 <PopoverTrigger asChild>
@@ -54,25 +86,27 @@ const HospitalSelector: React.FC<HospitalSelectorProps> = ({
                             errors[fieldName] && 'border-red-500 focus:border-red-500 focus:ring-red-500'
                         )}
                     >
-                        {hospitals.find(f => f.hfhudcode === selectedHospital)?.facility_name || 'Select hospital...'}
+                        {localHospitals.find(f => f.hfhudcode === selectedHospital)?.facility_name || 'Select hospital...'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-100 p-0">
+                <PopoverContent className="w-full p-0">
                     <Command>
                         <CommandInput placeholder="Search hospital..." />
                         <CommandList>
                             <CommandEmpty>No hospital found.</CommandEmpty>
                             <CommandGroup>
-                                {hospitals.map(hospital => (
+                                {localHospitals.map((hospital) => (
                                     <CommandItem
                                         key={hospital.hfhudcode}
                                         value={hospital.facility_name}
+
                                         onSelect={() => {
                                             setSelectedHospital(hospital.hfhudcode);
                                             setData(fieldName, hospital.hfhudcode);
                                             setHospitalPopoverOpen(false);
                                         }}
+
                                     >
                                         <Check
                                             className={cn(
@@ -89,8 +123,10 @@ const HospitalSelector: React.FC<HospitalSelectorProps> = ({
                 </PopoverContent>
             </Popover>
 
+
             {errors[fieldName] && (
                 <p className="text-sm text-red-500 mt-1">{errors[fieldName]}</p>
+
             )}
         </div>
     );

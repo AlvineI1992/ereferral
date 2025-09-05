@@ -16,12 +16,14 @@ const RolesList = ({ canEdit,canDelete,canAssign,refreshKey, onEdit }: RolesList
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
-  const perPage = 10; // Set per page
+  const perPage = 10; 
 
   const fetchData = async (pageNumber = 1, search = "", id = null) => { 
     setLoading(true);
     try {
+
       const baseUrl = id ? `/roles/${id}` : `/roles/list`;
+
 
       const response = await axios.get(`${baseUrl}?page=${pageNumber}&search=${search}`);
       

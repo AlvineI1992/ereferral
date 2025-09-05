@@ -23,6 +23,10 @@ use App\Models\RefFacilityModel;
 use App\Models\ReferralPatientInfoModel;
 use App\Helpers\ReferralHelper;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+
+use Illuminate\Support\Facades\Log;
+
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
  * @OA\SecurityScheme(
@@ -95,7 +99,7 @@ class Referral extends Controller
     }
 
     /**
- * Referral a patient to another facility.
+ * Patient Referral.
  *
  * @OA\Post(
  *     path="/api/refer_patient",
@@ -193,40 +197,41 @@ class Referral extends Controller
  * )
  */
 
-    public function patient_referral(PatientReferralRequest $request)
-    {
-        $jsonString = $request->getContent(); 
-        $data = json_decode($jsonString, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'error' => 'JSON Decode Error: ' . json_last_error_msg()
-            ], 400);
-        }
-
-        $rawData = $data;
-        $validatedData = $request->validated();
-        $mergedData = array_merge($rawData, $validatedData);
-        $check_from =  RefFacilityModel::select('emr_id')->where('hfhudcode', $mergedData['referral']['facility_from'])->first()->facility_name;
-        if($check_from)
-        {
-            return response()->json([
-                'error' =>'Referring facility not registered to any emr provider!'
-            ], 400);
-        }
-        $check_to =  RefFacilityModel::select('emr_id')->where('hfhudcode', $mergedData['referral']['facility_to'])->first()->facility_name;
-
-        if($check_to)
-        {
-            return response()->json([
-                'error' =>'Referral facility not registered to any emr provider!'
-            ], 400);
-        }
-
-        $output = $this->referralService->refer_patient($mergedData);
-
-        return $output;
-    }
+ public function patient_referral(PatientReferralRequest $request)
+ {
+     // You can get both raw and validated data easily
+ 
+      $validatedData = $request->validated();
+     
+     $rawData = $request->all(); // Already parsed JSON
+ 
+     // Optional: Merge if needed
+     $mergedData = array_merge($rawData, $validatedData);
+ 
+     // Check referring facility
+     $check_from = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_from'])->first();
+ 
+     if (!$check_from || empty($check_from->emr_id)) {
+        return response()->json([
+            'error' => $check_from->facility_name.' '.'is not registered to any EMR/HITP provider!'
+        ], 400);
+     }
+ 
+     // Check referred-to facility
+     $check_to = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_to'])->first();
+ 
+     if (!$check_to || empty($check_to->emr_id)) {
+         return response()->json([
+             'error' => $check_to->facility_name.' '.'is not registered to any EMR/HITP provider!'
+         ], 400);
+     }
+ 
+     // Send to referral service
+     $output = $this->referralService->refer_patient($mergedData);
+ 
+     return $output;
+ }
+ 
 
     /**
      * Generate a reference code.
@@ -612,7 +617,7 @@ public function barangay($id)
 
 /**
  * 
- *  Get facility information by fhudcode/facility code.
+ *  Get Facility Information.
  *
  * @OA\Get(
  *     path="/api/facility/{id}",
@@ -733,16 +738,29 @@ public function get_facility_list($id)
  public function getReferralData($id)
  {
     if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
+
      $referral = ReferralModel::with([
          'patientinformation',
+         'facility_to',
+         'facility_from',
          'medication',
          'demographics',
-         'clinical'
+         'clinical',
      ])->where('LogID', $id)->first();
- 
+
+
+     $consulting = DB::table('referral_provider')
+     ->where('LogID', $id)
+     ->where('provider_type', 'CONSU')
+     ->first();
+
+      $referring = DB::table('referral_provider')
+     ->where('LogID', $id)
+     ->where('provider_type', 'REFER')
+     ->first();
+
      if (!$referral) {
          return response()->json(['error' => 'Referral not found'], 404);
      }
@@ -757,40 +775,64 @@ public function get_facility_list($id)
      $transformedDemographics = [];
      if ($referral->demographics) {
          $transformedDemographics['address'] = $referral->demographics->patientStreetAddress ?? null;
-         $transformedDemographics['barangay'] = $referral->demographics->patientBrgyCode ?? null;
-         $transformedDemographics['city'] = $referral->demographics->patientMundCode ?? null;
-         $transformedDemographics['province'] = $referral->demographics->patientProvCode ?? null;
-         $transformedDemographics['region'] = $referral->demographics->patientRegCode ?? null;
-         $transformedDemographics['zipcode'] = $referral->demographics->patientZipCode ?? null;
+         $transformedDemographics['barangay_code'] = $referral->demographics->patientBrgyCode;
+         $transformedDemographics['barangay'] = ReferralHelper::getBarangay($referral->demographics->patientBrgyCode);
+         $transformedDemographics['city_code'] = $referral->demographics->patientMundCode;
+         $transformedDemographics['city'] = ReferralHelper::getCity($referral->demographics->patientMundCode); 
+         $transformedDemographics['province_code'] = $referral->demographics->patientProvCode;
+         $transformedDemographics['province'] = ReferralHelper::getProvince($referral->demographics->patientProvCode); 
+         $transformedDemographics['region_code'] = $referral->demographics->patientRegCode;
+         $transformedDemographics['region'] = ReferralHelper::getRegion($referral->demographics->patientRegCode); 
+         $transformedDemographics['zipcode'] =$referral->demographics->patientZipCode;
      }else{
         $transformedDemographics['address'] = '';
+        $transformedDemographics['barangay_code'] = '';
         $transformedDemographics['barangay'] = '';
+        $transformedDemographics['city_code'] = '';
         $transformedDemographics['city'] = '';
+        $transformedDemographics['province_code'] = '';
         $transformedDemographics['province'] = '';
+        $transformedDemographics['region_code'] = '';
         $transformedDemographics['region'] = '';
-        $transformedDemographics['zipcode'] ='';
+        $transformedDemographics['zipcode'] = '';
      }
  
   
      $transformedClinical = [];
      if ($referral->clinical) {
-         $transformedClinical['diagnosis'] = $referral->clinical->clinicalDiagnosis ?? null;
+        $diagnosis = $referral->clinical->clinicalDiagnosis;
+        $transformedClinical['diagnosis'] = is_string($diagnosis) ? trim($diagnosis) : null;
          $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
          $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
-         $transformedClinical['vitals'] = $referral->clinical->vitals ?? null;
+
+         $vitalsRaw = $referral->clinical->vitals;
+         $vitalsigns = null;
+        
+        if (is_string($vitalsRaw)) {
+            $decoded = json_decode(stripslashes(trim($vitalsRaw, '"')), true);
+            $vitalsigns = $decoded ?: null;
+        }
+         
+         $transformedClinical['vitalsigns'] = $vitalsigns;
+         $transformedClinical['findings'] = $referral->clinical->findings ?? null;
+         $transformedClinical['physical_examination'] = $referral->clinical->physicalExamination ?? null;
      }else{
         $transformedClinical['diagnosis'] = '';
-        $transformedClinical['history'] = '';
-        $transformedClinical['chief_complaint'] ='';
-        $transformedClinical['vitals'] = '';
+         $transformedClinical['history'] = '';
+         $transformedClinical['chief_complaint'] = '';
+         $transformedClinical['vitalsigns'] =  [];
+         $transformedClinical['findings'] = '';
+         $transformedClinical['physical_examination']='';
      }
 
       $transformedPatient = [];
+
       if ($referral->patientinformation) {
-          $transformedPatient['patient_lastname'] = $referral->patientinformation->patientLastName ?? null;
-          $transformedPatient['patient_firstname'] = $referral->patientinformation->patientFirstName ?? null;
-          $transformedPatient['patient_middlename'] = $referral->patientinformation->patientMiddleName ?? null;
-          $transformedPatient['patient_birthdate'] = $referral->patientinformation->patientBirthDate ?? null;
+          $transformedPatient['patient_lastname'] = strtoupper($referral->patientinformation->patientLastName ?? null);
+          $transformedPatient['patient_firstname'] = strtoupper($referral->patientinformation->patientFirstName ?? null);
+          $transformedPatient['patient_middlename'] = strtoupper($referral->patientinformation->patientMiddlename ?? null);
+          $transformedPatient['patient_suffix'] = strtoupper($referral->patientinformation->patientSuffix ?? null);
+          $transformedPatient['patient_birthdate'] = date('m/d/Y',strtotime($referral->patientinformation->patientBirthDate));
           $transformedPatient['patient_sex'] = $referral->patientinformation->patientSex ?? null;
           $transformedPatient['patient_civilstatus'] = $referral->patientinformation->patientCivilStatus ?? null;
           $transformedPatient['patient_contact'] = $referral->patientinformation->patientContactNumber ?? null;
@@ -811,6 +853,7 @@ public function get_facility_list($id)
       }
 
       $transformedMedication = [];
+
       if ($referral->medications) {
           $transformedMedication['drugcode'] = $referral->medications->drugcode ?? null;
           $transformedMedication['generic_name'] = $referral->medications->generic ?? null;
@@ -820,32 +863,66 @@ public function get_facility_list($id)
           $transformedMedication['generic_name'] = '';
           $transformedMedication['instructions'] ='';
       }
- 
+
+      $transformedFacility_origin = [];
+      if ($referral->facility_from) {
+          $transformedFacility_origin['referral_hfhudcode'] = $referral->facility_from->hfhudcode ;
+          $transformedFacility_origin['referral_facility_name'] = $referral->facility_from->facility_name;
+          $transformedFacility_origin['referral_facility_type'] = ReferralHelper::getFacilityType($referral->facility_from->facility_type);
+          $transformedFacility_origin['referral_address'] = $referral->facility_from->fhudaddress;
+          $transformedFacility_origin['referral_region'] = ReferralHelper::getRegion($referral->facility_from->region_code);
+          $transformedFacility_origin['referral_province'] = ReferralHelper::getProvince($referral->facility_from->province_code);
+          $transformedFacility_origin['referral_city'] = ReferralHelper::getCity($referral->facility_from->city_code);
+          $transformedFacility_origin['referral_barangay'] = ReferralHelper::getBarangay($referral->facility_from->bgycode);
+          $transformedFacility_origin['referral_zipcode'] = $referral->facility_from->zip_code;
+      }
+
+
+      $transformedFacility_destination = [];
+      if ($referral->facility_to) {
+          $transformedFacility_destination['referring_hfhudcode'] = $referral->facility_to->hfhudcode ;
+          $transformedFacility_destination['referring_facility_name'] = $referral->facility_to->facility_name;
+          $transformedFacility_destination['referring_facility_type'] = ReferralHelper::getFacilityType($referral->facility_to->facility_type);
+          $transformedFacility_destination['referring_address'] = $referral->facility_to->fhudaddress;
+          $transformedFacility_destination['referring_region'] = ReferralHelper::getRegion($referral->facility_to->region_code);
+          $transformedFacility_destination['referring_province'] = ReferralHelper::getProvince($referral->facility_to->province_code);
+          $transformedFacility_destination['referring_city'] = ReferralHelper::getCity($referral->facility_to->city_code);
+          $transformedFacility_destination['referring_barangay'] = ReferralHelper::getBarangay($referral->facility_to->bgycode);
+          $transformedFacility_destination['referring_zipcode'] = $referral->facility_to->zip_code;
+      }
+      
      $transformedReferral = [
          'LogID' => $referral->LogID,
          'referral_origin' => $referral->fhudFrom,
          'referral_destination' => $referral->fhudTo,
-         'referral_reason' => $referral->referralReason,
-         'referral_date' => $referral->refferalDate,
+         'referral_type_code' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['code'],
+         'referral_type' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+         'referral_reason_code' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['code'],
+         'referral_reason' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
+         'referral_date' => date('m/d/Y',strtotime($referral->refferalDate)),
          'referral_time' => $referral->refferalTime,
+         
          'referral_category' => $referral->referralCategory,
-         'referring_provider' => $referral->referringProvider,
+         'referring_provider' => $consulting ?? '' ,
+         'referral_provider' => $referring ?? '',
          'medications' => $referral->medication,
          'special_instructions' => $referral->specialinstruct,
-         'contact_number' => $referral->referringProviderContactNumber,
-         'patient_information' => $transformedPatient   ,
-         'demographics' => $transformedDemographics,
-         'clinical' => $transformedClinical
+         'referral_contact_name'=>$referral->referralContactPerson,
+         'referral_contact_number' => $referral->referringProviderContactNumber,
+         'referral_contact_designation' => $referral->referralPersonDesignation,
+         'patient_information' => $transformedPatient,
+         'patient_demographics' => $transformedDemographics,
+         'clinical' => $transformedClinical,
+         'facility_origin' => $transformedFacility_origin,
+         'facility_destination' => $transformedFacility_destination,
      ];
 
      // Return the transformed data in the expected format
-     return response()->json([
-         'data' => [
-            'referral' => $transformedReferral,
-         ]
-     ]);
+     return response()->json($transformedReferral);
  }
 /**
+ *  Get referral line list/s.
+ *
  * @OA\Get(
  *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
  *     summary="Get referral list by HFHUDCODE and EMR ID",
@@ -903,9 +980,6 @@ public function get_facility_list($id)
  */
 public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 {
-    //
-    //$emr_id =Crypt::decryptString($cipher);
-
     if (!Auth::check()) {
         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
     }
@@ -914,11 +988,13 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
     }
 
-    $referrals = ReferralModel::with(['facility_from', 'facility_to'])
-        ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
-            $query->where('emr_id', $emr_id)
-            ->where('fhudTo', $hfhudcode);
-        })->get();
+    $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
+    ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
+        $query->where('emr_id', $emr_id)
+              ->where('fhudTo', $hfhudcode);
+    })
+    ->whereDoesntHave('track') // This excludes referrals with any related track
+    ->get();
 
     if ($referrals->isEmpty()) {
         return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
@@ -935,9 +1011,9 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         return [    
             'LogID' => $referral->LogID,
             'referral_origin_code' => $referral->fhudFrom,
-            'referral_origin_name' => optional($referral->facility_from)->facility_name,
+            'referral_origin_name' => optional(RefFacilityModel::where('hfhudcode', $referral->fhudFrom)->first())->facility_name,
             'referral_destination_code' => $referral->fhudTo,
-            'referral_destination_name' => optional($referral->facility_to)->facility_name,
+            'referral_destination_name' => $referral->facility_name,
             'referral_reason' => $referral->referralReason,
             'referral_patient'=>$fullName, 
             'referral_patient_sex'=>strtoupper($patient->patientSex),
@@ -962,165 +1038,8 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
 
 
 /**
- * @OA\Get(
- *     path="/api/reason-referral",
- *     operationId="getOAOptions",
- *     tags={"References"},
- *     summary="Get list of Reason for referral",
- *     description="Returns a list of predefined codes reason for referral",
- *      security={{ "sanctum": {} }},
- *     @OA\Response(
- *         response=200,
- *         description="List of Referral Reason",
- *         @OA\JsonContent(
- *             type="array",
- *             @OA\Items(
- *                 type="object",
- *                 @OA\Property(property="code", type="string", example="NOEQP"),
- *                 @OA\Property(property="description", type="string", example="No equipment available")
- *             )
- *         )
- *     )
- * )
- */
-public function referral_reason()
-{
-    $referral_reason = ReferralHelper::getReferralReasons();
-    return response()->json([
-        'data'=>$referral_reason
-    ]);
-}
-
-/**
- * @OA\Get(
- *     path="/api/reason-referral-code/{code}",
- *     operationId="getReferralReasonByCode",
- *     tags={"References"},
- *     summary="Get specific referral reason by code",
- *     description="Returns a specific referral reason based on the provided code",
- * security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="code",
- *         in="path",
- *         required=true,
- *         description="Referral reason code",
- *         @OA\Schema(type="string", example="NOEQP")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Referral reason details",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="code", type="string", example="NOEQP"),
- *             @OA\Property(property="description", type="string", example="No equipment available")
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Referral reason not found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="message", type="string", example="Referral reason not found")
- *         )
- *     )
- * )
- */
-
-public function referral_reason_by_code($code)
-{
-    $referral_reason = ReferralHelper::getReferralReasonbyCode($code);
-    
-    if (!$referral_reason) {
-        return response()->json(['message' => 'Referral reason not found'], 404);
-    }
-
-    return response()->json([
-        'data' => $referral_reason
-    ]);
-}
-
-
-/**
- * @OA\Get(
- *     path="/api/referral-type",
- *     operationId="getReferralTypes",
- *     tags={"References"},
- *     summary="Get Referral Types",
- *     description="Returns a list of available referral types.",
- *     @OA\Response(
- *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     type="string",
- *                     example="TRANS"
- *                 )
- *             )
- *         )
- *     )
- * )
- */
-public function referral_type()
-{
-    $referral_type = ReferralHelper::getReferralType();
-
-    return response()->json([
-        'data' => $referral_type
-    ]);
-}
-
-/**
- * @OA\Get(
- *     path="/api/referral-type-code/{code}",
- *     operationId="getReferralTypeByCode",
- *     tags={"References"},
- *     summary="Get Referral Type by Code",
- *     description="Returns details of a referral type by its code.",
- *     @OA\Parameter(
- *         name="code",
- *         in="path",
- *         required=true,
- *         description="Referral type code",
- *         @OA\Schema(
- *             type="string",
- *             example="TRANS"
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="data",
- *                 type="object",
- *                 example={
- *                     "code": "TRANS",
- *                     "description": "Transfer"
- *                 }
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Referral type not found"
- *     )
- * )
- */
-public function referral_type_code($code)
-{
-    $referral_type = ReferralHelper::getReferralTypebyCode($code);
-    
-    return response()->json([
-        'data' => $referral_type
-    ]);
-}
-
-/**
+ *  Received patient from the facility.
+ *
  * @OA\Post(
  *     path="/api/received",
  *     summary="Store received referral data",
@@ -1179,7 +1098,11 @@ public function received(Request $request)
 
     return response()->json(['message' => 'Referral successfully received'], 200);
 }
+
     /**
+     *  
+     *  Admit patient on the facility.
+     * 
      * @OA\Post(
      *     path="/api/admit",
      *     operationId="admitReferral",
@@ -1403,8 +1326,10 @@ public function received(Request $request)
  
 
 /**
+ *  Get discharge information
+ * 
  * @OA\Get(
- *     path="/api/discharged-data/{logID}",
+ *     path="/api/get-discharged-data/{logID}",
  *     operationId="getDischargedData",
  *     tags={"Transactions"},
  *     summary="Get discharged patient data",

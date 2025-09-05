@@ -37,14 +37,14 @@ return [
      */
     'ui' => [
         /*
-         * Define the title of the documentation's website. App name is used when this config is `null`.
+         * Define the title of the documentation's website. App name is used when this configservers `null`.
          */
         'title' => 'eReferral',
 
         /*
          * Define the theme of the documentation. Available options are `light` and `dark`.
          */
-        'theme' => 'light',
+        'theme' => 'dark',
 
         /*
          * Hide the `Try It` feature. Enabled by default.
@@ -54,7 +54,7 @@ return [
         /*
          * Hide the schemas in the Table of Contents. Enabled by default.
          */
-        'hide_schemas' => true,
+        'hide_schemas' => false,
 
         /*
          * URL to an image that displays as a small square logo next to the title, above the table of contents.
@@ -64,7 +64,7 @@ return [
         /*
          * Use to fetch the credential policy for the Try It feature. Options are: omit, include (default), and same-origin
          */
-        'try_it_credentials_policy' => 'omit',
+        'try_it_credentials_policy' => 'same-origin',
 
         /*
          * There are three layouts for Elements:
@@ -73,6 +73,7 @@ return [
          * - stacked - Everything in a single column, making integrations with existing websites that have their own sidebar or other columns already.
          */
         'layout' => 'responsive',
+        'only_if_env' => ['local', 'production', 'staging'],
     ],
 
     /*
@@ -105,11 +106,11 @@ return [
      *    @see https://redocly.com/docs-legacy/api-reference-docs/specification-extensions/x-enum-descriptions
      * - false - Case descriptions are ignored.
      */
-    'enum_cases_description_strategy' => 'false',
+    'enum_cases_description_strategy' => 'description',
 
     'middleware' => [
         'web',
-        RestrictedDocsAccess::class,
+        //RestrictedDocsAccess::class,
     ],
 
     'extensions' => [
@@ -119,7 +120,7 @@ return [
                 'type' => 'http',
                 'scheme' => 'bearer',
                 'bearerFormat' => 'Bearer',
-                'description' => 'Laravel Sanctum Bearer Token Authentication',
+                'description' => 'Token Authentication',
             ],
         ],
     ],

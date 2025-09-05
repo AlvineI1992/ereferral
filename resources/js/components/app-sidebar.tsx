@@ -29,33 +29,21 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
+import { useMemo } from 'react';
+
 const mainNavItems: NavItem[] = [
-    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
-    { title: 'Incoming', href: '/incoming', icon: Inbox },
-    { title: 'Outgoing', href: '/dashboard', icon: ExternalLink },
-    { title: 'Patient', href: '/patient_registry', icon: BriefcaseMedical },
-    { title: 'Records', href: '/dashboard', icon: FileBadge },
-    { title: 'Appointments', href: '/dashboard', icon: Calendar1 },
-    { title: 'Bed Tracker', href: '/dashboard', icon: BedDouble },
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid }, // Changed to route
+    { title: 'Incoming', href: '/incoming', icon: Inbox }, // Changed to route
+    { title: 'Outgoing', href: '/outgoing', icon: ExternalLink }, // Changed to route
+    { title: 'Patient', href: '/patient_registry', icon: BriefcaseMedical }, // Changed to route
+    { title: 'Records', href: '/records', icon: FileBadge }, // Changed to route
+    { title: 'Appointments', href: '/appointments', icon: Calendar1 }, // Changed to route
+    { title: 'Bed Tracker', href: '/bed_tracker', icon: BedDouble }, // Changed to route
 ];
 
 const navReferences: NavItem[] = [
-    { title: 'Demographics', href: '/dashboard', icon: MapPinned },
-    { title: 'Facilities', href: '/facilities', icon: Hospital },
-];
-
-const adminNavItems: NavItem[] = [
-    {
-        title: 'Administrator',
-        href: '#',
-        icon: User,
-        submenu: [
-            { title: 'Manage Provider', href: '/emr', icon: CircleChevronRight },
-            { title: 'Manage Users', href: '/users', icon: CircleChevronRight },
-            { title: 'Roles', href: '/roles', icon: CircleChevronRight },
-            { title: 'Permissions', href: '/permission', icon: CircleChevronRight },
-        ],
-    },
+    { title: 'Demographics', href: '/demographics', icon: MapPinned }, // Changed to route
+    { title: 'Facilities', href: '/facilities', icon: Hospital }, // Changed to route
 ];
 
 const footerNavItems: NavItem[] = [];
@@ -63,16 +51,46 @@ const footerNavItems: NavItem[] = [];
 export function AppSidebar() {
     const { props } = usePage();
     const user = props.auth?.user;
- 
     const userRoles = user?.roles || [];
-    console.log(userRoles);
+
+    const getRouteOrFallback = (routeName: string, fallback: string) => {
+        try {
+            return route(routeName);
+        } catch (error) {
+            console.warn(`Error resolving route: ${routeName}, using fallback.`);
+            return fallback;
+        }
+    };
+
+    // Check roles (case-insensitive)
+    const hasAdminRole = useMemo(() => {
+        const normalized = userRoles.map((r: string) => r.toLowerCase());
+        return normalized.includes('admin') || normalized.includes('super-admin');
+    }, [userRoles]);
+
+    const adminNavItems: NavItem[] = [
+        {
+            title: 'Admin',
+            href: '#',
+            icon: User,
+            submenu: [
+                { title: 'Provider', href: 'emr.index', icon: CircleChevronRight },
+                { title: 'Users', href: 'user.index', icon: CircleChevronRight },
+                { title: 'Roles', href: 'roles.index', icon: CircleChevronRight },
+                { title: 'Permissions', href: 'permission.index', icon: CircleChevronRight },
+            ],
+        },
+    ];
+
+    console.log(hasAdminRole); // Can be used for debugging or conditional rendering
+
     return (
         <Sidebar collapsible="offcanvas" variant="sidebar">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
+                            <Link href={getRouteOrFallback('dashboard.index', '/dashboard')} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -83,8 +101,8 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={mainNavItems} />
                 <NavReference items={navReferences} />
-                <NavAdministrator items={adminNavItems} />
-                 
+                
+                {hasAdminRole && <NavAdministrator items={adminNavItems} />} {/* Conditionally render the admin menu */}
             </SidebarContent>
 
             <SidebarFooter>

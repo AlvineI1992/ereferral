@@ -251,10 +251,10 @@ class ReferralService
          
             $referring_provider=[
                 'LogID'=>$LogID,
-                'provider_last'=>$data['patient_providers'][0]['provider_last_name'],
-                'provider_first'=>$data['patient_providers'][0]['provider_first_name'],
-                'provider_middle'=>$data['patient_providers'][0]['provider_middle_name'],
-                'provider_suffix'=>($data['patient_providers'][0]['provider_suffix'])?$data['patient_providers'][0]['provider_suffix']:'N/A',
+                'provider_last'=>$data['patient_providers'][0]['provider_last'],
+                'provider_first'=>$data['patient_providers'][0]['provider_first'],
+                'provider_middle'=>$data['patient_providers'][0]['provider_middle'],
+                'provider_suffix'=>($data['patient_providers'][0]['provider_suffix']) ? $data['patient_providers'][0]['provider_suffix']:'N/A',
                 'provider_type'=>$data['patient_providers'][0]['provider_type'],
             ];
             
@@ -262,26 +262,26 @@ class ReferralService
 
             $consulting_provider=[
                 'LogID'=>$LogID,
-                'provider_last'=>$data['patient_providers'][1]['provider_last_name'],
-                'provider_first'=>$data['patient_providers'][1]['provider_first_name'],
-                'provider_middle'=>$data['patient_providers'][1]['provider_middle_name'],
+                'provider_last'=>$data['patient_providers'][1]['provider_last'],
+                'provider_first'=>$data['patient_providers'][1]['provider_first'],
+                'provider_middle'=>$data['patient_providers'][1]['provider_middle'],
                 'provider_suffix'=>($data['patient_providers'][1]['provider_suffix'])?$data['patient_providers'][1]['provider_suffix']:'N/A',
                 'provider_type'=>$data['patient_providers'][1]['provider_type'],
             ];
 
             DB::table('referral_provider')->insert($consulting_provider);
-
-            $clinical =[
-                'LogID'=>$LogID,
-                'clinicalDiagnosis'=>$data['clinical']['diagnosis'],
-                'clinicalHistory'=>$data['clinical']['history'],
-                'physicalExamination'=>$data['clinical']['physical_examination'],
-                'chiefComplaint'=>$data['clinical']['chief_complaint'],
-                'findings'=>$data['clinical']['findings'],
-                'vitals'=> json_encode($data['vital_signs'])
+            $clinical = $data['clinical'];
+            $insertData = [
+                'LogID'               => $LogID,
+                'clinicalDiagnosis'   => implode(', ', $clinical['diagnosis']), // or json_encode(...)
+                'clinicalHistory'     => $clinical['history'],
+                'physicalExamination' => isset($clinical['physical_examination']) ? json_encode($clinical['physical_examination']) : null,
+                'chiefComplaint'      => $clinical['chief_complaint'],
+                'findings'            => $clinical['findings'],
+                'vitals'              => json_encode($data['vital_signs']),
             ];
 
-            DB::table('referral_clinical')->insert($clinical);
+            DB::table('referral_clinical')->insert($insertData);
 
             DB::commit();
 

@@ -32,10 +32,10 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
             <SidebarGroupLabel>Administrator</SidebarGroupLabel>
             <SidebarMenu>
                 {items.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton 
-                            asChild 
-                            isActive={route().current(item.href)}
+                    <SidebarMenuItem key={`${item.title}-${item.href}`}>
+                        <SidebarMenuButton
+                            asChild
+                            isActive={route().current(item.href)} // If it's a named route, this should work
                             onClick={() => item.submenu ? toggleMenu(item.title) : null}
                         >
                             {item.submenu ? (
@@ -43,7 +43,7 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
                                     <item.icon />
                                     <span className="ml-2">{item.title}</span>
                                     <span className="ml-auto">
-                                        {openMenu === item.title ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                                        {openMenu === item.title ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                     </span>
                                 </button>
                             ) : (
@@ -57,8 +57,11 @@ export function NavAdministrator({ items = [] }: { items: NavItem[] }) {
                         {item.submenu && openMenu === item.title && (
                             <SidebarMenu className="ml-4 border-l border-gray-200">
                                 {item.submenu.map((subitem) => (
-                                    <SidebarMenuItem key={subitem.href}>
-                                        <SidebarMenuButton asChild isActive={route().current(subitem.href)}>
+                                    <SidebarMenuItem key={`${subitem.title}-${subitem.href}`}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={route().current(subitem.href)} 
+                                        >
                                             <Link href={route(subitem.href)}>
                                                 <subitem.icon />
                                                 <span>{subitem.title}</span>

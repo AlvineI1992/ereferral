@@ -265,6 +265,14 @@ const ProfileForm = () => {
                                 barangay: errors.barangay,
                             }}
                         />
+                            <Input
+                            id="zipcode"
+                            ref={nameInputRef}
+                            placeholder="Zipcode"
+                            onChange={handleChange}
+                            className="mt-1 block w-full"
+                            autoComplete="off"
+                        />
                     </div>
                 </div>
 

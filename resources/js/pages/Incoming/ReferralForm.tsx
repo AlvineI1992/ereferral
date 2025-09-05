@@ -35,9 +35,11 @@ const ReferralForm = ({
   errors: pageErrors = {},
 }: ReferralFormProps) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [hfhudcode, setHfhudcode] = useState('');
+  const [referringFacilityCode, setReferringFacilityCode] = useState('');
+  const [referralFacilityCode, setReferralFacilityCode] = useState('');
   const [responseCode, setResponseCode] = useState(null);
   const [error, setError] = useState(null);
+
   const [hospitalPopoverOpen, setHospitalPopoverOpen] = useState(false);
 
   const handleSetFhudcode = async (e:any) => {
@@ -67,6 +69,7 @@ const ReferralForm = ({
         });
 }, []);
 
+
   const { data, setData, post, processing, errors } = useForm({
     LogID,
     typeOfReferral,
@@ -75,7 +78,24 @@ const ReferralForm = ({
     otherTypeOfReferral,
     otherReferralReason,
     refferalDate,
+    referringFacility: '',
+    referralFacility: '',
   });
+
+  useEffect(() => {
+    axios.get('/facilities-list')
+      .then(res => setHospitals(res.data.data))
+      .catch(err => console.error(err));
+
+    nameInputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post(route('profile.store'), {
+      forceFormData: true,
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, files } = e.target as HTMLInputElement;
@@ -86,18 +106,6 @@ const ReferralForm = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('profile.store'), {
-      forceFormData: true,
-    });
-  };
-
-  useEffect(() => {
-    nameInputRef.current?.focus();
-  }, []);
-
-  // Helper to get combined errors from useForm and pageErrors
   const getError = (field: string) => errors[field] || pageErrors[field];
 
   return (
@@ -107,6 +115,7 @@ const ReferralForm = ({
         Referral Information
       </h1>
 
+
     <div className="md:col-span-1">
         <Label htmlFor="datetime" className="text-semibold">Datetime called</Label>
         <Input
@@ -114,7 +123,6 @@ const ReferralForm = ({
           id="calledDate"
           name="calledDate"
           value={data.LogID}
-          placeholder="Transaction code"
           onChange={handleChange}
           ref={nameInputRef}
         />
@@ -135,7 +143,6 @@ const ReferralForm = ({
       </div>
 
       <div className="md:col-span-1">
-     
             <HospitalSelector
             label="Referring Facility"
             hospitals={hospitals} // ✅ pass the list, not the setter
@@ -206,6 +213,7 @@ const ReferralForm = ({
           ref={nameInputRef}
         />
         {getError('designation') && <p className="text-[10px] text-red-500 mt-1">{getError('designation')}</p>}
+
       </div>
 
 
@@ -239,7 +247,6 @@ const ReferralForm = ({
           </SelectContent>
         </Select>
         {getError('typeOfReferral') && <p className="text-[10px] text-red-500 mt-1">{getError('typeOfReferral')}</p>}
-
         {data.typeOfReferral === 'OTHER' && (
           <div className="mt-4">
             <Label htmlFor="otherTypeOfReferral" className="font-semibold">Please specify</Label>
@@ -295,7 +302,6 @@ const ReferralForm = ({
           </SelectContent>
         </Select>
         {getError('referralReason') && <p className="text-xs text-red-500 mt-1">{getError('referralReason')}</p>}
-
         {data.referralReason === 'OTHER' && (
           <div className="mt-4">
             <Label htmlFor="otherReferralReason" className="font-semibold">Please specify</Label>

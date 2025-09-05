@@ -124,12 +124,14 @@ class ReferralPatientInfoController extends Controller
                     'age'   => !empty($patient->patientBirthDate) ? $this->calculateAge($patient->patientBirthDate) : null,
                     'avatar' => null,
                 ],
+
                 'demographics' => [
                     'street'   => !empty($patient->patientStreetAddress) ? $patient->patientStreetAddress : null,
                     'region'   => !empty($demographics->region->regname) ? $demographics->region->regname : null,
                     'province' => !empty($demographics->province->provname) ? $demographics->province->provname : null,
                     'city'     => !empty($demographics->city->cityname) ? $demographics->city->cityname : null,
                     'barangay' => !empty($demographics->barangay->bgyname) ? $demographics->barangay->bgyname : null,
+
                 ]
             ]);
         /* } catch (\Exception $e) {
