@@ -150,8 +150,7 @@ class PermissionController extends Controller
             'name' => $request->name,
             'guard_name' => $request->guard_name,
         ]);
-    
-        // Return success
+        return redirect()->route('permission.index')->with('message', 'Permission updated successfully.');
     }
 
     /**
@@ -160,7 +159,8 @@ class PermissionController extends Controller
      * @param  \App\Models\Permission  $permission
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+
+    public function destroy(PermissionModel $permission)
     {
         $permission = PermissionModel::findOrFail($id);
         $permission->delete();

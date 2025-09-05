@@ -149,6 +149,18 @@ class ReferralController extends Controller
             return response()->json(['message' => 'Referral not found.'], 404);
         }
     
+        $reasonData = ReferralHelper::getReferralReasonbyCode($referral->referralReason);
+        $typeData   = ReferralHelper::getReferralTypebyCode($referral->typeOfReferral);
+        
+        $reason = !empty($reasonData['description']) 
+            ? $reasonData['description'] 
+            : 'Unknown Reason';
+        
+        $type = !empty($typeData['description']) 
+            ? $typeData['description'] 
+            : 'Unknown Type';
+
+            
         $data = [
             'patient' => $referral->patientinformation,
             'origin' => $referral->facility_from,
@@ -157,8 +169,8 @@ class ReferralController extends Controller
                 'LogID' => $referral->LogID,
                 'date' => $referral->refferalDate,
                 'category' => $referral->referralCategory,
-                'reason' =>  ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
-                'type' =>  ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+                'reason' => $reason,
+                'type' => $type,
             ],
         ];
     

@@ -60,6 +60,9 @@ const ProfileForm = () => {
         barangay: '',
     });
 
+
+
+
     useEffect(() => {
         nameInputRef.current?.focus();
     }, []);
@@ -97,8 +100,19 @@ const ProfileForm = () => {
                     </div>
                 </div>
 
+                <div className="grid grid-cols-1 gap-1 sm:col-span-3 md:grid-cols-2">
+                    <ReferralForm    
+                      LogID=""
+                  typeOfReferral=""
+                  referralCategory=""
+                  referralReason=""
+                  otherTypeOfReferral=""
+                  otherReferralReason=""
+                  refferalDate=""  errors={errors} />
+                </div>
                 <div className="grid grid-cols-1 items-start gap-1 sm:grid-cols-4">
-                    <Card className="flex flex-col justify-between p-4 sm:col-span-1">
+                    
+                  {/*   <Card className="flex flex-col justify-between p-4 sm:col-span-1">
                         <CardContent className="flex justify-center">
                             <Avatar className="h-24 w-24">
                                 <AvatarImage src="https://github.com/shadcn.png" alt="Avatar" />
@@ -111,8 +125,10 @@ const ProfileForm = () => {
                                 Take Photo
                             </Button>
                         </CardFooter>
-                    </Card>
-                    <div className="grid grid-cols-1 gap-1 sm:col-span-3 md:grid-cols-2">
+                    </Card> */}
+
+
+                    <div className="grid grid-cols-1 gap-1 sm:col-span-4 md:grid-cols-2">
                         <h2 className="text-md mb-1 flex items-center gap-2 font-semibold md:col-span-2">
                             <User className="h-5 w-5" />
                             Patient Information
@@ -260,16 +276,6 @@ const ProfileForm = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-1 sm:col-span-3 md:grid-cols-2">
-                    <ReferralForm    
-                      LogID=""
-                  typeOfReferral=""
-                  referralCategory=""
-                  referralReason=""
-                  otherTypeOfReferral=""
-                  otherReferralReason=""
-                  refferalDate=""  errors={errors} />
-                </div>
             </form>
         </AppLayout>
     );

@@ -84,14 +84,30 @@ class RefEmrController extends Controller
         $data->update($validated);
         return response()->json($data);
     }
-
-    // Remove the specified resource from storage
-    public function destroy($id)
-    {
-        $data = RefEmrModel::findOrFail($LogID);
-        $data->delete();
-        return response()->json(['message' => 'Record deleted successfully.']);
-    }
+    
+       // Soft delete
+       public function destroy($id)
+       {
+           $emr = RefEmrModel::findOrFail($id);
+           $emr->delete(); // Soft delete
+           return redirect()->back()->with('success', 'Data soft deleted successfully!');
+       }
+   
+       // Restore soft-deleted record
+       public function restore($id)
+       {
+           $emr = RefEmrModel::withTrashed()->findOrFail($id);
+           $emr->restore();
+           return redirect()->back()->with('success', 'Data restored successfully!');
+       }
+   
+       // Permanently delete
+       public function forceDelete($id)
+       {
+           $emr = RefEmrModel::withTrashed()->findOrFail($id);
+           $emr->forceDelete();
+           return redirect()->back()->with('success', 'Data permanently deleted!');
+       }
 
     public function assign(Request $request)
     {
@@ -109,7 +125,7 @@ class RefEmrController extends Controller
     public function revoke(Request $request)
     {
         $codes = $request->input('facilities', []); 
-        $id = $request->input('emr_id'); // e.g. ['fac123','fac456']
+        $id = $request->input('emr_id');
 
         $updatedCount = $this->_revokeFacilities($id, $codes);
       

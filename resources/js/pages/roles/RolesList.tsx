@@ -21,7 +21,9 @@ const RolesList = ({ canEdit,canDelete,canAssign,refreshKey, onEdit }: RolesList
   const fetchData = async (pageNumber = 1, search = "", id = null) => { 
     setLoading(true);
     try {
-      const baseUrl = id ? `/roles/list/${id}` : `/roles/list`;
+
+      const baseUrl = id ? `/roles/${id}` : `/roles/list`;
+
 
       const response = await axios.get(`${baseUrl}?page=${pageNumber}&search=${search}`);
       

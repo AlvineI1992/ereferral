@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\PermissionController;
+
+
+
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\RefEmrController;
 use App\Http\Controllers\RefFacilitiesController;
@@ -11,7 +12,7 @@ use App\Http\Controllers\RefFacilitytypeController;
 use App\Http\Controllers\DemographicController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ReferralPatientInfoController;
-
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReferralClinicalController;
 
 use Illuminate\Http\Request;
@@ -74,17 +75,6 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::patch('/users/assign-roles/{id}', [RegisteredUserController::class, 'assignRolesToUser'])->name('user.assign');
 Route::patch('/users/revoke-roles/{id}', [RegisteredUserController::class, 'revokeRolesFromUser'])->name('user.revoke');
 
-// Inertia Page Route (Web, uses session-based auth)
-Route::get('/roles', function (Request $request) {
-    $permissions = [
-        'canCreateRole' => $request->user()->can('role create'),
-        'canEditRole' => $request->user()->can('role edit'),
-        'canDeleteRole' => $request->user()->can('role delete'),
-        'canViewRole' => $request->user()->can('role list'),
-        'canAssignRole' => $request->user()->can('role assign'),
-    ];
-    return Inertia::render('Roles/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('roles.index');
 
 Route::get('roles/assign/{id}', function (Request $request,$id) {
     $permissions = [
@@ -103,81 +93,13 @@ Route::get('roles/assigned/{id}', function ($id) {
 })->middleware(['auth:sanctum', 'verified']);
 
 // API Routes (Sanctum-protected)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/roles/list', [RoleController::class, 'index']);
-    Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
-    Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
-});
+
+
 
 Route::patch('/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
 Route::patch('/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
 
 
-// Inertia Page Route (Web, uses session-based auth)
-Route::get('/permission', function (Request $request) {
-     // Check permissions for the authenticated user
-     $permissions = [
-        'canCreatePermission' => $request->user()->can('permission create'),
-        'canEditPermission' => $request->user()->can('permission edit'),
-        'canDeletePermission' => $request->user()->can('permission delete'),
-        'canViewPermission' => $request->user()->can('permission list'),
-    ];
-    return Inertia::render('Permission/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('permission.index');
-
-
-// API Routes (Sanctum-protected)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/permission/list', [PermissionController::class, 'index']); 
-    Route::put('/permission/update/{perm}', [PermissionController::class, 'update'])->name('permission.update');
-    //Route::delete('/permission/delete/{permission}', [PermissionController::class, 'destroy'])->name('permission.destroy');
-    Route::delete('/permission/delete/{perm}', [PermissionController::class, 'destroy'])->name('permission.destroy');
-    Route::post('/permission/store', [PermissionController::class, 'store'])->name('permission.store');
-    Route::get('/permission-has-role', [PermissionController::class, 'permission_has_role'])->name('permission.has.role');
-    Route::get('/permission/info/{id}', [PermissionController::class, 'show'])->name('permission.info');
-});
-
-Route::get('emr', function (Request $request) {
-    $permissions = [
-        'canCreate' => $request->user()->can('provider create'),
-        'canEdit' => $request->user()->can('provider edit'),
-        'canDelete' => $request->user()->can('provider delete'),
-        'canView' => $request->user()->can('provider list'),
-        'canAssign' => $request->user()->can('provider assign')];
-    return Inertia::render('Emr/Index',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('emr.index');
-
-
-Route::get('emr/profile/{id}', function (Request $request,$id) {
-    $permissions = [
-        'user' => $request->user()->load('roles'),
-        'id' => $id,
-        'is_include'=>true
-    ];
-    return Inertia::render('Emr/ProfileLayout',$permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('emr.profile');
-
-// API Routes (Sanctum-protected)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/emr/list', [RefEmrController::class, 'index'])->name('emr.list');
-    Route::put('/emr/update/{id}', [RefEmrController::class, 'update'])->name('emr.update');
-    Route::delete('/emr/delete/{id}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
-    Route::post('/emr/store', [RefEmrController::class, 'store'])->name('emr.store');
-    Route::get('/emr/info/{id}', [RefEmrController::class, 'show'])->name('emr.info');
-
-    Route::post('/emr/assign', [RefEmrController::class, 'assign'])->name('emr.assign-facility');
-    Route::post('/emr/revoke', [RefEmrController::class, 'revoke'])->name('emr.revoke-facility');
-
-    Route::get('/emr/profile_form', function (Request $request) {
-      
-        return Inertia::render('Emr/ProfileForm');
-    })->name('emr/profile_form');
-
-});
-/* Route::get('/emr/list', [RefEmrController::class, 'list'])->name('emr.list');
- */
 
 
 // API Routes (Sanctum-protected)
@@ -208,7 +130,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('can:facility delete')
         ->name('facility.destroy');
 
-    Route::get('/facilities-list', [RefFacilitiesController::class, 'facility_list'])
+    Route::get('/facilities-list/{type}', [RefFacilitiesController::class, 'facility_list'])
         ->name('facility.facility_list');
 
         Route::post('/facilities/store', [RefFacilitiesController::class, 'store'])
@@ -333,21 +255,18 @@ Route::middleware(['auth:sanctum', 'verified'])
 
 
 //Patient
-
-
  Route::get('/patient_registry', function (Request $request) {
 
     $permissions = [
         'canCreate' => $request->user()->can('patient create'),
         'canEdit' => $request->user()->can('patient edit'),
         'canDelete' => $request->user()->can('patient delete'),
-        'canVie' => $request->user()->can('patient list'),
+        'canView' => $request->user()->can('patient list'),
     ];
 
     return Inertia::render('Patient/Index',$permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('patient_list');
 
-/* Route::get('/patient-list', [ReferralPatientInfoController::class, 'index'])->name('patient_profile.list'); */
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/patient-profile/{LogID}', [ReferralPatientInfoController::class, 'show'])->name('patient_profile.show');
@@ -355,5 +274,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     
 });
 
+
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/role.php';
+require __DIR__.'/permission.php';
+require __DIR__.'/provider.php';
