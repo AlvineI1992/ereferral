@@ -2,58 +2,58 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 use Spatie\Permission\Traits\HasRoles;
-use Laravel\Sanctum\HasApiTokens;   
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
+use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
+use ParagonIE\CipherSweet\EncryptedRow; // ✅ Use ParagonIE's class
+use ParagonIE\CipherSweet\BlindIndex;
 
-class User extends Authenticatable implements Auditable
+class User extends Authenticatable implements AuditableContract, CipherSweetEncrypted
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable ,SoftDeletes, \OwenIt\Auditing\Auditable,hasRoles,HasApiTokens;
-    protected $guard_name = 'web';
-    protected $dates = ['deleted_at'];
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    use HasFactory,
+        Notifiable,
+        SoftDeletes,
+        AuditableTrait,
+        HasRoles,
+        HasApiTokens,
+        UsesCipherSweet;
+
     protected $fillable = [
         'name',
         'email',
         'password',
         'status',
         'access_id',
-        'access_type'
+        'access_type',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => 'string', // 👈 Add this line
         ];
     }
 
+    public static function configureCipherSweet(EncryptedRow $row): void
+    {
+        // Encrypt email
+        $row->addField('email');
 
+        // Encrypt + searchable with blind index
+        $row->addField('name')
+            ->addBlindIndex('name', new BlindIndex('name_index', ['name'], 16, false));
+    }
 }

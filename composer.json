@@ -18,8 +18,8 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "owen-it/laravel-auditing": "^14.0",
-        "paragonie/ciphersweet": "^4.7",
         "predis/predis": "^3.0",
+        "spatie/laravel-ciphersweet": "^1.7",
         "spatie/laravel-csp": "^3.13",
         "spatie/laravel-permission": "^6.16",
         "tightenco/ziggy": "^2.4"
