@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Pencil, Trash2, List, CircleArrowRight } from "lucide-react";
+import { Pencil, Trash2, List, CircleArrowRight, LucideAArrowDown, LucideDelete, LucideEyeClosed, Check, X } from "lucide-react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Inertia } from "@inertiajs/inertia";
@@ -8,17 +8,18 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   refreshKey: () => any;
-  onEdit: () => any;  // Add onCancel prop
-  canDelete:boolean;// Role data for editing
-  canEdit:boolean;// Role data for editing
+  onEdit: () => any;
+  canDelete: boolean; // Role data for editing
+  canEdit: boolean; // Role data for editing
 };
 
-const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
+const UserList = ({ canEdit, canDelete, refreshKey, onEdit }: Props) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set()); // Track selected rows
   const perPage = 10;
 
   const fetchData = async (pageNumber = 1, search = "") => {
@@ -40,36 +41,6 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
     return () => clearTimeout(delayDebounce);
   }, [refreshKey, page, searchTerm]);
 
-  const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await axios.delete(`/roles/delete/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        fetchData(page, searchTerm);
-        Swal.fire({
-          title: "Deleted!",
-          text: "The user has been deleted.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        Swal.fire("Oops!", "Something went wrong.", "error");
-      }
-    }
-  };
 
   const handleEdit = (row) => {
     onEdit?.(row);
@@ -77,6 +48,49 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
 
   const handleGoto = (id) => {
     if (id) Inertia.visit(`/users/assign-roles/${id}`);
+  };
+
+  const handleSelectRow = (id: number) => {
+    const newSelectedRows = new Set(selectedRows);
+    if (newSelectedRows.has(id)) {
+      newSelectedRows.delete(id); // Uncheck
+    } else {
+      newSelectedRows.add(id); // Check
+    }
+    setSelectedRows(newSelectedRows);
+  };
+
+  const handleSoftDelete = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This will soft delete the selected users.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete them!",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        for (const id of selectedRows) {
+          await axios.post(`/users/soft-delete/${id}`, {}, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+        }
+        Swal.fire({
+          title: "Deleted!",
+          text: "The selected users have been soft deleted.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        fetchData(page, searchTerm);
+      } catch (error) {
+        console.error("Error deleting users:", error);
+        Swal.fire("Oops!", "Something went wrong.", "error");
+      }
+    }
   };
 
   const totalPages = Math.ceil(totalRows / perPage);
@@ -89,13 +103,26 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
           <List size={16} />
           <h2 className="text-lg font-semibold">Users</h2>
         </div>
-        <Input
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-2 py-1 border rounded-md text-sm w-56"
-        />
+        <div className="flex space-x-2">
+
+          <Button
+            variant="outline"
+            color="danger"
+            onClick={handleSoftDelete}
+            disabled={selectedRows.size === 0}
+            className="text-xs"
+          >
+            <LucideDelete />Delete
+          </Button>
+
+          <Input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-2 py-1 border rounded-md text-sm w-56"
+          />
+        </div>
       </div>
 
       {/* Table or Loader */}
@@ -109,6 +136,19 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead>
               <tr>
+                <th className="px-2 py-1 text-left font-medium">
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.size === data.length}
+                    onChange={() => {
+                      if (selectedRows.size === data.length) {
+                        setSelectedRows(new Set());
+                      } else {
+                        setSelectedRows(new Set(data.map((row) => row.id)));
+                      }
+                    }}
+                  />
+                </th>
                 <th className="px-2 py-1 text-left font-medium">ID</th>
                 <th className="px-2 py-1 text-left font-medium">Name</th>
                 <th className="px-2 py-1 text-left font-medium">Email</th>
@@ -120,10 +160,26 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
               {data.length > 0 ? (
                 data.map((row) => (
                   <tr key={row.id}>
+                    <td className="px-2 py-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.has(row.id)}
+                        onChange={() => handleSelectRow(row.id)}
+                      />
+                    </td>
                     <td className="px-2 py-1">{row.id}</td>
                     <td className="px-2 py-1">{row.name}</td>
                     <td className="px-2 py-1">{row.email}</td>
-                    <td className="px-2 py-1">{row.status}</td>
+                    <td className="px-2 py-1">
+                      <span
+                        className={`px-1 py-0.5 rounded-full text-xs font-medium ${row.status === "A" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          } flex items-center space-x-1`}
+                      >
+                        {row.status === "A" ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        <span>{row.status === "A" ? "Active" : "Inactive"}</span>
+                      </span>
+
+                    </td>
                     <td className="px-2 py-1 text-right">
                       <div className="flex justify-end space-x-1">
                         <Button
@@ -134,14 +190,7 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
                         >
                           <Pencil size={16} />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(row.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -156,7 +205,7 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="text-center text-gray-500 italic py-4">
+                  <td colSpan="6" className="text-center text-gray-500 italic py-4">
                     No users found.
                   </td>
                 </tr>
@@ -176,30 +225,14 @@ const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
               <Button
                 variant="outline"
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                className="text-xs p-1"
+                onClick={() => setPage(page - 1)}
               >
-                Previous
+                Prev
               </Button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))
-                .map((pNum) => (
-                  <Button
-                    key={pNum}
-                    variant={pNum === page ? "default" : "outline"}
-                    className="px-3 py-1 text-xs"
-                    onClick={() => setPage(pNum)}
-                  >
-                    {pNum}
-                  </Button>
-                ))}
-
               <Button
                 variant="outline"
                 disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                className="text-xs p-1"
+                onClick={() => setPage(page + 1)}
               >
                 Next
               </Button>

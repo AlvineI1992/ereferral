@@ -69,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/sample', [RegisteredUserController::class, 'sample'])->name('user.sample');
     Route::get('/users/info/{id}', [RegisteredUserController::class, 'show'])->name('user.info');
     Route::get('/user-has-role', [RegisteredUserController::class, 'role_has_user'])->name('user.has.role');
+     Route::post('/users/soft-delete/{id}', [RegisteredUserController::class, 'delete'])->name('user.delete');
 });
 
 Route::patch('/users/assign-roles/{id}', [RegisteredUserController::class, 'assignRolesToUser'])->name('user.assign');

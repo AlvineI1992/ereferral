@@ -17,6 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+      
        /*  $this->app->singleton(CipherSweet::class, function ($app) {
             $key = base64_decode(str_replace('base64:', '', env('CIPHERSWEET_KEY')));
             $provider = new StringProvider($key);

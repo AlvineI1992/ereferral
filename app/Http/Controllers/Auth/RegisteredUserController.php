@@ -150,10 +150,7 @@ public function role_has_user(Request $request)
         return response()->json($data);
     }
 
-    public function sample()
-    {
-       return  User::find(2)->assignRole('Admin');
-    }
+
 
     public function assignRolesToUser(Request $request, $userId)
 {
@@ -219,5 +216,10 @@ public function revokeRolesFromUser(Request $request, $userId)
     ]);
 }
 
+    public function delete($id)
+    {
+        $post = User::find($id);
+        $post->delete(); 
+    }
 
 }

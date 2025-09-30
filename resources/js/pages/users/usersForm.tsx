@@ -67,6 +67,13 @@ type UserFormProps = {
     onCancel: () => void;
     user?: any;
 };
+type Provider = { emr_id: number; emr_name: string };
+
+type Props = {
+  providers?: Provider[];
+};
+
+
 
 // -------------------- Component --------------------
 export default function UsersForm({ onUserCreated, onCancel, user }: UserFormProps) {
@@ -80,9 +87,9 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
     });
 
     const nameInputRef = useRef<HTMLInputElement>(null);
-    const [frameworks, setFrameworks] = useState<Framework[]>([]);
-    const [regions, setRegions] = useState<Region[]>([]);
-    const [hospitals, setHospital] = useState<Hospital[]>([]);
+    const [providers, setProvider] = useState([]);
+    const [regions, setRegions] = useState([]);
+    const [hospitals, setHospital] = useState([]);
 
     const [selectedProvider, setSelectedProvider] = useState(data.access_id);
     const [selectedRegion, setSelectedRegion] = useState(data.access_id);
@@ -104,7 +111,7 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
                 access_id: user.access_id,
                 access_type: user.access_type,
             });
-            setAccessType(user.access_type);
+            setAccessType(user.access_type); 
             if (user.access_type === 'EMR') {
                 setSelectedProvider(user.access_id);
             } else if (user.access_type === 'CHD') {
@@ -119,14 +126,8 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
 
     useEffect(() => {
         axios.get('/emr/list')
-            .then(res => {
-                const emrList = Array.isArray(res.data) ? res.data : res.data.data || [];
-                setFrameworks(emrList);
-            })
-            .catch(err => {
-                console.error('Failed to load EMR providers:', err);
-                setFrameworks([]);
-            });
+            .then(res => setProvider(res.data))
+            .catch(err => console.error(err));
 
         axios.get('/region/list')
             .then(res => {
@@ -138,15 +139,9 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
                 setRegions([]);
             });
 
-        axios.get('/facilities-list')
-            .then(res => {
-                const hospitalList = Array.isArray(res.data) ? res.data : res.data.data || [];
-                setHospital(hospitalList);
-            })
-            .catch(err => {
-                console.error('Failed to load hospitals:', err);
-                setHospital([]);
-            });
+        axios.get('/facilities-list/table')
+            .then(res => setHospital(res.data.data))
+            .catch(err => console.error(err));
 
         nameInputRef.current?.focus();
     }, []);
@@ -157,23 +152,35 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        const action = user
-            ? axios.put(route("user.update", user.id), data)
-            : axios.post(route("user.store"), data);
-
-        action
-            .then(() => {
-                reset();
-                setSelectedProvider('');
-                setSelectedRegion('');
-                setSelectedHospital('');
-                onUserCreated();
-                toastr.success(`User ${user ? 'updated' : 'created'}!`, "Success");
-            })
-            .catch(error => {
-                toastr.error(`Failed to ${user ? 'update' : 'create'} user`, "Error");
-                console.error(error);
-            });
+    
+        if (user) {
+            axios.put(route("user.update", user.id), data)
+                .then(() => {
+                    reset();
+                    setSelectedProvider('');
+                    setSelectedRegion('');
+                    setSelectedHospital('');
+                    onUserCreated();
+                    toastr.success("User updated!", "Success");
+                })
+                .catch(error => {
+                    toastr.error("Failed to update user", "Error");
+                    console.error(error);
+                });
+        } else {
+            axios.post(route("user.store"), data)
+                .then(() => {
+                    reset();
+                    setSelectedProvider('');
+                    setSelectedRegion('');
+                    setSelectedHospital('');
+                    onUserCreated();
+                    toastr.success("User created!", "Success");
+                })
+                .catch(error => {
+                    toastr.error(error, "Error");
+                });
+        }
     };
 
     const renderProviderSelector = (label: string) => (
@@ -188,7 +195,7 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
                         aria-expanded={popoverOpen}
                         className="w-full justify-between"
                     >
-                        {frameworks.find(f => f.emr_id === selectedProvider)?.emr_name || 'Select provider...'}
+                        {(providers ?? []).find(f => f.emr_id === selectedProvider)?.emr_name || 'Select provider...'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </PopoverTrigger>
@@ -198,18 +205,18 @@ export default function UsersForm({ onUserCreated, onCancel, user }: UserFormPro
                         <CommandList>
                             <CommandEmpty>No provider found.</CommandEmpty>
                             <CommandGroup>
-                                {frameworks.map(framework => (
+                                {providers.map(provider => (
                                     <CommandItem
-                                        key={framework.emr_id}
-                                        value={framework.emr_name}
+                                        key={provider.emr_id}
+                                        value={provider.emr_name}
                                         onSelect={() => {
-                                            setSelectedProvider(framework.emr_id);
-                                            setData('access_id', framework.emr_id);
+                                            setSelectedProvider(provider.emr_id);
+                                            setData('access_id', provider.emr_id);
                                             setPopoverOpen(false);
                                         }}
                                     >
-                                        <Check className={cn('mr-2 h-4 w-4', selectedProvider === framework.emr_id ? 'opacity-100' : 'opacity-0')} />
-                                        {framework.emr_name}
+                                        <Check className={cn('mr-2 h-4 w-4', selectedProvider === provider.emr_id ? 'opacity-100' : 'opacity-0')} />
+                                        {provider.emr_name}
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
