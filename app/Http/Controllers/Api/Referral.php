@@ -1000,6 +1000,8 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
     }
 
+   
+  
     $transformedList = $referrals->map(function ($referral) {
         $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
         
@@ -1021,8 +1023,8 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
             'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
             'referral_time' => date('h:i A', strtotime($referral->referralTime ?? $referral->refferalTime)),
             'referral_category' => $referral->referralCategory,
-            'referral_contact_person' => $referral->referraContactPerson,
-            'referral_contact_person_designation' => $referral->referraContactPersonDesignation,
+            'referral_contact_person' => $referral->referralContactPerson,
+            'referral_contact_person_designation' => $referral->referralContactPersonDesignation,
             'referral_remarks'=>$referral->remarks,
             'referring_type' => $referral->typeOfReferral,
             'referring_provider' => $referral->referringProvider,
@@ -1326,15 +1328,13 @@ public function received(Request $request)
  
 
 /**
- *  Get discharge information
- * 
  * @OA\Get(
  *     path="/api/get-discharged-data/{logID}",
  *     operationId="getDischargedData",
  *     tags={"Transactions"},
  *     summary="Get discharged patient data",
  *     description="Retrieves discharged patient data by the provided log ID. Requires authentication.",
- *     security={{"bearerAuth":{}}},
+ *     security={{ "sanctum": {} }},
  *     @OA\Parameter(
  *         name="logID",
  *         in="path",
@@ -1342,56 +1342,81 @@ public function received(Request $request)
  *         description="The log ID of the patient",
  *         @OA\Schema(type="string")
  *     ),
+ *     @OA\Response(response=200, description="Successful response"),
+ *     @OA\Response(response=400, description="Invalid data"),
+ *     @OA\Response(response=401, description="Unauthenticated")
+ * )
+ */
+public function get_discharged_data(Request $request, $logID)
+{
+    if (empty($logID)) {
+        return response()->json(['error' => 'Invalid data'], 400);
+    }
+
+    $output = $this->referralService->getDischargeInformation($logID);
+    return response()->json($output);
+}
+/**
+ * @OA\Get(
+ *     path="/api/get-accredited-facilities",
+ *     summary="Get list of accredited facilities",
+ *     description="Returns all accredited facilities filtered by status A. You can optionally filter by facility_name using a wildcard.",
+ *     tags={"References"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="facility_name",
+ *         in="query",
+ *         required=false,
+ *         description="Optional facility name filter (wildcard search)",
+ *         @OA\Schema(type="string", example="general")
+ *     ),
+ *
  *     @OA\Response(
  *         response=200,
- *         description="Successful response",
+ *         description="List of accredited facilities",
  *         @OA\JsonContent(
  *             type="object",
- *             example={
- *                 "patient_name": "John Doe",
- *                 "discharge_date": "2025-05-10",
- *                 "diagnosis": "Acute appendicitis"
- *             }
+ *             @OA\Property(property="code", type="integer", example=200),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="hfhudcode", type="string", example="12345"),
+ *                     @OA\Property(property="facility_name", type="string", example="Benguet General Hospital"),
+ *                     @OA\Property(property="facility_type", type="string", example="Hospital"),
+ *                     @OA\Property(property="status", type="string", example="A")
+ *                 )
+ *             ),
+ *             @OA\Property(property="message", type="string", example="Success!")
  *         )
  *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid data",
- *         @OA\JsonContent(
- *             type="object",
- *             example={
- *                 "error": "Invalid data"
- *             }
- *         )
- *     ),
+ *
  *     @OA\Response(
  *         response=401,
  *         description="Unauthenticated",
- *         @OA\JsonContent(
- *             type="object",
- *             example={
- *                 "message": "Unauthenticated."
- *             }
- *         )
+ *         @OA\JsonContent(example={"error": "Unauthenticated"})
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Server error",
+ *         @OA\JsonContent(example={"error": "Server Error"})
  *     )
  * )
  */
-
-    public function get_discharged_data(Request $request,$logID)
-    {
-
-        if (!Auth::check()) {
-            // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-        }
-  
-        if (empty($logID)) {
-            return response()->json(['error' => 'Invalid data'], 400);
-        }
-    
-        $output = $this->referralService->getDischargeInformation($logID);
-        return response()->json($output);
+public function get_accredited_facilities(Request $request)
+{
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
     }
+
+    $facility_name = $request->query('facility_name'); // optional wildcard filter
+    $output = $this->referralService->getActiveFacilities($facility_name);
+
+    return response()->json($output);
+}
+  
   
 
   

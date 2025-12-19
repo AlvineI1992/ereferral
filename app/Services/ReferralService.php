@@ -332,14 +332,14 @@ class ReferralService
     
             $scheduleQuery = null;
             if ($record->hasFollowup === 'Y') {
-                $scheduleQuery = DB::table('followup_schedule')
+                $scheduleQuery = DB::table('referral_followup')
                     ->where('LogID', $logId)
                     ->value('scheduleDateTime');
             }
     
             $medQuery = [];
             if ($record->hasMedicine === 'Y') {
-                $medQuery = DB::table('medications')
+                $medQuery = DB::table('referral_medicine')
                     ->select('drugcode', 'generic', 'instruction')
                     ->where('LogID', $logId)
                     ->get();
@@ -419,5 +419,41 @@ class ReferralService
             ];
         }
     }
+
+
+    
+	public function getActiveFacilities(?string $facility_name = null)
+{
+    try {
+        $query = RefFacilitiesModel::query()
+            ->where('status', 'A')
+            ->whereNotNull('emr_id');
+
+        if (!empty($facility_name)) {
+            $query->where('facility_name', 'LIKE', '%' . $facility_name . '%');
+        }
+
+        $data = $query->get();
+
+        return [
+            'code' => 200,
+            'data' => $data,
+            'message' => 'Success!'
+        ];
+
+    } catch (Exception $e) {
+        Log::error(sprintf(
+            'getActiveFacilities failed: %s in %s on line %d',
+            $e->getMessage(), $e->getFile(), $e->getLine()
+        ));
+
+        return [
+            'code' => $e->getCode() ?: 500,
+            'message' => $e->getMessage()
+        ];
+    }
+}
+
+
 
 }
