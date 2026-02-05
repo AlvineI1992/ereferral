@@ -42,27 +42,35 @@ type Formtype = {
 };
 
 export default function FacilityForm({ onCreated, onCancel, formval, canCreate }: Props) {
-    const nameInputRef = useRef<HTMLInputElement>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+ 
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedBarangay, setSelectedBarangay] = useState("");
+
+
 
     const [factypes, setFacilitytype] = useState([]);
     const [value, setValue] = useState(formval?.factype_code || '');
     const [open, setOpen] = useState(false);
-
+    const nameInputRef = useRef<HTMLInputElement>(null);
     const { data, setData, post, put, processing, errors, reset } = useForm<Formtype>({
         hfhudcode: formval?.hfhudcode || '',
         facility_name: formval?.facility_name || '',
         fhudaddress: formval?.fhudaddress || '',
-        factype_code: formval?.factype_code || '',
+        factype_code: formval?.facility_type || '', // must match useForm field
         region: formval?.region || '',
         province: formval?.province || '',
         city: formval?.city || '',
         barangay: formval?.barangay || '',
-        status: formval?.status ?? true,
+        status: formval?.status ?? false,
     });
 
     useEffect(() => {
         axios.get('/facility_type/list')
             .then((response) => {
+              
                 setFacilitytype(response.data);
             })
             .catch((error) => {
@@ -74,24 +82,36 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate }
         nameInputRef.current?.focus();
     }, []);
 
-    useEffect(() => {
-        if (formval) {
-            setData({
-                hfhudcode: formval.hfhudcode || '',
-                facility_name: formval.facility_name || '',
-                fhudaddress: formval.fhudaddress || '',
-                factype_code: formval.factype_code || '',
-                region: formval.region || '',
-                province: formval.province || '',
-                city: formval.city || '',
-                barangay: formval.barangay || '',
-                status: formval.status ?? true,
-            });
-            setValue(formval.factype_code || '');
-        } else {
-            reset();
-        }
-    }, [formval]);
+ useEffect(() => {
+  if (!formval?.hfhudcode) return;
+
+  axios.get(`/emr/info/${formval.hfhudcode}`).then(({ data: facility }) => {
+    const region = String(facility.region_code || '').padStart(2, '0');
+    const province = String(facility.province_code || '').padStart(2, '0');
+    const city = String(facility.city_code || '').padStart(2, '0');
+    const barangay = String(facility.bgycode || '').padStart(3, '0');
+
+    setData((prev) => ({
+      ...prev,
+      hfhudcode: facility.hfhudcode ?? '',
+      facility_name: facility.facility_name ?? '',
+      fhudaddress: facility.fhudaddress ?? '',
+      factype_code: String(facility.facility_type).padStart(2, '0'),
+      status: facility.status ?? true,
+    }));
+
+    // 👇 cascade safely
+    setTimeout(() => setData('region', region), 0);
+    setTimeout(() => setData('province', province), 50);
+    setTimeout(() => setData('city', city), 100);
+    setTimeout(() => setData('barangay', barangay), 150);
+
+    setValue(String(facility.facility_type).padStart(2, '0'));
+  });
+}, [formval?.hfhudcode]);
+
+
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setData(e.target.id, e.target.value);
@@ -105,7 +125,7 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate }
         e.preventDefault();
 
         if (formval) {
-            put(route('facility.update', formval.id), {
+            put(route('facility.update', formval.hfhudcode), {
                 onSuccess: () => {
                     reset();
                     onCreated();
@@ -122,15 +142,18 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate }
             });
         }
     };
+// Cancel edit and clear all inputs / switches / selectors
+  const handleCancelEdit = () => {
+    setSelectedId(null);
+    reset(); // Reset Inertia form
+    setValue(""); // Clear popover
+    setSelectedRegion("");
+    setSelectedProvince("");
+    setSelectedCity("");
+    setSelectedBarangay("");
+    onCancel?.(); // Optional callback if parent needs to know
+  };
 
-    useEffect(() => {
-
-        axios.get('/facilities-list')
-            .then(res => setHospital(res.data.data))
-            .catch(err => console.error(err));
-
-        nameInputRef.current?.focus();
-    }, []);
 
     return (
         <div className="mt-2 mr-3 ml-2 w-full">
@@ -268,7 +291,7 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate }
                         {formval && (
                             <Button
                                 type="button"
-                                onClick={onCancel}
+                                onClick={handleCancelEdit}
                                 className="flex flex-1 items-center justify-center gap-2 rounded-md border border-red-400 bg-white py-2 font-semibold text-red-600 transition-all hover:bg-red-600 hover:text-white"
                                 disabled={!canCreate}
                             >

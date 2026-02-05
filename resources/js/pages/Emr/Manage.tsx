@@ -6,7 +6,7 @@ const Manage = () => {
     const [selectedId, setSelectedId] = useState(null); // ID of the selected user for editing
     const [refreshKey, setRefreshKey] = useState(0); // Used to trigger list refresh
 
-    const handleEdit = (id) => {
+    const handleEdit = (id:any) => {
         setSelectedId(id); // Set selected user ID for editing
     };
 
@@ -17,11 +17,19 @@ const Manage = () => {
 
     const handleCancelEdit = () => {
         setSelectedId(null); // Clear selection when editing is canceled
+        
     };
 
     return (
         <div className="roles-management">
           <div className="relative grid grid-cols-1 gap-4 lg:grid-cols-4">
+            <div className="lg:col-span-1 p-4">
+        <Form
+          onCancel={selectedId ? handleCancelEdit : undefined}
+          emr={selectedId}
+          onCreated={handleCreatedOrUpdated}
+        />
+      </div>
       <div className="lg:col-span-3 p-4 relative">
         <div className="mb-4">
           <Lists refreshKey={refreshKey} onEdit={handleEdit} />
@@ -29,13 +37,7 @@ const Manage = () => {
         <div className="hidden lg:block absolute top-0 right-0 h-full w-px bg-gray-300"></div>
       </div>
 
-      <div className="lg:col-span-1 p-4">
-        <Form
-          onCancel={selectedId ? handleCancelEdit : undefined}
-          emr={selectedId}
-          onCreated={handleCreatedOrUpdated}
-        />
-      </div>
+      
     </div>
         </div>
     );

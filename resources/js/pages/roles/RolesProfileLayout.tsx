@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { Head,usePage } from '@inertiajs/react';
 import axios from 'axios';
 
-import RolesInfo from '../Roles/RolesInfo';
-import RolesListAssign from '../Roles/RolesListAssign';
-import Menu from '../Roles/Menu';
+import RolesInfo from './RolesInfo';
+import RolesListAssign from './RolesListAssign';
+import Menu from './Menu';
 import type { BreadcrumbItem } from '@/types';
 import { LoaderCircle, Save, User, X } from "lucide-react";
 

@@ -19,7 +19,7 @@ import {
 
 type ListProps = {
   refreshKey: any; 
-  onEdit: (id: number) => void;
+  onEdit: (id: any) => void;
   canEdit: boolean; onEdit
   canDelete: boolean; 
 };
@@ -96,9 +96,8 @@ const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
     }
   };
 
-  const handleEdit = (row) => {
+  const handleEdit = (row:any) => {
     onEdit?.(row);
-
   };
 
   const handleGoto = (id:string) => {
@@ -120,27 +119,7 @@ const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
 
   return (
     <div className="p-3  mr-2 ml-2 mt-1">
-      <div className="flex justify-end mb-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-1 p-1 text-xs cursor-pointer">
-              <Eye size={16} /> Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {Object.keys(visibleColumns).map((key) => (
-              <DropdownMenuCheckboxItem
-                key={key}
-                checked={visibleColumns[key]}
-                onCheckedChange={() => toggleColumn(key)}
-              >
-                {key.charAt(0).toUpperCase() + key.slice(1)}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
+   
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <TableOfContents size="16" />
@@ -202,13 +181,13 @@ const Lists = ({ refreshKey, onEdit,canEdit,canDelete }: ListProps) => {
                     <TableCell className="p-1 text-right flex justify-end space-x-1">
                       
                       {canEdit && (
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
+                        <Button variant="outline" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
                         <Pencil size={12} />
                         </Button>
                       )}
                       
                       {canDelete && (
-                           <Button variant="ghost" size="icon" onClick={() => handleDelete(row.hfhudcode)} className="cursor-pointer">
+                           <Button variant="outline" size="icon" onClick={() => handleDelete(row.hfhudcode)} className="cursor-pointer">
                            <Trash2 size={12} className="text-red-600" />
                          </Button>
                       )}

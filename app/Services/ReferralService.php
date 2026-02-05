@@ -9,6 +9,8 @@ use App\Models\ReferralPatientInfoModel;
 use Illuminate\Support\Facades\DB;
 use App\Models\RefFacilitiesModel;
 use App\Helpers\ReferralHelper;
+use App\Models\BloodTypeModel;
+use App\Models\RefReligionModel;
 
 use Illuminate\Support\Facades\Crypt;
 
@@ -454,6 +456,72 @@ class ReferralService
     }
 }
 
+
+public function getBloodTypes(?string $search = null, ?int $is_active = null)
+{
+    try {
+        // Start query
+        $query = BloodTypeModel::select( 'name', 'value');
+
+        // Optional filter by active status
+        if (!is_null($is_active)) {
+            $query->where('is_active', $is_active);
+        }
+
+        // Optional search by name or value
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('value', 'like', "%{$search}%");
+            });
+        }
+
+        // Order results by name
+        $data = $query->orderBy('name', 'asc')->get();
+
+        // Return structured response
+        return [
+            'code' => 200,
+            'data' => $data,
+            'count' => $data->count(),
+            'message' => 'Success!'
+        ];
+
+    } catch (Exception $e) {
+        Log::error(sprintf(
+            'getBloodtype failed: %s in %s on line %d',
+            $e->getMessage(), $e->getFile(), $e->getLine()
+        ));
+
+        return [
+            'code' => $e->getCode() ?: 500,
+            'message' => $e->getMessage()
+        ];
+    }
+}
+
+
+ public function getreligion(array $filters = [])
+    {
+        $query = RefReligionModel::select('relcode', 'reldesc');
+
+        // Filter by status (default: Active)
+        if (!empty($filters['relstat'])) {
+            $query->where('relstat', $filters['relstat']);
+        } else {
+            $query->where('relstat', 'A');
+        }
+
+        // Search by description
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where('reldesc', 'like', "%{$search}%");
+        }
+
+        return $query
+            ->orderBy('reldesc')
+            ->get();
+    }
 
 
 }

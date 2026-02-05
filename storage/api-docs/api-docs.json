@@ -1580,6 +1580,192 @@
                     }
                 ]
             }
+        },
+        "/api/blood-types": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get list of blood types",
+                "description": "Returns all blood types",
+                "operationId": "daa47f916729c638922d95aad4650254",
+                "responses": {
+                    "200": {
+                        "description": "List of blood types",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 8
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "A+"
+                                                    },
+                                                    "value": {
+                                                        "type": "string",
+                                                        "example": "A+"
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "entryby": {
+                                                        "type": "string",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-01-15T02:07:08"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-01-15T10:07:08"
+                                                    },
+                                                    "deleted_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/religions": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Get list of religions",
+                "description": "Returns list of religions. Defaults to active (relstat = A). Supports search by description.",
+                "operationId": "9cda63f65f2d2d47bf287350997e9c6c",
+                "parameters": [
+                    {
+                        "name": "relstat",
+                        "in": "query",
+                        "description": "Religion status filter (A = Active, I = Inactive)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "A"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search religion description (wildcard search)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "christ"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of religions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 22
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "relcode": {
+                                                        "type": "string",
+                                                        "example": "CATHO"
+                                                    },
+                                                    "reldesc": {
+                                                        "type": "string",
+                                                        "example": "Catholic"
+                                                    },
+                                                    "relstat": {
+                                                        "type": "string",
+                                                        "example": "A"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "error": "Unauthenticated"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "error": "Server Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {

@@ -125,6 +125,12 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
     <div className={containerClass}>
       {/* Region */}
       <div className={fieldClass}>
+         <label
+    htmlFor="region"
+    className="block text-sm font-medium text-gray-700"
+  >
+    Region
+  </label>
       <div className="relative mt-1">
       
         <Select
@@ -163,7 +169,12 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
       </div>
       {/* Province */}
       <div className={fieldClass}>
-       
+           <label
+    htmlFor="province"
+    className="block text-sm font-medium text-gray-700"
+  >
+    Province
+  </label>
         <Select
           value={selectedProvince}
           onValueChange={(value) => {
@@ -200,7 +211,12 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
 
       {/* City */}
       <div className={fieldClass}>
-      
+         <label
+    htmlFor="city"
+    className="block text-sm font-medium text-gray-700"
+  >
+    City
+  </label>
         <Select
           value={selectedCity}
           onValueChange={(value) => {
@@ -236,7 +252,12 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
 
       {/* Barangay */}
       <div className={fieldClass}>
-     
+        <label
+    htmlFor="barangay"
+    className="block text-sm font-medium text-gray-700"
+  >
+    Barangay
+  </label>
         <Select
           value={selectedBarangay}
           onValueChange={(value) => {

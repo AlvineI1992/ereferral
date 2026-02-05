@@ -66,7 +66,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`/roles/delete/${id}`, {
+        await axios.delete(`/emr/delete/${id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         fetchData(page, searchTerm);
@@ -84,7 +84,10 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
     }
   };
 
-  const handleEdit = (row:string) => onEdit?.(row);
+  const handleEdit = (row: string) => {
+    
+  onEdit?.(row);
+};
 
   const handleGoto = (id:string) => {
     if (!id) {
@@ -105,27 +108,7 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
 
   return (
     <div className="p-3  mr-3 ml-3 mt-3">
-      <div className="flex justify-end mb-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-1 p-1 text-xs cursor-pointer">
-              <Eye size={16} /> Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {Object.keys(visibleColumns).map((key) => (
-              <DropdownMenuCheckboxItem
-                key={key}
-                checked={visibleColumns[key]}
-                onCheckedChange={() => toggleColumn(key)}
-              >
-                {key.charAt(0).toUpperCase() + key.slice(1)}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
+      
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center space-x-2">
           <TableOfContents size="16" />
@@ -179,13 +162,13 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
                   {visibleColumns.remarks && <TableCell className="p-1 max-w-xs truncate">{row.remarks}</TableCell>}
                   {visibleColumns.actions && (
                     <TableCell className="p-1 text-right flex justify-end space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
+                      <Button variant="outline" size="icon" onClick={() => handleEdit(row)} className="cursor-pointer">
                         <Pencil size={12} />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.emr_id)} className="cursor-pointer">
+                      <Button variant="outline" size="icon" onClick={() => handleDelete(row.emr_id)} className="cursor-pointer">
                         <Trash2 size={12} className="text-red-600" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleGoto(row.emr_id)} className="cursor-pointer">
+                      <Button variant="outline" size="icon" onClick={() => handleGoto(row.emr_id)} className="cursor-pointer">
                         <CircleArrowRight size={12} className="text-blue-600" />
                       </Button>
                     </TableCell>

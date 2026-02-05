@@ -83,10 +83,9 @@ export default function ProfileLayout({ id, children }: ProfileLayoutProps) {
         <div className="w-full space-y-4 lg:w-1/2">
           {profile && <Profileinfo profile={profile} />}
         </div>
-        <div className="flex w-full items-start justify-end lg:w-1/2">
-          <Button onClick={() => setShowModal(true)}>Add Facility</Button>
-        </div>
+        
       </div>
+
 
       {/* Modal Controlled Here */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -113,11 +112,18 @@ export default function ProfileLayout({ id, children }: ProfileLayoutProps) {
         </DialogContent>
       </Dialog>
 
-      <div className="my-4 border-t" />
+  
 
-      <div className="flex flex-col">
-        <Reference_List refreshKey={refreshKey} id={id} />
-      </div>
+      <div className="flex flex-col gap-4">
+  <div className="flex justify-end">
+    <Button onClick={() => setShowModal(true)}>
+      Add Facility
+    </Button>
+  </div>
+
+  <Reference_List refreshKey={refreshKey} id={id} />
+</div>
+
 
       {/* Optional children slot rendering */}
       {children}

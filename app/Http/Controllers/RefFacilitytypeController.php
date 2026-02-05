@@ -79,9 +79,9 @@ class RefFacilitytypeController extends Controller
      * @param  \App\Models\Permission  $permission
      * @return \Illuminate\Http\Response
      */
-    public function show(PermissionModel $permission)
+    public function show($id)
     {
-        return view('admin.permission.show',compact('permission'));
+        
     }
 
     /**

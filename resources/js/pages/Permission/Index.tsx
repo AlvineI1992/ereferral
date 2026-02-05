@@ -28,14 +28,14 @@ export default function Permission({
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(true);
     const handleCreated = () => {
-        setRefreshKey((prev) => prev + 1); // triggers reload of RolesList
+        setRefreshKey((prev) => prev + 1); 
     };
     useEffect(() => {
-        // Simulate a network request or data fetching
+       
         setLoading(true);
         setTimeout(() => {
             setLoading(false);
-        }, 2000); // Simulate loading for 2 seconds
+        }, 2000); 
     }, [refreshKey]);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -48,7 +48,7 @@ export default function Permission({
                 canView={canViewPermission} 
                 />
             </div>
-            {/*   <RolesManagement refreshKey={refreshKey} className="w-full" /> */}
+        
         </AppLayout>
     );
 }

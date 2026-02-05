@@ -166,7 +166,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/emr/list', [RefEmrController::class, 'index'])->name('emr.list');
     Route::put('/emr/update/{id}', [RefEmrController::class, 'update'])->name('emr.update');
     Route::delete('/emr/delete/{id}', [RefEmrController::class, 'destroy'])->name('emr.destroy');
-    Route::post('/emr/store', [RefEmrController::class, 'store'])->name('emr.store');
+   Route::match(['post', 'put'], '/emr/store/{emr_id?}', [RefEmrController::class, 'store'])
+    ->name('emr.store');
     Route::get('/emr/info/{id}', [RefEmrController::class, 'show'])->name('emr.info');
 
     Route::post('/emr/assign', [RefEmrController::class, 'assign'])->name('emr.assign-facility');
@@ -217,8 +218,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('can:facility create')
         ->name('facility.store');
 
+
+        
+
     Route::get('/emr/info/{id}', [RefFacilitiesController::class, 'show'])
-        ->middleware('can:facility view')
+/*         ->middleware('can:facility view') */
         ->name('facility.info');
 
     Route::get('/facilities/profile_form', function () {

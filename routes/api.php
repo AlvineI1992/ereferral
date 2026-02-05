@@ -56,18 +56,24 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::post('/admit', [Referral::class, 'admit'])->name('referral.admit');
+    Route::post('/admit', [Referral::class, 'admit'])->name('admit');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/get-discharged-data/{LogID}', [Referral::class, 'get_discharged_data'])->name('referral.get.discharge.data');
+    Route::get('/get-discharged-data/{LogID}', [Referral::class, 'get_discharged_data'])->name('get_discharged_data');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/get-accredited-facilities', [Referral::class, 'get_accredited_facilities'])->name('referral.get_accredited_facilities');
+    Route::get('/get-accredited-facilities', [Referral::class, 'get_accredited_facilities'])->name('get_accredited_facilities');
 });
 
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::get('/blood-types', [Referral::class, 'getBloodtype'])->name('getBloodtype');
+});
 
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::get('/religions', [Referral::class, 'getReligion'])->name('getBloodtype');
+});
 
 
 

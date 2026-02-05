@@ -6,6 +6,7 @@ use App\Models\RefFacilitiesModel;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 
 class RefFacilitiesController extends Controller
 {
@@ -132,9 +133,15 @@ class RefFacilitiesController extends Controller
      * @param  \App\Models\RefFacilitiesModel  $RefFacilitiesModel
      * @return \Illuminate\Http\Response
      */
-    public function show(RefFacilitiesModel $RefFacilitiesModel)
+    public function show($hfhudcode)
     {
-        return response()->json($RefFacilitiesModel);
+        $facility = RefFacilitiesModel::where('hfhudcode', $hfhudcode)->first();
+
+        if (!$facility) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        return response()->json($facility);
     }
 
     /**
@@ -156,19 +163,44 @@ class RefFacilitiesController extends Controller
      * @param  \App\Models\RefFacilitiesModel  $RefFacilitiesModel
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, RefFacilitiesModel $RefFacilitiesModel)
-    {
-        $request->validate([
-            'hfhudcode' => 'required|string|max:50',
-            'facility_name' => 'required|string|max:50',
-            'fhud_address' => 'nullable|string|max:10',
-            'status' => 'nullable|string|max:1',
-        ]);
+   public function update(Request $request, $id = null)
+{
 
-        $RefFacilitiesModel->update($request->all());
+      $facility = $id
+            ? RefFacilitiesModel::findOrFail($id)
+            : new RefFacilitiesModel();
+    // Validate input
+    $validated = $request->validate([
+        'hfhudcode'     => ['required', 'string', 'max:50', Rule::unique('ref_facilities', 'hfhudcode')->ignore($facility->hfhudcode,'hfhudcode')],
+        'facility_name' => ['required', 'string', 'max:50', Rule::unique('ref_facilities', 'facility_name')->ignore($facility->facility_name,'facility_name')],
+        'fhudaddress'   => 'nullable|string|max:100',
+        'factype_code'  => 'required|string',
+        'region'        => 'required|string|max:10',
+        'province'      => 'required|string|max:10',
+        'city'          => 'required|string|max:10',
+        'barangay'      => 'required|string|max:10',
+        'status'        => 'required|string',
+    ]);
 
-        return response()->json($RefFacilitiesModel);
-    }
+    // Map fields
+    $facility->update([
+        'hfhudcode'     => $validated['hfhudcode'],
+        'facility_name' => strtoupper($validated['facility_name']),
+        'facility_type' => $validated['factype_code'],
+        'region_code'   => $validated['region'],
+        'province_code' => $validated['province'],
+        'city_code'     => $validated['city'],
+        'bgycode'       => $validated['barangay'],
+        'fhudaddress'   => $validated['fhudaddress'] ?? null,
+        'status'        => $validated['status'] ? 'A' : 'I',
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'data'    => $facility,
+        'message' => 'Facility updated successfully',
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.

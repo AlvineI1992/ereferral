@@ -21,6 +21,7 @@ class RefEmrModel extends Model
         'emr_name',
         'status',
         'remarks',
+        'uuid'
     ];
 
     protected $dates = ['deleted_at']; // Soft delete column

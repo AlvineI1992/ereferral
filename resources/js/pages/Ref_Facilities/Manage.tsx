@@ -14,7 +14,8 @@ const Manage = ({
     const [selectedId, setSelectedId] = useState<number | null>(null); // ID of the selected user for editing
     const [refreshKey, setRefreshKey] = useState(0); // Used to trigger list refresh
 
-    const handleEdit = (id: number) => {
+    const handleEdit = (id: any) => {
+       
         setSelectedId(id); // Set selected user ID for editing
     };
 
@@ -25,6 +26,7 @@ const Manage = ({
 
     const handleCancelEdit = () => {
         setSelectedId(null); // Clear selection when editing is canceled
+     
     };
 
     return (
@@ -34,7 +36,7 @@ const Manage = ({
                     {/* Conditionally render Form component based on permission */}
                     <Form
                         canCreate = {canCreate} onCancel={selectedId ? handleCancelEdit : undefined}
-                        emr={selectedId}
+                        formval={selectedId}
                         onCreated={handleCreatedOrUpdated}
                     />
                 </div>

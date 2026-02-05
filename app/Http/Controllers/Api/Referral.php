@@ -1182,8 +1182,10 @@ public function received(Request $request)
             'message' => 'Patient admitted successfully'
         ], 200);
     }
-
-    /**
+/**
+     *  
+     *  Discharge patient.
+     * 
  * @OA\Post(
  *     path="/api/discharge",
  *     operationId="dischargePatient",
@@ -1328,6 +1330,9 @@ public function received(Request $request)
  
 
 /**
+     *  
+     *  Get Discharged Data.
+     * 
  * @OA\Get(
  *     path="/api/get-discharged-data/{logID}",
  *     operationId="getDischargedData",
@@ -1357,6 +1362,9 @@ public function get_discharged_data(Request $request, $logID)
     return response()->json($output);
 }
 /**
+     *  
+     *  Get all the accredited facilities.
+     * 
  * @OA\Get(
  *     path="/api/get-accredited-facilities",
  *     summary="Get list of accredited facilities",
@@ -1416,7 +1424,131 @@ public function get_accredited_facilities(Request $request)
 
     return response()->json($output);
 }
-  
+
+   /**
+     *  
+     * Get blood types.
+     * 
+     * @OA\Get(
+     *     path="/api/blood-types",
+     *     summary="Get list of blood types",
+     *     description="Returns all blood types",
+     *     tags={"References"},
+     *    
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of blood types",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="count", type="integer", example=8),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="A+"),
+     *                     @OA\Property(property="value", type="string", example="A+"),
+     *                     @OA\Property(property="is_active", type="boolean", example=true),
+     *                     @OA\Property(property="entryby", type="string", nullable=true, example=null),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2026-01-15T02:07:08"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2026-01-15T10:07:08"),
+     *                     @OA\Property(property="deleted_at", type="string", format="date-time", nullable=true, example=null)
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Success!")
+     *         )
+     *     )
+     * )
+     */
+ public function getBloodtype(Request $request)
+{
+    // Get request parameters
+    $search = $request->query('search');
+    $is_active = $request->query('is_active');
+
+    // Call service
+    $response = $this->referralService->getBloodTypes($search, $is_active);
+
+    // Return JSON response
+    return response()->json($response, $response['code']);
+}
+
+/**
+     *  
+     *  Get all the Religion/s.
+     * 
+ * @OA\Get(
+ *     path="/api/religions",
+ *     summary="Get list of religions",
+ *     description="Returns list of religions. Defaults to active (relstat = A). Supports search by description.",
+ *     tags={"References"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="relstat",
+ *         in="query",
+ *         required=false,
+ *         description="Religion status filter (A = Active, I = Inactive)",
+ *         @OA\Schema(type="string", example="A")
+ *     ),
+ *
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         required=false,
+ *         description="Search religion description (wildcard search)",
+ *         @OA\Schema(type="string", example="christ")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="List of religions",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="count", type="integer", example=22),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="relcode", type="string", example="CATHO"),
+ *                     @OA\Property(property="reldesc", type="string", example="Catholic"),
+ *                     @OA\Property(property="relstat", type="string", example="A")
+ *                 )
+ *             ),
+ *             @OA\Property(property="message", type="string", example="Success!")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthenticated",
+ *         @OA\JsonContent(example={"error": "Unauthenticated"})
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Server error",
+ *         @OA\JsonContent(example={"error": "Server Error"})
+ *     )
+ * )
+ */
+
+    public function getReligion(Request $request)
+    {
+        $data = $this->referralService->getreligion($request->all());
+
+        return response()->json([
+            'success' => true,
+            'count'   => $data->count(),
+            'data'    => $data,
+            'message' => 'Success!'
+        ]);
+    }
+}
+
+
   
 
   
@@ -1424,4 +1556,4 @@ public function get_accredited_facilities(Request $request)
    
 
     
-}
+

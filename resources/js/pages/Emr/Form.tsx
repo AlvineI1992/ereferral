@@ -22,7 +22,7 @@ type Formtype = {
   remarks: string;
 };
 
-export default function Form({ onCreated, onCancel, emr }: Props) {
+export default function Form({ onCreated, onCancel, emr }: Props) {w
   const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
     emr_name: emr?.emr_name || '',
     status: !!emr?.status,
@@ -35,6 +35,20 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
     nameInputRef.current?.focus();
   }, []);
 
+
+   useEffect(() => {
+        if (emr) {
+            setData({
+                emr_name: emr.emr_name,
+                status: Number(emr.status) === 1,
+                remarks:emr.remarks
+            });
+        } else {
+            reset();
+        }
+    }, [emr]);
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setData(e.target.id, e.target.value);
   };
@@ -43,16 +57,33 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
     setData('status', checked);
   };
 
-  const submit: FormEventHandler = (e) => {
+const submit: FormEventHandler = (e) => {
     e.preventDefault();
-    post(route('emr.store'), {
-      onSuccess: () => {
-        reset();
-        onCreated();
-        toast.success('Record saved!');
-      },
+  const meth= emr?.emr_id ? 'put' : 'post';
+
+    post(route('emr.store', emr?.emr_id), {
+        ...data,
+        status: data.status ? 1 : 0, 
+        _method:meth, 
+        onSuccess: () => {
+            reset();      
+            onCreated();  
+            toast.success(emr?.emr_id ? 'Record updated!' : 'Record saved!');
+        },
     });
+};
+   // Cancel edit and clear everything
+  const handleCancelEdit = () => {
+    setSelectedId(null);
+    reset(); // Clear form data
+    setValue(""); // Clear Popover
+    setSelectedRegion("");
+    setSelectedProvince("");
+    setSelectedCity("");
+    setSelectedBarangay("");
   };
+
+
 
   return (
     <div className="w-full">
@@ -64,8 +95,8 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
         </h1>
       </div>
       <HeadingSmall title="Provider Information" description="Enter your details below." />
-      <form className="flex flex-col gap-1 mt-4" onSubmit={submit}>
-        <div className="grid gap-4">
+      <form className="flex flex-col gap-1 mt-2" onSubmit={submit}>
+        <div className="grid gap-2">
           {/* Name */}
           <Label htmlFor="emr_name">Name:</Label>
           <Input
@@ -80,11 +111,12 @@ export default function Form({ onCreated, onCancel, emr }: Props) {
           <InputError message={errors.emr_name} className="mt-1" />
 
           {/* Status */}
-          <Label htmlFor="status" className="mb-2 block">Status:</Label>
+          <Label htmlFor="status" className="mb-1 block">Status:</Label>
           <Switch
             id="status"
             checked={data.status}
             onCheckedChange={handleSwitchChange}
+              className="shadow-lg"
           />
           <InputError message={errors.status} className="mt-1" />
 

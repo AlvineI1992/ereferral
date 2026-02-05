@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\RefEmrModel;
 use App\Models\RefFacilitiesModel;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule; 
+use Illuminate\Support\Str;
 
 class RefEmrController extends Controller
 {
@@ -45,33 +47,52 @@ class RefEmrController extends Controller
         // Show a form (if applicable) or return a response
     }
 
-    // Store a newly created resource in storage
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'emr_name' => 'required|string|max:50|unique:ref_emr,emr_name',
-            'status' => 'required',
-            'remarks' => 'nullable|string|max:20',
-        ]);
 
-        $patient = RefEmrModel::create($validated);
-        return redirect()->route('emr')->with('success', 'Data saved!');
+  public function store(Request $request, $emr_id = null)
+    {
+        $emr = $emr_id
+            ? RefEmrModel::findOrFail($emr_id)
+            : new RefEmrModel();
+
+    $validated = $request->validate([
+                'emr_name' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('ref_emr', 'emr_name')->ignore($emr->emr_id, 'emr_id'),
+            ],
+            'status'  => ['required', 'boolean'], 
+            'remarks' => 'nullable|string|max:20',
+        ],
+        [
+        'emr_name.required' => 'Provider name is required.',       
+        'emr_name.unique'   => 'This provider name is already taken.', 
+        'emr_name.max'      => 'Provider name cannot exceed 50 characters.']);
+    
+        $validated['status'] = isset($validated['status']) && $validated['status'] ? 1 : 0;
+
+        if (!$emr->exists) {
+            $validated['uuid'] = base64_encode((string) Str::uuid());
+        }
+        
+        $emr->fill($validated)->save();
+        return redirect()->route('emr.index')->with('success', 'Data saved!');
     }
 
-    // Display the specified resource
+   
     public function show($id)
     {
         $data = RefEmrModel::findOrFail($id);
         return response()->json($data);
     }
 
-    // Show the form for editing the specified resource
+    
     public function edit($LogID)
     {
-        // Show an edit form (if applicable) or return a response
+       
     }
 
-    // Update the specified resource in storage
+   
     public function update(Request $request, $LogID)
     {
         $validated = $request->validate([
@@ -88,7 +109,7 @@ class RefEmrController extends Controller
     // Remove the specified resource from storage
     public function destroy($id)
     {
-        $data = RefEmrModel::findOrFail($LogID);
+        $data = RefEmrModel::findOrFail($id);
         $data->delete();
         return response()->json(['message' => 'Record deleted successfully.']);
     }
@@ -131,4 +152,16 @@ class RefEmrController extends Controller
         return RefFacilitiesModel::whereIn('hfhudcode', $hfhudcodes)
                         ->update(['emr_id' =>null]);
     }
+
+    function uuidToBase64(string $uuid): string
+{
+    return rtrim(
+        strtr(
+            base64_encode(hex2bin(str_replace('-', '', $uuid))),
+            '+/',
+            '-_'
+        ),
+        '='
+    );
+}
 }
