@@ -83,6 +83,9 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::post('/referral-status/update', [Referral::class, 'saveReferralStatus'])->name('get_saved_referral_status');
 });
 
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::get('/referral-status/patient', [Referral::class, 'getPatientReferralStatus'])->name('get_patient_referral_status');
+});
 
 
  

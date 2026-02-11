@@ -546,13 +546,25 @@ public function getBloodTypes(?string $search = null, ?int $is_active = null)
             ->where('LogID', $data['LogID'])
             ->where('referral_status', strtoupper($data['status']))
             ->first();
-
-        if ($existing) {
+     if ($existing) {
             return [
-                'code' => 422,
+                'code' => 400,
                 'message' => 'This status already exists for the given LogID.'
             ];
         }
+
+        $checklogid = DB::table('referral_information')
+            ->where('LogID', $data['LogID'])
+            ->first();
+
+              if ($checklogid) {
+            return [
+                'code' => 400,
+                'message' => 'Invalid LogID.'
+            ];
+        }
+
+      
             // update if exists, otherwise insert
             $saved =  DB::table('referral_status')->insert([
             'LogID' => $data['LogID'],

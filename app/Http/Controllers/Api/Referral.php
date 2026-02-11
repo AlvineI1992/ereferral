@@ -1668,6 +1668,7 @@ public function get_accredited_facilities(Request $request)
 
 $validator = \Validator::make($requestData, [
     'LogID' => 'required|string',
+    'date' => 'required|date_format:m/d/Y H:i:s',
     'status' => 'required|string',
     'remarks' => 'string',
 ]);
@@ -1688,7 +1689,81 @@ $data = $this->referralService->saveReferralStatus($requestData);
     ]);
 }
 
+/**
+ * Get All Patient Status.
+ *
+ * @OA\Get(
+ *     path="/api/referral-status/patient",
+ *     summary="Get All Patient Status",
+ *     description="Retrieve all patient referral statuses. Requires authentication.",
+ *     operationId="getAllPatientStatus",
+ *     tags={"Referral"},
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="LogID",
+ *         in="query",
+ *         required=false,
+ *         description="Optional LogID to filter patient status",
+ *         @OA\Schema(
+ *             type="string",
+ *             example="REF123456"
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     @OA\Property(property="LogID", type="string", example="REF123456"),
+ *                     @OA\Property(property="referral_status", type="string", example="approved"),
+ *                     @OA\Property(property="remarks", type="string", example="Patient referred successfully"),
+ *                     @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-11T14:13:01Z"),
+ *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-11T14:13:01Z")
+ *                 )
+ *             ),
+ *             @OA\Property(property="message", type="string", example="Success!")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthenticated",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Unauthenticated")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Server Error"
+ *     )
+ * )
+ */
 
+
+public function getAllPatientstatus(Request $request)
+{
+    if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+ $requestData = $request->only(['LogID']);
+
+    $data = $this->referralService->getAllPatientStatus();
+
+    return response()->json([
+        'success' => true,
+        'data'    => $data,
+        'message' => 'Success!'
+    ]);
+
+}
 
 
 }

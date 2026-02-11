@@ -1896,6 +1896,104 @@
                     }
                 }
             }
+        },
+        "/api/referral-status/patient": {
+            "get": {
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "Get All Patient Status",
+                "description": "Retrieve all patient referral statuses. Requires authentication.",
+                "operationId": "getAllPatientStatus",
+                "parameters": [
+                    {
+                        "name": "LogID",
+                        "in": "query",
+                        "description": "Optional LogID to filter patient status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "REF123456"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "LogID": {
+                                                        "type": "string",
+                                                        "example": "REF123456"
+                                                    },
+                                                    "referral_status": {
+                                                        "type": "string",
+                                                        "example": "approved"
+                                                    },
+                                                    "remarks": {
+                                                        "type": "string",
+                                                        "example": "Patient referred successfully"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-02-11T14:13:01Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2026-02-11T14:13:01Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unauthenticated"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
