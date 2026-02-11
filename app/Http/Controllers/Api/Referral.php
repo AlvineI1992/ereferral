@@ -1558,7 +1558,7 @@ public function get_accredited_facilities(Request $request)
  *     summary="Get Referral Status",
  *     description="Retrieve referral status based on given filters",
  *     operationId="getReferralStatus",
- *     tags={"Referral"},
+ *     tags={"References"},
  *
  *     @OA\RequestBody(
  *         required=true,
