@@ -7,6 +7,7 @@ import {
   SelectItem
 } from '@/components/ui/select'
 import axios from 'axios'
+import { Label } from '@/components/ui/label';
 
 type Barangay = { code: string; name: string }
 type City = { code: string; name: string; barangays: Barangay[] }
@@ -92,24 +93,38 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
   if (loading) {
     return (
       <div className="relative">
-        <div className="absolute right-0 flex items-center space-x-2 text-gray-600">
-          <svg
-            className="animate-spin h-5 w-5 text-blue-500"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
-          <p className="text-sm font-medium">Loading Demographics...</p>
-        </div>
-        <div className="opacity-50 pointer-events-none">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-10 bg-gray-200 rounded mb-2"></div>
-          ))}
-        </div>
-      </div>
+  {/* Centered loader */}
+  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 space-y-2">
+    <svg
+      className="animate-spin h-5 w-5 text-blue-500"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+      />
+    </svg>
+    <p className="text-sm font-medium">Loading Demographics...</p>
+  </div>
+
+  {/* Placeholder content */}
+  <div className="opacity-50 pointer-events-none">
+    {[...Array(4)].map((_, i) => (
+      <div key={i} className="h-10 bg-gray-200 rounded mb-2"></div>
+    ))}
+  </div>
+</div>
     )
   }
 
@@ -125,12 +140,7 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
     <div className={containerClass}>
       {/* Region */}
       <div className={fieldClass}>
-         <label
-    htmlFor="region"
-    className="block text-sm font-medium text-gray-700"
-  >
-    Region
-  </label>
+        <Label htmlFor="region">Region:</Label>
       <div className="relative mt-1">
       
         <Select
@@ -169,12 +179,7 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
       </div>
       {/* Province */}
       <div className={fieldClass}>
-           <label
-    htmlFor="province"
-    className="block text-sm font-medium text-gray-700"
-  >
-    Province
-  </label>
+         <Label htmlFor="province">Province:</Label>
         <Select
           value={selectedProvince}
           onValueChange={(value) => {
@@ -211,12 +216,7 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
 
       {/* City */}
       <div className={fieldClass}>
-         <label
-    htmlFor="city"
-    className="block text-sm font-medium text-gray-700"
-  >
-    City
-  </label>
+          <Label htmlFor="city">City:</Label>
         <Select
           value={selectedCity}
           onValueChange={(value) => {
@@ -252,12 +252,7 @@ export default function DemographicSelector({ variant = 'vertical', value, onCha
 
       {/* Barangay */}
       <div className={fieldClass}>
-        <label
-    htmlFor="barangay"
-    className="block text-sm font-medium text-gray-700"
-  >
-    Barangay
-  </label>
+          <Label htmlFor="barangay">Barangay:</Label>
         <Select
           value={selectedBarangay}
           onValueChange={(value) => {

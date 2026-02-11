@@ -523,5 +523,85 @@ public function getBloodTypes(?string $search = null, ?int $is_active = null)
             ->get();
     }
 
+    public function getReferralStatus()
+    {
+     return  ReferralHelper::getReferralStatus();
+    }
+
+    public function saveReferralStatus(array $data)
+    {
+        try {
+        //  Validate status against allowed list
+        $statusIsValid = ReferralHelper::getReferralStatus($data['status']);
+        if (!$statusIsValid) {
+            return [
+                'code' => 400,
+                'message' => 'Invalid referral status provided.'
+            ];
+        }
+
+        
+        // 3️⃣ Check if the same LogID already has this status
+        $existing = DB::table('referral_status')
+            ->where('LogID', $data['LogID'])
+            ->where('referral_status', strtoupper($data['status']))
+            ->first();
+
+        if ($existing) {
+            return [
+                'code' => 422,
+                'message' => 'This status already exists for the given LogID.'
+            ];
+        }
+            // update if exists, otherwise insert
+            $saved =  DB::table('referral_status')->insert([
+            'LogID' => $data['LogID'],
+            'referral_status' => $data['status'],
+            'remarks' => $data['remarks'] ?? 'n/a',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+            return [
+                'code' => 200,
+                'message' => 'Referral status saved successfully.'
+            ];
+
+        } catch (Exception $e) {
+            Log::error(sprintf(
+                'saveReferralStatus failed: %s in %s on line %d',
+                $e->getMessage(), $e->getFile(), $e->getLine()
+            ));
+
+            return [
+                'code' => $e->getCode() ?: 500,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function getReferralPatientStatus($LogID)
+    {
+        $status = DB::table('referral_status')
+            ->where('LogID', $LogID)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        return $status ? $status->referral_status : null;
+    }
+
+
+    
+    public function getReferralPatientStatusList($LogID)
+    {
+        $status = DB::table('referral_status')
+            ->where('LogID', $LogID)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        return $status ? $status->referral_status : null;
+    }
+
+
+
 
 }

@@ -179,7 +179,7 @@ class RefFacilitiesController extends Controller
         'province'      => 'required|string|max:10',
         'city'          => 'required|string|max:10',
         'barangay'      => 'required|string|max:10',
-        'status'        => 'required|string',
+        'status'        => 'required|boolean',
     ]);
 
     // Map fields
@@ -195,11 +195,7 @@ class RefFacilitiesController extends Controller
         'status'        => $validated['status'] ? 'A' : 'I',
     ]);
 
-    return response()->json([
-        'success' => true,
-        'data'    => $facility,
-        'message' => 'Facility updated successfully',
-    ]);
+    return redirect()->route('facilities')->with('message','Created successfully.');
 }
 
     /**

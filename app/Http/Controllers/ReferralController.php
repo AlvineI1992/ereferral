@@ -20,7 +20,7 @@ class ReferralController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-  
+  dd($user);
         $role = 'guest';
 
         if ($user && method_exists($user, 'getRoleNames')) {
@@ -37,7 +37,8 @@ class ReferralController extends Controller
         // Handle role-based query adjustments
         $emr_id = $user->access_id ?? null;
         $hfhudcode = $user->hfhudcode ?? null;
-    
+      
+         
         if ($role === 'EMR') {  
             // Use whereHas to filter by the destination relationship
             $query->whereHas('facility_to', function($query) use ($emr_id) {

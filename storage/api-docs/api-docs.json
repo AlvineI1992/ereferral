@@ -1766,6 +1766,136 @@
                     }
                 ]
             }
+        },
+        "/api/referral-status": {
+            "post": {
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "Get Referral Status",
+                "description": "Retrieve referral status based on given filters",
+                "operationId": "getReferralStatus",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "referral_id": {
+                                        "type": "string",
+                                        "example": "REF123456"
+                                    },
+                                    "patient_id": {
+                                        "type": "string",
+                                        "example": "PAT001"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "approved"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error"
+                    }
+                }
+            }
+        },
+        "/api/referral-status/update": {
+            "post": {
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "Update Referral Status",
+                "description": "Update the referral status for a given LogID.",
+                "operationId": "saveReferralStatus",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "LogID": {
+                                        "type": "string",
+                                        "example": "REF123456"
+                                    },
+                                    "statusData": {
+                                        "type": "object",
+                                        "example": {
+                                            "status": "approved",
+                                            "remarks": "Patient referred successfully"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Referral status saved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success!"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -1792,6 +1922,10 @@
         {
             "name": "References",
             "description": "References"
+        },
+        {
+            "name": "Referral",
+            "description": "Referral"
         }
     ]
 }

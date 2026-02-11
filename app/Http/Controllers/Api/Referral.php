@@ -1463,6 +1463,11 @@ public function get_accredited_facilities(Request $request)
      */
  public function getBloodtype(Request $request)
 {
+
+  if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+
     // Get request parameters
     $search = $request->query('search');
     $is_active = $request->query('is_active');
@@ -1546,6 +1551,146 @@ public function get_accredited_facilities(Request $request)
             'message' => 'Success!'
         ]);
     }
+/**
+ * Get referral status.
+ * @OA\Post(
+ *     path="/api/referral-status",
+ *     summary="Get Referral Status",
+ *     description="Retrieve referral status based on given filters",
+ *     operationId="getReferralStatus",
+ *     tags={"Referral"},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(
+ *                 property="referral_id",
+ *                 type="string",
+ *                 example="REF123456"
+ *             ),
+ *             @OA\Property(
+ *                 property="patient_id",
+ *                 type="string",
+ *                 example="PAT001"
+ *             ),
+ *             @OA\Property(
+ *                 property="status",
+ *                 type="string",
+ *                 example="approved"
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful Response",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="count", type="integer", example=1),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(type="object")
+ *             ),
+ *             @OA\Property(property="message", type="string", example="Success!")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Server Error"
+ *     )
+ * )
+ */
+    public function getReferralStatus(Request $request)
+    {
+          if (!Auth::check()) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+
+        $data = $this->referralService->getReferralStatus($request->all());
+
+        return response()->json([
+            'success' => true,
+           
+            'data'    => $data,
+            'message' => 'Success!'
+        ]); 
+    }
+
+
+
+    /**
+     * 
+     * Update Referral Status.
+     * @OA\Post(
+     *     path="/api/referral-status/update",
+     *     summary="Update Referral Status",
+     *     description="Update the referral status for a given LogID.",
+     *     operationId="saveReferralStatus",
+     *     tags={"Referral"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="LogID", type="string", example="REF123456"),
+     *             @OA\Property(
+     *                 property="statusData",
+     *                 type="object",
+     *                 example={"status": "approved", "remarks": "Patient referred successfully"}
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Referral status saved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object"),
+     *             @OA\Property(property="message", type="string", example="Success!")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
+   public function saveReferralStatus(Request $request)
+{
+   $requestData = $request->only(['LogID', 'status','remarks']);
+
+$validator = \Validator::make($requestData, [
+    'LogID' => 'required|string',
+    'status' => 'required|string',
+    'remarks' => 'string',
+]);
+
+if ($validator->fails()) {
+    return response()->json([
+        'success' => false,
+        'message' => 'Validation failed',
+        'errors' => $validator->errors()
+    ], 422);
+}
+
+$data = $this->referralService->saveReferralStatus($requestData);
+    return response()->json([
+        'success' => true,
+        'data'    => $data,
+        'message' => 'Success!'
+    ]);
+}
+
+
+
+
 }
 
 

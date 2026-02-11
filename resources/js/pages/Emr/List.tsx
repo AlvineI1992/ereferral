@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { router } from '@inertiajs/react';
 import axios from "axios";
 import Swal from "sweetalert2";
 import {
@@ -89,13 +90,13 @@ const Lists = ({ refreshKey, onEdit }: ListProps) => {
   onEdit?.(row);
 };
 
-  const handleGoto = (id:string) => {
-    if (!id) {
-      console.error("ID parameter is required");
-      return;
-    }
-    Inertia.visit(`/emr/profile/${id}`);
-  };
+const handleGoto = (id: string) => {
+  if (!id) {
+    console.error("ID parameter is required");
+    return;
+  }
+  router.visit(`/emr/profile/${id}`);
+};
 
   const totalPages = Math.ceil(totalRows / perPage);
 

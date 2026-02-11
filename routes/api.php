@@ -75,6 +75,13 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/religions', [Referral::class, 'getReligion'])->name('getBloodtype');
 });
 
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::get('/referral-status', [Referral::class, 'getReferralStatus'])->name('get_referral_status');
+});
+
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::post('/referral-status/update', [Referral::class, 'saveReferralStatus'])->name('get_saved_referral_status');
+});
 
 
 

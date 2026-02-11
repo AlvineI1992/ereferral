@@ -22,7 +22,7 @@ type Formtype = {
   remarks: string;
 };
 
-export default function Form({ onCreated, onCancel, emr }: Props) {w
+export default function Form({ onCreated, onCancel, emr }: Props) {
   const { data, setData, post, processing, errors, reset } = useForm<Formtype>({
     emr_name: emr?.emr_name || '',
     status: !!emr?.status,

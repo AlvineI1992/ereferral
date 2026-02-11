@@ -97,7 +97,8 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate }
       facility_name: facility.facility_name ?? '',
       fhudaddress: facility.fhudaddress ?? '',
       factype_code: String(facility.facility_type).padStart(2, '0'),
-      status: facility.status ?? true,
+status: facility.status ? facility.status === 'A' : true
+
     }));
 
     // 👇 cascade safely

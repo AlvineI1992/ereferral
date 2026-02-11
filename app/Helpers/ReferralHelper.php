@@ -71,6 +71,40 @@ class ReferralHelper
         return $type_array;
     }
 
+
+   /**
+     * Get allowed referral statuses.
+     * If $status is provided, validate it and throw an exception if invalid.
+     *
+     * @param string|null $status
+     * @return array
+     * @throws \InvalidArgumentException
+     */
+    public static function getReferralStatus(?string $status = null): array
+    {
+        $type_array = [
+            ['code' => 'ADMIT', 'description' => 'Admitted'],
+            ['code' => 'DISCH', 'description' => 'Managed and discharged'],
+            ['code' => 'OBSRV', 'description' => 'Observation'],
+            ['code' => 'REFER', 'description' => 'Referred to another facility'],
+            ['code' => 'RETUR', 'description' => 'Returned to originating facility'],
+        ];
+
+        // If no status provided, return the full list
+        if (is_null($status)) {
+            return $type_array;
+        }
+
+        // Validate status
+        $allowed_codes = array_column($type_array, 'code');
+        if (!in_array(strtoupper($status), $allowed_codes, true)) {
+            throw new \InvalidArgumentException("Invalid referral status: {$status}");
+        }
+
+        return $type_array;
+    }
+
+
     public static function getRegion($id)
     {
         $data =RefRegionModel::find($id);
