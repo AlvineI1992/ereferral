@@ -1000,8 +1000,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
         return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
     }
 
-   
-  
+
     $transformedList = $referrals->map(function ($referral) {
         $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
         
@@ -1015,7 +1014,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
             'referral_origin_code' => $referral->fhudFrom,
             'referral_origin_name' => optional(RefFacilityModel::where('hfhudcode', $referral->fhudFrom)->first())->facility_name,
             'referral_destination_code' => $referral->fhudTo,
-            'referral_destination_name' => $referral->facility_name,
+       
             'referral_reason' => $referral->referralReason,
             'referral_patient'=>$fullName, 
             'referral_patient_sex'=>strtoupper($patient->patientSex),
@@ -1029,8 +1028,7 @@ public function get_referral_list(Request $request, $hfhudcode, $emr_id)
             'referring_type' => $referral->typeOfReferral,
             'referring_provider' => $referral->referringProvider,
             'patient_pan'=>$referral->patientPan,
-            'contact_number' => $referral->referringProviderContactNumber,
-            'emr' => optional(RefFacilityModel::where('emr_id', $referral->emr_id)->first())->facility_name,
+            'contact_number' => $referral->referringProviderContactNumber
         ];
     });
 
@@ -1753,7 +1751,7 @@ public function getAllPatientstatus(Request $request)
     if (!Auth::check()) {
         return response()->json(['error' => 'Unauthenticated'], 401);
     }
- $requestData = $request->only(['LogID']);
+     $requestData = $request->only(['LogID']);
 
     $data = $this->referralService->getAllPatientStatus();
 

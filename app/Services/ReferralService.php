@@ -76,7 +76,10 @@ class ReferralService
             $code .= date('mdyhis');
             return str_pad($code, 6, 0, STR_PAD_LEFT);
         } else {
-            return 0;
+           $code = 'REF-';
+            $code .= $maxID + 1;
+            $code .= date('mdyhis');
+            return str_pad($code, 6, 0, STR_PAD_LEFT);
         }
     }
 
@@ -193,108 +196,130 @@ class ReferralService
     }
 
 
-    public  function transaction_refer(array $data)
-    {
-        DB::beginTransaction();
+public function transaction_refer(array $data)
+{
+    DB::beginTransaction();
 
-        try {
-            $LogID=$this->generate_code($data['referral']['facility_from']);
-            $referral = [
-                'LogID' => $LogID,
-                'fhudFrom' => $data['referral']['facility_from'] ?? null,
-                'fhudTo' => $data['referral']['facility_to'] ?? null,
-                'typeOfReferral' => $data['referral']['type_referral']  ?? null,
-                'referralCategory' => $data['referral']['category'] ?? null,
-                'referralReason' =>$data['referral']['reason'] ?? null,
-                'referralContactPerson' => $data['referral']['contact_person'] ?? null,
-                'referralContactPersonDesignation' => $data['referral']['designation'] ?? 'N/A',
-                'referringProvider' =>'N/A',
-                'referringProviderContactNumber' => $data['referral']['contact_no'] ?? null,
-                'otherReasons' =>$data['referral']['other_reason'] ?? null,
-                'remarks' =>$data['referral']['remarks'] ?? null,
-                'refferalDate' => $data['referral']['refer_date'] ?? null,
-                'refferalTime' =>$data['referral']['refer_time'] ?? null,
-                'logDate' => date('Y-m-d H:i:s'),
-                'created_at' => now(), 
-            ];
+    try {
+        $LogID = $this->generate_code($data['referral']['facility_from']);
 
-            ReferralInformationModel::create($referral);
-            $patient = [
-                'LogID'=>$LogID,
-                'FamilyID'=>($data['patient']['family_number'])?$data['patient']['family_number']: 0 ,
-                'caseNum'=>($data['patient']['case_no'])?(int)$data['patient']['case_no']: 0 ,
-                'phicNum'=>($data['patient']['phic_number'])?(int)$data['patient']['phic_number']: 0 ,
-                'patientLastName'=>$data['patient']['last_name'],
-                'patientFirstName'=>$data['patient']['first_name'],
-                'patientMiddlename'=>$data['patient']['middle_name'],
-                'patientSuffix'=>($data['patient']['suffix'])?$data['patient']['suffix']: '.' ,
-                'patientBirthDate'=>$data['patient']['birthdate'],
-                'patientSex'=>$data['patient']['sex'],
-                'patientContactNumber'=>$data['patient']['contact_no'],
-                'patientReligion'=>$data['patient']['religion'],
-                'patientBloodType'=>$data['patient']['blood_type'],
-                'patientBloodTypeRH'=>$data['patient']['blood_rh'],
-                'patientCivilStatus'=>$data['patient']['civil_status'] ?? null
-            ];
+        $referral = [
+            'LogID' => $LogID,
+            'fhudFrom' => $data['referral']['facility_from'] ?? null,
+            'fhudTo' => $data['referral']['facility_to'] ?? null,
+            'typeOfReferral' => $data['referral']['type_referral'] ?? null,
+            'referralCategory' => $data['referral']['category'] ?? null,
+            'referralReason' => $data['referral']['reason'] ?? null,
+            'referralContactPerson' => $data['referral']['contact_person'] ?? null,
+            'referralContactPersonDesignation' => $data['referral']['designation'] ?? 'N/A',
+            'referringProvider' => 'N/A',
+            'referringProviderContactNumber' => $data['referral']['contact_no'] ?? null,
+            'otherReasons' => $data['referral']['other_reason'] ?? null,
+            'remarks' => $data['referral']['remarks'] ?? null,
+            'refferalDate' => $data['referral']['refer_date'] ?? null,
+            'refferalTime' => $data['referral']['refer_time'] ?? null,
+            'logDate' => date('Y-m-d H:i:s'),
+            'created_at' => now(),
+        ];
 
-            ReferralPatientInfoModel::create($patient);
-
-            $demographics = [
-                'LogID'=>$LogID,
-                'patientStreetAddress'=>$data['demographics']['street'],
-                'patientBrgyCode'=>$data['demographics']['brgy_code'],
-                'patientMundCode'=>$data['demographics']['city_code'],
-                'patientProvCode'=>$data['demographics']['prov_code'],
-                'patientRegCode'=>$data['demographics']['reg_code'],
-                'patientZipCode'=>$data['demographics']['zipcode']
-            ];
-            ReferralPatientDemoModel::create($demographics);
-
-         
-            $referring_provider=[
-                'LogID'=>$LogID,
-                'provider_last'=>$data['patient_providers'][0]['provider_last'],
-                'provider_first'=>$data['patient_providers'][0]['provider_first'],
-                'provider_middle'=>$data['patient_providers'][0]['provider_middle'],
-                'provider_suffix'=>($data['patient_providers'][0]['provider_suffix']) ? $data['patient_providers'][0]['provider_suffix']:'N/A',
-                'provider_type'=>$data['patient_providers'][0]['provider_type'],
-            ];
-            
-            DB::table('referral_provider')->insert($referring_provider);
-
-            $consulting_provider=[
-                'LogID'=>$LogID,
-                'provider_last'=>$data['patient_providers'][1]['provider_last'],
-                'provider_first'=>$data['patient_providers'][1]['provider_first'],
-                'provider_middle'=>$data['patient_providers'][1]['provider_middle'],
-                'provider_suffix'=>($data['patient_providers'][1]['provider_suffix'])?$data['patient_providers'][1]['provider_suffix']:'N/A',
-                'provider_type'=>$data['patient_providers'][1]['provider_type'],
-            ];
-
-            DB::table('referral_provider')->insert($consulting_provider);
-            $clinical = $data['clinical'];
-            $insertData = [
-                'LogID'               => $LogID,
-                'clinicalDiagnosis'   => implode(', ', $clinical['diagnosis']), // or json_encode(...)
-                'clinicalHistory'     => $clinical['history'],
-                'physicalExamination' => isset($clinical['physical_examination']) ? json_encode($clinical['physical_examination']) : null,
-                'chiefComplaint'      => $clinical['chief_complaint'],
-                'findings'            => $clinical['findings'],
-                'vitals'              => json_encode($data['vital_signs']),
-            ];
-
-            DB::table('referral_clinical')->insert($insertData);
-
-            DB::commit();
-
-            return $LogID;
-
-        } catch (Exception $e) {
-            DB::rollBack(); 
-            return 'Transaction failed: ' . $e->getMessage();
+        $ref = ReferralInformationModel::create($referral);
+        if (!$ref) {
+            throw new Exception('Failed to insert referral information');
         }
-    }
 
+        $patient = [
+            'LogID'=>$LogID,
+            'FamilyID'=>($data['patient']['family_number']) ? $data['patient']['family_number'] : 0,
+            'caseNum'=>($data['patient']['case_no']) ? (int)$data['patient']['case_no'] : 0,
+            'phicNum'=>($data['patient']['phic_number']) ? (int)$data['patient']['phic_number'] : 0,
+            'patientLastName'=>$data['patient']['last_name'],
+            'patientFirstName'=>$data['patient']['first_name'],
+            'patientMiddlename'=>$data['patient']['middle_name'],
+            'patientSuffix'=>($data['patient']['suffix']) ? $data['patient']['suffix'] : '.',
+            'patientBirthDate'=>$data['patient']['birthdate'],
+            'patientSex'=>$data['patient']['sex'],
+            'patientContactNumber'=>$data['patient']['contact_no'],
+            'patientReligion'=>$data['patient']['religion'],
+            'patientBloodType'=>$data['patient']['blood_type'],
+            'patientBloodTypeRH'=>$data['patient']['blood_rh'],
+            'patientCivilStatus'=>$data['patient']['civil_status'] ?? null
+        ];
+
+        $pat = ReferralPatientInfoModel::create($patient);
+        if (!$pat) {
+            throw new Exception('Failed to insert patient info');
+        }
+
+        $demographics = [
+            'LogID'=>$LogID,
+            'patientStreetAddress'=>$data['demographics']['street'],
+            'patientBrgyCode'=>$data['demographics']['brgy_code'],
+            'patientMundCode'=>$data['demographics']['city_code'],
+            'patientProvCode'=>$data['demographics']['prov_code'],
+            'patientRegCode'=>$data['demographics']['reg_code'],
+            'patientZipCode'=>$data['demographics']['zipcode']
+        ];
+
+        $demo = ReferralPatientDemoModel::create($demographics);
+        if (!$demo) {
+            throw new Exception('Failed to insert demographics');
+        }
+    
+        $referring_provider = [
+            'LogID'=>$LogID,
+            'provider_last'=>$data['patient_providers'][0]['provider_last'],
+            'provider_first'=>$data['patient_providers'][0]['provider_first'],
+            'provider_middle'=>$data['patient_providers'][0]['provider_middle'],
+            'provider_suffix'=>($data['patient_providers'][0]['provider_suffix']) ? $data['patient_providers'][0]['provider_suffix'] : 'N/A',
+            'provider_type'=>$data['patient_providers'][0]['provider_type'],
+        ];
+
+        if (!DB::table('referral_provider')->insert($referring_provider)) {
+            throw new Exception('Failed to insert referring provider');
+        }
+
+/*         $consulting_provider = [
+            'LogID'=>$LogID,
+            'provider_last'=>$data['patient_providers'][1]['provider_last'],
+            'provider_first'=>$data['patient_providers'][1]['provider_first'],
+            'provider_middle'=>$data['patient_providers'][1]['provider_middle'],
+            'provider_suffix'=>($data['patient_providers'][1]['provider_suffix']) ? $data['patient_providers'][1]['provider_suffix'] : 'N/A',
+            'provider_type'=>$data['patient_providers'][1]['provider_type'],
+        ];
+
+        if (!DB::table('referral_provider')->insert($consulting_provider)) {
+            throw new Exception('Failed to insert consulting provider');
+        }
+ */
+        $clinical = $data['clinical'];
+
+        $insertData = [
+            'LogID' => $LogID,
+            'clinicalDiagnosis' => implode(', ', $clinical['diagnosis']),
+            'clinicalHistory' => $clinical['history'],
+            'physicalExamination' => isset($clinical['physical_examination']) ? json_encode($clinical['physical_examination']) : null,
+            'chiefComplaint' => $clinical['chief_complaint'],
+            'findings' => $clinical['findings'],
+            'vitals' => json_encode($data['vital_signs']),
+        ];
+
+        if (!DB::table('referral_clinical')->insert($insertData)) {
+            throw new Exception('Failed to insert clinical data');
+        }
+
+        DB::commit();
+
+        return $LogID;
+
+    } catch (Exception $e) {
+        DB::rollBack();
+        return [
+            'status' => false,
+            'message' => 'Transaction failed',
+            'error' => $e->getMessage()
+        ];
+    }
+}
 
     public function receive_incoming(array $data)
     {

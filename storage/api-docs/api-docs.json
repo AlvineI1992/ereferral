@@ -1770,7 +1770,7 @@
         "/api/referral-status": {
             "post": {
                 "tags": [
-                    "Referral"
+                    "References"
                 ],
                 "summary": "Get Referral Status",
                 "description": "Retrieve referral status based on given filters",
