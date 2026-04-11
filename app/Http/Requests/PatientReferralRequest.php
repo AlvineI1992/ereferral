@@ -22,15 +22,15 @@ class PatientReferralRequest extends FormRequest
             // Referral rules
             'referral.facility_from' => 'required|string|max:50',
             'referral.facility_to' => 'required|string|max:50',
-            'referral.phic_pan' => 'nullable|string|max:20',
+            'referral.phic_pan' => 'nullable',
             //'referral.contact_no' => 'required|string|max:11',
             'referral.type_referral' => 'required|string|max:10',
             'referral.category' => 'required|string|max:2',
             'referral.reason' => 'required|string|max:50',
-            'referral.other_reason' => 'nullable|string|max:255',
-            'referral.remarks' => 'nullable|string|max:255',
+            'referral.other_reason' => 'nullable|',
+            'referral.remarks' => 'nullable',
             'referral.contact_person' => 'required|string|max:100',
-            'referral.designation' => 'nullable|string|max:100',
+            'referral.designation' => 'nullable',
             'referral.refer_date' => 'required|date',
             'referral.refer_time' => 'required|string|max:12',
 
@@ -46,9 +46,9 @@ class PatientReferralRequest extends FormRequest
             'patient.sex' => 'required|in:M,F',
             'patient.civil_status' => 'nullable|string',
             'patient.religion' => 'required|string|max:50',
-            'patient.contact_no' => 'nullable|string|max:15',
-            'patient.blood_type' => 'nullable|string|max:1',
-            'patient.blood_rh' => 'nullable|string|max:1',
+            'patient.contact_no' => 'nullable',
+            'patient.blood_type' => 'nullable',
+            'patient.blood_rh' => 'nullable',
 
             // Demographics rules
             'demographics.street' => 'required|string|max:255',
@@ -60,20 +60,20 @@ class PatientReferralRequest extends FormRequest
 
             // Clinical rules
             'clinical.diagnosis' => 'required|array|min:1',
-            'clinical.diagnosis.*' => 'required|string|max:255',
+             'clinical.diagnosis.*' => 'required|string|max:255', 
 
             'clinical.chief_complaint' => 'required|string|max:255',
-            'clinical.history' => 'nullable|string|max:255',
-            'clinical.findings' => 'nullable|string|max:255',
+            'clinical.history' => 'nullable',
+            'clinical.findings' => 'nullable',
             //'clinical.physical_examination' => 'nullable|string|max:255',
            // 'vital_signs'=>'nullable|string|max:255',
-            'vital_signs.BP' => 'nullable|string|max:20',
-            'vital_signs.temp' => 'nullable|string|max:5',
-            'vital_signs.HR' => 'nullable|string|max:5',
-            'vital_signs.RR' => 'nullable|string|max:5',
-            'vital_signs.O2_sats' => 'nullable|string|max:5',
-            'vital_signs.weight' => 'nullable|numeric',
-            'vital_signs.height' => 'nullable|numeric',
+            'vital_signs.BP' => 'nullable',
+            'vital_signs.temp' => 'nullable|',
+            'vital_signs.HR' => 'nullable',
+            'vital_signs.RR' => 'nullable',
+            'vital_signs.O2_sats' => 'nullable',
+            'vital_signs.weight' => 'nullable',
+            'vital_signs.height' => 'nullable',
 
             // ICD codes
            // Validate ICD is an array with at least one item
@@ -84,13 +84,13 @@ class PatientReferralRequest extends FormRequest
           
 
             // Patient providers rules
-        'patient_providers' => 'required|array|min:1',
+      /*   'patient_providers' => 'required|array|min:1',
         'patient_providers.*.provider_last' => 'required|string|max:255',
         'patient_providers.*.provider_first' => 'required|string|max:255',
-        'patient_providers.*.provider_middle' => 'nullable|string|max:255',
-        'patient_providers.*.provider_suffix' => 'nullable|string|max:255',
-        'patient_providers.*.ProviderContactNo' => 'nullable|string|max:50',
-        'patient_providers.*.provider_type' => 'required|string|in:REFER,CONSU',
+        'patient_providers.*.provider_middle' => 'nullable',
+        'patient_providers.*.provider_suffix' => 'nullable',
+        'patient_providers.*.ProviderContactNo' => 'nullable',
+        'patient_providers.*.provider_type' => 'required|string|in:REFER,CONSU', */
         ];
 
         

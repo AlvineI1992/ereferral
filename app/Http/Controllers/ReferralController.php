@@ -20,7 +20,7 @@ class ReferralController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-  dd($user);
+ 
         $role = 'guest';
 
         if ($user && method_exists($user, 'getRoleNames')) {

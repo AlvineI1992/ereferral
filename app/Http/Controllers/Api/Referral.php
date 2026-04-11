@@ -1083,10 +1083,25 @@ public function received(Request $request)
         'received_by' => 'required'
     ]);
 
+   
+
         // Prevent duplicate insert
         $existing = ReferralTrackModel::find($validated['LogID']);
+
+         $referral_data = ReferralModel::with([
+         'patientinformation',
+         'facility_to',
+         'facility_from',
+        
+         'demographics',
+         'clinical',
+          ])->where('LogID', $validated['LogID'])->first();
+       
         if ($existing) {
-            return response()->json(['message' => 'Referral already marked as received.'], 400);
+            return response()->json([
+                'data'=>$referral_data,
+                'message' => 'Referral already marked as received.'], 
+                400);
         }
       // Insert new record
       ReferralTrackModel::create([
@@ -1096,7 +1111,9 @@ public function received(Request $request)
     ]);
 
 
-    return response()->json(['message' => 'Referral successfully received'], 200);
+    return response()->json([
+        'data'=>$referral_data,
+        'message' => 'Referral successfully received'], 200);
 }
 
     /**

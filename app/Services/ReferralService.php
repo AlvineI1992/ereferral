@@ -201,6 +201,8 @@ public function transaction_refer(array $data)
     DB::beginTransaction();
 
     try {
+		
+		
         $LogID = $this->generate_code($data['referral']['facility_from']);
 
         $referral = [
@@ -240,8 +242,8 @@ public function transaction_refer(array $data)
             'patientSex'=>$data['patient']['sex'],
             'patientContactNumber'=>$data['patient']['contact_no'],
             'patientReligion'=>$data['patient']['religion'],
-            'patientBloodType'=>$data['patient']['blood_type'],
-            'patientBloodTypeRH'=>$data['patient']['blood_rh'],
+            'patientBloodType'=>$data['patient']['blood_type'] ?? null ,
+            'patientBloodTypeRH'=>$data['patient']['blood_rh']?? null ,
             'patientCivilStatus'=>$data['patient']['civil_status'] ?? null
         ];
 
@@ -296,6 +298,7 @@ public function transaction_refer(array $data)
         $insertData = [
             'LogID' => $LogID,
             'clinicalDiagnosis' => implode(', ', $clinical['diagnosis']),
+		   
             'clinicalHistory' => $clinical['history'],
             'physicalExamination' => isset($clinical['physical_examination']) ? json_encode($clinical['physical_examination']) : null,
             'chiefComplaint' => $clinical['chief_complaint'],
