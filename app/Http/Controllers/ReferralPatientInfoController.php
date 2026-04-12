@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ReferralHelper;
 use App\Models\ReferralInformationModel;
 use App\Models\ReferralPatientInfoModel;
 use App\Models\ReferralPatientDemoModel;
@@ -54,7 +55,7 @@ class ReferralPatientInfoController extends Controller
                 'patient_name' => $patient->patientFirstName.' '.$patient->patientMiddlename.' '.$patient->patientLastname,
                 'sex' => ($patient->patientSex === 'M')? 'Male' : 'Female',
                 'birthdate' => date('m/d/Y',strtotime($patient->patientBirthDate)),
-                'civil_status' => $patient->patientCivilStatus,
+                'civil_status' => ReferralHelper::getCivilStatusDescription($patient->patientCivilStatus) ?? $patient->patientCivilStatus,
             ];
         });
     

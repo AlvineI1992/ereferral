@@ -1,32 +1,27 @@
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { Head, useForm } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Hospital, LoaderCircle, Save, X, Edit } from 'lucide-react';
+import axios from 'axios';
+import { Check, ChevronsUpDown, Edit, Hospital, LoaderCircle, Save, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import DemographicSelector from '../Demographics/Demographics_selector';
-import axios from 'axios';
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { type FacilityRecord } from './types';
 
 type Props = {
     onCreated: () => void;
-    onCancel: () => void;
-    formval?: any;
+    onCancel?: () => void;
+    formval?: FacilityRecord | null;
     canCreate: boolean;
+    canEdit: boolean;
 };
 
 type Formtype = {
@@ -41,36 +36,35 @@ type Formtype = {
     status: boolean;
 };
 
-export default function FacilityForm({ onCreated, onCancel, formval, canCreate }: Props) {
-    const [selectedId, setSelectedId] = useState<string | null>(null);
- 
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [selectedProvince, setSelectedProvince] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
-  const [selectedBarangay, setSelectedBarangay] = useState("");
+type FacilityTypeOption = {
+    factype_code: string;
+    description: string;
+};
 
+export default function FacilityForm({ onCreated, onCancel, formval, canCreate, canEdit }: Props) {
+    const isEditMode = Boolean(formval?.hfhudcode);
+    const canSubmit = isEditMode ? canEdit : canCreate;
 
-
-    const [factypes, setFacilitytype] = useState([]);
-    const [value, setValue] = useState(formval?.factype_code || '');
+    const [factypes, setFacilitytype] = useState<FacilityTypeOption[]>([]);
+    const [value, setValue] = useState('');
     const [open, setOpen] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
     const { data, setData, post, put, processing, errors, reset } = useForm<Formtype>({
         hfhudcode: formval?.hfhudcode || '',
         facility_name: formval?.facility_name || '',
         fhudaddress: formval?.fhudaddress || '',
-        factype_code: formval?.facility_type || '', // must match useForm field
-        region: formval?.region || '',
-        province: formval?.province || '',
-        city: formval?.city || '',
-        barangay: formval?.barangay || '',
-        status: formval?.status ?? false,
+        factype_code: '',
+        region: '',
+        province: '',
+        city: '',
+        barangay: '',
+        status: formval ? formval.status === 'A' : true,
     });
 
     useEffect(() => {
-        axios.get('/facility_type/list')
+        axios
+            .get('/facility_type/list')
             .then((response) => {
-              
                 setFacilitytype(response.data);
             })
             .catch((error) => {
@@ -82,40 +76,45 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate }
         nameInputRef.current?.focus();
     }, []);
 
- useEffect(() => {
-  if (!formval?.hfhudcode) return;
+    useEffect(() => {
+        if (!formval?.hfhudcode) {
+            reset();
+            setValue('');
+            return;
+        }
 
-  axios.get(`/emr/info/${formval.hfhudcode}`).then(({ data: facility }) => {
-    const region = String(facility.region_code || '').padStart(2, '0');
-    const province = String(facility.province_code || '').padStart(2, '0');
-    const city = String(facility.city_code || '').padStart(2, '0');
-    const barangay = String(facility.bgycode || '').padStart(3, '0');
+        axios
+            .get(`/facilities/info/${formval.hfhudcode}`)
+            .then(({ data: facility }) => {
+                const region = String(facility.region_code || '').padStart(2, '0');
+                const province = String(facility.province_code || '').padStart(2, '0');
+                const city = String(facility.city_code || '').padStart(2, '0');
+                const barangay = String(facility.bgycode || '').padStart(3, '0');
 
-    setData((prev) => ({
-      ...prev,
-      hfhudcode: facility.hfhudcode ?? '',
-      facility_name: facility.facility_name ?? '',
-      fhudaddress: facility.fhudaddress ?? '',
-      factype_code: String(facility.facility_type).padStart(2, '0'),
-status: facility.status ? facility.status === 'A' : true
+                setData((prev) => ({
+                    ...prev,
+                    hfhudcode: facility.hfhudcode ?? '',
+                    facility_name: facility.facility_name ?? '',
+                    fhudaddress: facility.fhudaddress ?? '',
+                    factype_code: String(facility.facility_type).padStart(2, '0'),
+                    status: facility.status ? facility.status === 'A' : true,
+                }));
 
-    }));
+                setTimeout(() => setData('region', region), 0);
+                setTimeout(() => setData('province', province), 50);
+                setTimeout(() => setData('city', city), 100);
+                setTimeout(() => setData('barangay', barangay), 150);
 
-    // 👇 cascade safely
-    setTimeout(() => setData('region', region), 0);
-    setTimeout(() => setData('province', province), 50);
-    setTimeout(() => setData('city', city), 100);
-    setTimeout(() => setData('barangay', barangay), 150);
-
-    setValue(String(facility.facility_type).padStart(2, '0'));
-  });
-}, [formval?.hfhudcode]);
-
-
-
+                setValue(String(facility.facility_type).padStart(2, '0'));
+            })
+            .catch((error) => {
+                console.error('Unable to load facility details:', error);
+                toast.error('Unable to load selected facility.');
+            });
+    }, [formval?.hfhudcode, reset, setData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setData(e.target.id, e.target.value);
+        setData(e.target.id as keyof Formtype, e.target.value);
     };
 
     const handleSwitchChange = (checked: boolean) => {
@@ -125,8 +124,8 @@ status: facility.status ? facility.status === 'A' : true
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        if (formval) {
-            put(route('facility.update', formval.hfhudcode), {
+        if (isEditMode) {
+            put(route('facility.update', formval!.hfhudcode), {
                 onSuccess: () => {
                     reset();
                     onCreated();
@@ -143,27 +142,19 @@ status: facility.status ? facility.status === 'A' : true
             });
         }
     };
-// Cancel edit and clear all inputs / switches / selectors
-  const handleCancelEdit = () => {
-    setSelectedId(null);
-    reset(); // Reset Inertia form
-    setValue(""); // Clear popover
-    setSelectedRegion("");
-    setSelectedProvince("");
-    setSelectedCity("");
-    setSelectedBarangay("");
-    onCancel?.(); // Optional callback if parent needs to know
-  };
-
+    // Cancel edit and clear all inputs / switches / selectors
+    const handleCancelEdit = () => {
+        reset(); // Reset Inertia form
+        setValue(''); // Clear popover
+        onCancel?.(); // Optional callback if parent needs to know
+    };
 
     return (
         <div className="mt-2 mr-3 ml-2 w-full">
             <Head title={formval ? 'Edit Facility' : 'Register Facility'} />
             <div className="mb-2 flex items-center">
                 {formval ? <Edit size={18} /> : <Hospital size={18} />}
-                <h1 className="ml-2 text-lg font-semibold text-gray-800">
-                    {formval ? 'Edit Facility' : 'Create Facility'}
-                </h1>
+                <h1 className="ml-2 text-lg font-semibold text-gray-800">{formval ? 'Edit Facility' : 'Create Facility'}</h1>
             </div>
             <HeadingSmall title="Facility Information" description="Enter your details below." />
             <form className="mt-4 flex flex-col gap-4" onSubmit={submit}>
@@ -177,7 +168,7 @@ status: facility.status ? facility.status === 'A' : true
                         onChange={handleChange}
                         className="mt-1 block h-8 w-full px-2 py-1 text-xs"
                         autoComplete="off"
-                        disabled={!canCreate}
+                        disabled={isEditMode || !canSubmit}
                     />
                     <InputError message={errors.hfhudcode} className="mt-1 text-xs" />
 
@@ -189,18 +180,13 @@ status: facility.status ? facility.status === 'A' : true
                         onChange={handleChange}
                         className="mt-1 block h-8 w-full px-2 py-1 text-sm"
                         autoComplete="off"
-                        disabled={!canCreate}
+                        disabled={!canSubmit}
                     />
                     <InputError message={errors.facility_name} className="mt-1 text-xs" />
 
                     <div className="mb-2 flex items-center space-x-4">
                         <Label htmlFor="status">Status:</Label>
-                        <Switch
-                            id="status"
-                            checked={data.status}
-                            onCheckedChange={handleSwitchChange}
-                            disabled={!canCreate}
-                        />
+                        <Switch id="status" checked={data.status} onCheckedChange={handleSwitchChange} disabled={!canSubmit} />
                     </div>
                     <InputError message={errors.status} className="mt-1 text-xs" />
 
@@ -215,7 +201,7 @@ status: facility.status ? facility.status === 'A' : true
                                 role="combobox"
                                 aria-expanded={open}
                                 className="w-full justify-between"
-                                disabled={!canCreate}
+                                disabled={!canSubmit}
                             >
                                 {value ? factypes.find((f) => f.factype_code === value)?.description : 'Select Facility type...'}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -258,7 +244,7 @@ status: facility.status ? facility.status === 'A' : true
                         className="mt-1 block w-full px-2 py-1 text-sm"
                         placeholder="Address"
                         autoComplete="off"
-                        disabled={!canCreate}
+                        disabled={!canSubmit}
                     />
                     <InputError message={errors.fhudaddress} className="mt-1 text-xs" />
 
@@ -276,17 +262,23 @@ status: facility.status ? facility.status === 'A' : true
                             setData('city', val.city || '');
                             setData('barangay', val.barangay || '');
                         }}
-                        canCreate={canCreate}
+                        canCreate={canSubmit}
                     />
 
                     <div className="mt-4 flex justify-between gap-4">
                         <Button
                             type="submit"
                             className="flex flex-1 items-center justify-center gap-2 rounded-md border border-green-600 bg-white py-2 font-semibold text-green-600 transition-all hover:bg-green-600 hover:text-white"
-                            disabled={processing || !canCreate}
+                            disabled={processing || !canSubmit}
                         >
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            {processing ? 'Processing...' : <><Save size={12} /></>}
+                            {processing ? (
+                                'Processing...'
+                            ) : (
+                                <>
+                                    <Save size={12} />
+                                </>
+                            )}
                         </Button>
 
                         {formval && (
@@ -294,10 +286,16 @@ status: facility.status ? facility.status === 'A' : true
                                 type="button"
                                 onClick={handleCancelEdit}
                                 className="flex flex-1 items-center justify-center gap-2 rounded-md border border-red-400 bg-white py-2 font-semibold text-red-600 transition-all hover:bg-red-600 hover:text-white"
-                                disabled={!canCreate}
+                                disabled={processing}
                             >
                                 {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                                {processing ? 'Processing...' : <><X size={12} /></>}
+                                {processing ? (
+                                    'Processing...'
+                                ) : (
+                                    <>
+                                        <X size={12} />
+                                    </>
+                                )}
                             </Button>
                         )}
                     </div>

@@ -1,88 +1,116 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Thermometer, Droplet,Ruler,Scale} from 'lucide-react';
+import { Activity, Heart, Ruler, Scale, Thermometer, Wind } from 'lucide-react';
 
 type Vitals = {
-  BP: string;
-  Temp: string;
-  HR: string;
-  RR: string;
-  O2Sats: string;
-  Weight: string;
-  Height: string;
+    BP?: string;
+    Temp?: string;
+    HR?: string;
+    RR?: string;
+    O2Sats?: string;
+    Weight?: string;
+    Height?: string;
 };
 
 type ReferralClinicalData = {
-  LogID: string;
-  diagnosis: string;
-  history: string;
-  physical_examination: string;
-  chief_complaint: string;
-  findings: string;
-  vitals: Vitals;
+    LogID: string;
+    diagnosis: string;
+    history: string;
+    physical_examination: string;
+    chief_complaint: string;
+    findings: string;
+    vitals: Vitals | null;
 };
 
 type ClinicalInfoProps = {
-  logID: string;
+    logID: string;
 };
 
+const vitalCards = [
+    { key: 'BP', label: 'BP', icon: Heart },
+    { key: 'Temp', label: 'Temp', icon: Thermometer },
+    { key: 'HR', label: 'HR', icon: Activity },
+    { key: 'RR', label: 'RR', icon: Wind },
+    { key: 'O2Sats', label: 'O2 Sats', icon: Activity },
+    { key: 'Weight', label: 'Weight', icon: Scale },
+    { key: 'Height', label: 'Height', icon: Ruler },
+] as const;
+
 export default function ClinicalInfo({ logID }: ClinicalInfoProps) {
-  const [clinicalData, setClinicalData] = useState<ReferralClinicalData | null>(null);
-  const [loading, setLoading] = useState(true);
+    const [clinicalData, setClinicalData] = useState<ReferralClinicalData | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!logID) return;
+    useEffect(() => {
+        if (!logID) {
+            return;
+        }
 
-    const fetchClinicalData = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`/referral-clinical/${logID}`);
-        setClinicalData(res.data);
-      } catch (error) {
-        console.error('Failed to fetch clinical data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        const fetchClinicalData = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(`/referral-clinical/${logID}`);
+                setClinicalData(response.data);
+            } catch (error) {
+                console.error('Failed to fetch clinical data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchClinicalData();
-  }, [logID]);
+        void fetchClinicalData();
+    }, [logID]);
 
-  if (loading) return <div>Loading clinical data...</div>;
-  if (!clinicalData) return <div>No clinical data found.</div>;
+    if (loading) {
+        return <div className="text-sm text-slate-500">Loading clinical data...</div>;
+    }
 
-  const {
-    diagnosis,
-    history,
-    physical_examination,
-    chief_complaint,
-    findings,
-    vitals,
-  } = clinicalData;
+    if (!clinicalData) {
+        return <div className="text-sm text-slate-500">No clinical data found.</div>;
+    }
 
-  return (
-    <div className="space-y-4 p-4">
-      <div className="space-y-2 text-sm">
-        <p><strong>Chief Complaint:</strong> {chief_complaint || '-'}</p>
-        <p><strong>Diagnosis:</strong> {diagnosis || '-'}</p>
-        <p><strong>History:</strong> {history || '-'}</p>
-        <p><strong>Physical Examination:</strong> {physical_examination || '-'}</p>
-        <p><strong>Findings:</strong> {findings || '-'}</p>
-      </div>
+    const vitals = clinicalData.vitals ?? {};
 
-      <div className="space-y-2">
-        <h3 className="font-semibold mt-4">Vital signs</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <p><Heart className="inline w-4 h-4" /> BP: {vitals.BP || '-'}</p>
-          <p><Thermometer className="inline w-4 h-4" /> Temp: {vitals.Temp || '-'}</p>
-          <p><Droplet className="inline w-4 h-4" /> HR: {vitals.HR || '-'}</p>
-          <p>RR: {vitals.RR || '-'}</p>
-          <p>O₂ Sats: {vitals.O2Sats || '-'}</p>
-          <p><Scale className="inline w-4 h-4" />Weight: {vitals.Weight || '-'}</p>
-          <p><Ruler className="inline w-4 h-4" />Height: {vitals.Height || '-'}</p>
+    return (
+        <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+                <ClinicalBlock title="Chief complaint" value={clinicalData.chief_complaint} />
+                <ClinicalBlock title="Diagnosis" value={clinicalData.diagnosis} />
+                <ClinicalBlock title="History" value={clinicalData.history} />
+                <ClinicalBlock title="Physical examination" value={clinicalData.physical_examination} />
+            </div>
+
+            <ClinicalBlock title="Findings" value={clinicalData.findings} />
+
+            <div>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Vital signs</h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {vitalCards.map((item) => {
+                        const Icon = item.icon;
+                        const value = vitals[item.key];
+
+                        return (
+                            <div key={item.key} className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
+                                    <div className="rounded-xl bg-white p-2 text-teal-700 shadow-sm">
+                                        <Icon className="size-4" />
+                                    </div>
+                                </div>
+                                <p className="mt-3 text-lg font-semibold text-slate-900">{value || '-'}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
+}
+
+function ClinicalBlock({ title, value }: { title: string; value?: string }) {
+    return (
+        <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-4">
+            <p className="text-sm font-semibold text-slate-900">{title}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{value || '-'}</p>
+        </div>
+    );
 }

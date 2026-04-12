@@ -1,41 +1,21 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import Lists from './List';
+import Manage from './Manage';
+import { type PatientPermissionProps } from './types';
 
-const breadcrumbs: BreadcrumbItem[] = [
+const breadcrumbs = [
     {
-        title: 'Patient',
-        href: '/patient-list',
+        title: 'Patient Registry',
+        href: '/patient_registry',
     },
 ];
-export default function Index() {
-    
-    const [loading, setLoading] = useState(true);
 
-    const handleCreated = () => {
-        setRefreshKey((prev) => prev + 1); 
-    };
-
-    const [selectedId, setSelectedId] = useState(null); // ID of the selected user for editing
-    const [refreshKey, setRefreshKey] = useState(0); // Used to trigger list refresh
-
-    const handleEdit = (id) => {
-        setSelectedId(id); // Set selected user ID for editing
-    };
-
-    useEffect(() => {
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-        }, 2000); 
-    }, [refreshKey]);
-
+export default function PatientIndex(props: PatientPermissionProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Users" />
+            <Head title="Patient Registry" />
             <div className="lg:col-span-1">
-            <Lists refreshKey={refreshKey} onEdit={handleEdit} />
+                <Manage {...props} />
             </div>
         </AppLayout>
     );

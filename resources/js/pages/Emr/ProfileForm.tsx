@@ -1,6 +1,6 @@
-import { usePage } from '@inertiajs/react';
 import HeadingSmall from '@/components/heading-small';
 import { type BreadcrumbItem } from '@/types';
+import { usePage } from '@inertiajs/react';
 import ProfileLayout from './ProfileLayout';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -12,7 +12,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function ProfileForm() {
     const { props } = usePage();
-    const { id } = props;  // Assuming the id is passed in the page props
+    const id = String((props as { id?: string | number }).id ?? '');
 
     return (
         <ProfileLayout id={id}>

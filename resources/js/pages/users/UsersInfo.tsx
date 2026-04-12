@@ -1,50 +1,55 @@
-// RolesInfo.tsx
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 
 type ProfileData = {
-  name: string;
-  guard_name: string;
-  avatar?: string;
+    name: string;
+    email: string;
+    primary_role?: string | null;
+    role?: string | null;
+    status?: string;
+    avatar?: string;
 };
 
 type Props = {
-  profile: ProfileData | null;
+    profile: ProfileData | null;
 };
 
 export default function Profileinfo({ profile }: Props) {
-  if (!profile) {
-    return <p>Loading profile...</p>;
-  }
+    if (!profile) {
+        return <p>Loading profile...</p>;
+    }
 
-  return (
-    <div className='ml-2 mr-2'>
-    <div className="flex items-center space-x-1 mb-2">
-      <Info size={15} />
-      <h3 className="text-sm font-semibold">
-        User Details
-      </h3>
-    </div>
-  
-    <div className="flex items-center space-x-4">
-      <Avatar className="w-12 h-12 ring-1 ring-primary shadow-sm">
-        <AvatarImage src={profile.avatar || '/default-avatar.jpg'} alt={`${profile.name}'s avatar`} />
-        <AvatarFallback>
-          {profile.name?.charAt(0).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
-  
-      <div className="flex flex-col">
-        <h2 className="text-md font-bold ">{profile.name}</h2>
-        <p className="text-sm text-gray-800">{profile.email}</p>
-        {profile.role && (
-          <span className="inline-block mt-1 px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full w-max">
-            {profile.role}
-          </span>
-        )}
-      </div>
-    </div>
-  </div>
-  
-);
+    const roleLabel = profile.primary_role || profile.role || 'No role assigned';
+
+    return (
+        <Card className="mx-2 overflow-hidden shadow-sm">
+            <CardHeader className="bg-muted/20 border-b pb-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                    <Info size={15} />
+                    User Details
+                </CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-4 p-4">
+                <div className="flex items-center gap-4">
+                    <Avatar className="ring-primary h-12 w-12 shadow-sm ring-1">
+                        <AvatarImage src={profile.avatar || '/default-avatar.jpg'} alt={`${profile.name}'s avatar`} />
+                        <AvatarFallback>{profile.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+
+                    <div className="space-y-1">
+                        <h2 className="text-md font-bold">{profile.name}</h2>
+                        <p className="text-muted-foreground text-sm">{profile.email}</p>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{roleLabel}</Badge>
+                    <Badge variant={profile.status === 'A' ? 'default' : 'outline'}>{profile.status === 'A' ? 'Active' : 'Inactive'}</Badge>
+                </div>
+            </CardContent>
+        </Card>
+    );
 }

@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\RefFacilitiesModel;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
-use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
 
 class RefFacilitiesController extends Controller
@@ -17,6 +15,9 @@ class RefFacilitiesController extends Controller
      */
     public function index(Request $request)
     {
+        $perPage = (int) $request->input('perPage', 10);
+        $perPage = max(10, min($perPage, 100));
+
         $query = RefFacilitiesModel::select([
             'ref_facilities.hfhudcode',
             'ref_facilities.facility_name',
@@ -29,17 +30,23 @@ class RefFacilitiesController extends Controller
              ->leftJoin('ref_facilitytype', 'ref_facilitytype.factype_code', '=', 'ref_facilities.facility_type')
              ->orderBy('ref_facilities.fhud_seq','desc');
 
-            if ($search = $request->input('search')) {
+            $search = trim((string) $request->input('search', ''));
+            if ($search !== '') {
                 $query->where(function ($q) use ($search) {
                     $q->where('ref_facilities.facility_name', 'LIKE', "%{$search}%")
                       ->orWhere('ref_facilities.hfhudcode', 'LIKE', "%{$search}%")
-                      ->orWhere('ref_facilitytype.description', '=', $search)
-                      ->orWhere('ref_region.regname', '=', $search); // exact match
+                      ->orWhere('ref_facilitytype.description', 'LIKE', "%{$search}%")
+                      ->orWhere('ref_region.regname', 'LIKE', "%{$search}%");
                 });
             }
+        
+            if ($request->filled('status') && in_array($request->status, ['A', 'I'], true)) {
+                $query->where('ref_facilities.status', $request->status);
+            }
 
-            if ($request->filled('not_assigned') === true) {
-                $query->whereNull('ref_facilities.emr_id');
+            if ($request->boolean('not_assigned')) {
+                $query->whereNull('ref_facilities.emr_id')
+                      ->where('ref_facilities.status', 'A');
             }
 
             if ($request->filled('emr_id')) {
@@ -58,7 +65,7 @@ class RefFacilitiesController extends Controller
                 $query->where('ref_region.regname', 'like', "%{$request->region}%");
             }
 
-        $facilities = $query->paginate(10); 
+        $facilities = $query->paginate($perPage); 
 
         return response()->json([
             'data' => $facilities->items(),
@@ -195,7 +202,7 @@ class RefFacilitiesController extends Controller
         'status'        => $validated['status'] ? 'A' : 'I',
     ]);
 
-    return redirect()->route('facilities')->with('message','Created successfully.');
+    return redirect()->route('facilities')->with('message','Updated successfully.');
 }
 
     /**
@@ -204,9 +211,13 @@ class RefFacilitiesController extends Controller
      * @param  \App\Models\RefFacilitiesModel  $RefFacilitiesModel
      * @return \Illuminate\Http\Response
      */
-    public function destroy(RefFacilitiesModel $RefFacilitiesModel)
+    public function destroy(string $id)
     {
-        $RefFacilitiesModel->delete();
-        return response()->json(null, 204);
+        $facility = RefFacilitiesModel::findOrFail($id);
+        $facility->delete();
+
+        return response()->json([
+            'message' => 'Facility deleted successfully.',
+        ]);
     }
 }

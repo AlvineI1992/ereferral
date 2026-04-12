@@ -1,9 +1,5 @@
 import AuthLayoutTemplate from '@/layouts/auth/auth-split-layout';
 
-import { useCallback } from 'react';
-
-import { loadFull } from 'tsparticles';
-
 export default function AuthLayout({
     children,
     title,
@@ -11,14 +7,11 @@ export default function AuthLayout({
     ...props
 }: {
     children: React.ReactNode;
-    title: string;
+    title: React.ReactNode;
     description: string;
 }) {
-  
-
     return (
         <AuthLayoutTemplate title={title} description={description} {...props}>
-            
             <div className="relative z-10">{children}</div>
         </AuthLayoutTemplate>
     );

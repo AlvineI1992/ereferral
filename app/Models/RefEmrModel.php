@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Traits\HasRoles;
@@ -21,8 +22,16 @@ class RefEmrModel extends Model
         'emr_name',
         'status',
         'remarks',
-        'uuid'
     ];
 
     protected $dates = ['deleted_at']; // Soft delete column
+
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
+    public function facilities(): HasMany
+    {
+        return $this->hasMany(RefFacilitiesModel::class, 'emr_id', 'emr_id');
+    }
 }

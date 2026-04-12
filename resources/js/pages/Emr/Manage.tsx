@@ -1,44 +1,132 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { PanelLeftClose, PanelLeftOpen, Plus, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
-import Lists from './List';
 import Form from './Form';
+import Lists from './List';
+import { type EmrPermissionProps, type EmrRecord } from './types';
 
-const Manage = () => {
-    const [selectedId, setSelectedId] = useState(null); // ID of the selected user for editing
-    const [refreshKey, setRefreshKey] = useState(0); // Used to trigger list refresh
+const Manage = ({ canCreate, canEdit, canDelete, canView }: EmrPermissionProps) => {
+    const [selectedEmr, setSelectedEmr] = useState<EmrRecord | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [isFormOpen, setIsFormOpen] = useState(canCreate);
 
-    const handleEdit = (id:any) => {
-        setSelectedId(id); // Set selected user ID for editing
+    const hasFormAccess = canCreate || canEdit;
+
+    const handleEdit = (emr: EmrRecord) => {
+        if (!canEdit) {
+            return;
+        }
+
+        setSelectedEmr(emr);
+        setIsFormOpen(true);
     };
 
     const handleCreatedOrUpdated = () => {
-        setSelectedId(null); // Reset selection
-        setRefreshKey((prev) => prev + 1); // Refresh the list
+        setSelectedEmr(null);
+        setRefreshKey((prev) => prev + 1);
+
+        if (!canCreate) {
+            setIsFormOpen(false);
+        }
     };
 
     const handleCancelEdit = () => {
-        setSelectedId(null); // Clear selection when editing is canceled
-        
+        setSelectedEmr(null);
+
+        if (!canCreate) {
+            setIsFormOpen(false);
+        }
     };
 
     return (
-        <div className="roles-management">
-          <div className="relative grid grid-cols-1 gap-4 lg:grid-cols-4">
-            <div className="lg:col-span-1 p-4">
-        <Form
-          onCancel={selectedId ? handleCancelEdit : undefined}
-          emr={selectedId}
-          onCreated={handleCreatedOrUpdated}
-        />
-      </div>
-      <div className="lg:col-span-3 p-4 relative">
-        <div className="mb-4">
-          <Lists refreshKey={refreshKey} onEdit={handleEdit} />
-        </div>
-        <div className="hidden lg:block absolute top-0 right-0 h-full w-px bg-gray-300"></div>
-      </div>
+        <div className="space-y-4 p-4">
+            <section className="border-primary/15 from-primary/10 via-background to-background rounded-2xl border bg-gradient-to-r p-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-2">
+                        <p className="text-primary text-sm font-medium">EMR Directory</p>
+                        <div>
+                            <h1 className="text-2xl font-semibold tracking-tight">Manage provider records</h1>
+                            <p className="text-muted-foreground text-sm">
+                                Add, update, and retire EMR providers before assigning facilities to them.
+                            </p>
+                        </div>
+                    </div>
 
-      
-    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Badge variant={canCreate ? 'default' : 'outline'}>Create</Badge>
+                        <Badge variant={canEdit ? 'default' : 'outline'}>Edit</Badge>
+                        <Badge variant={canDelete ? 'default' : 'outline'}>Delete</Badge>
+                        <Badge variant={canView ? 'default' : 'outline'}>View</Badge>
+                    </div>
+                </div>
+            </section>
+
+            <div className={cn('grid gap-4', hasFormAccess && isFormOpen ? 'xl:grid-cols-[360px_minmax(0,1fr)]' : 'grid-cols-1')}>
+                {hasFormAccess && isFormOpen && (
+                    <Form canCreate={canCreate} canEdit={canEdit} emr={selectedEmr} onCancel={handleCancelEdit} onCreated={handleCreatedOrUpdated} />
+                )}
+
+                <div className="space-y-4">
+                    {hasFormAccess && (
+                        <div className="bg-background flex flex-col gap-3 rounded-xl border p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setIsFormOpen((prev) => !prev)}
+                                    title={isFormOpen ? 'Hide provider form' : 'Show provider form'}
+                                >
+                                    {isFormOpen ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
+                                </Button>
+
+                                <div>
+                                    <p className="text-sm font-medium">{selectedEmr ? `Editing ${selectedEmr.emr_name}` : 'Provider form'}</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        {selectedEmr
+                                            ? 'Changes are saved directly to the selected provider.'
+                                            : canCreate
+                                              ? 'Open the form to register a new provider.'
+                                              : 'Select a provider from the list to start editing.'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {canCreate && (
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedEmr(null);
+                                        setIsFormOpen(true);
+                                    }}
+                                >
+                                    <Plus className="size-4" />
+                                    New Provider
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
+                    {canView ? (
+                        <Lists canDelete={canDelete} canEdit={canEdit} refreshKey={refreshKey} onEdit={handleEdit} />
+                    ) : (
+                        <Card>
+                            <CardContent className="flex items-start gap-3 p-6">
+                                <ShieldAlert className="text-muted-foreground mt-0.5 size-5" />
+                                <div className="space-y-1">
+                                    <p className="font-medium">Provider list is unavailable</p>
+                                    <p className="text-muted-foreground text-sm">
+                                        Your account can open the EMR workspace, but it does not include permission to view provider records.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };

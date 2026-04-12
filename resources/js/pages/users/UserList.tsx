@@ -1,214 +1,281 @@
-import React, { useState, useEffect } from "react";
-import { Pencil, Trash2, List, CircleArrowRight } from "lucide-react";
-import axios from "axios";
-import Swal from "sweetalert2";
-import { Inertia } from "@inertiajs/inertia";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { type SharedData } from '@/types';
+import { router, usePage } from '@inertiajs/react';
+import axios from 'axios';
+import { ArrowRight, Pencil, Search, Trash2 } from 'lucide-react';
+import { useDeferredValue, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import Swal from 'sweetalert2';
+import { type UserRecord } from './types';
 
 type Props = {
-  refreshKey: () => any;
-  onEdit: () => any;  // Add onCancel prop
-  canDelete:boolean;// Role data for editing
-  canEdit:boolean;// Role data for editing
+    refreshKey: number;
+    onEdit: (user: UserRecord) => void;
+    canDelete: boolean;
+    canEdit: boolean;
+    canAssign: boolean;
 };
 
-const UserList = ({  canEdit,canDelete,refreshKey, onEdit  }:Props) => {
-  const [data, setData] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalRows, setTotalRows] = useState(0);
-  const perPage = 10;
+const PAGE_SIZE = 10;
 
-  const fetchData = async (pageNumber = 1, search = "") => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`/users/list?page=${pageNumber}&search=${search}`);
-      setData(response.data.data);
-      setTotalRows(response.data.total);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-    setLoading(false);
-  };
+const UserList = ({ canAssign, canDelete, canEdit, refreshKey, onEdit }: Props) => {
+    const {
+        props: { auth },
+    } = usePage<SharedData>();
 
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchData(page, searchTerm);
-    }, 500);
-    return () => clearTimeout(delayDebounce);
-  }, [refreshKey, page, searchTerm]);
+    const [rows, setRows] = useState<UserRecord[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const deferredSearchTerm = useDeferredValue(searchTerm);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalRows, setTotalRows] = useState(0);
 
-  const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
+    const currentUserId = auth.user.id;
 
-    if (result.isConfirmed) {
-      try {
-        await axios.delete(`/roles/delete/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    const fetchData = async (pageNumber = 1, search = '') => {
+        setLoading(true);
+
+        try {
+            const response = await axios.get('/users/list', {
+                params: {
+                    page: pageNumber,
+                    search,
+                },
+            });
+
+            setRows(response.data.data);
+            setTotalRows(response.data.total);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            toast.error('Unable to load user accounts right now.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        void fetchData(page, deferredSearchTerm.trim());
+    }, [deferredSearchTerm, page, refreshKey]);
+
+    const handleDelete = async (user: UserRecord) => {
+        if (user.id === currentUserId) {
+            toast.error('You cannot delete your own account while you are signed in.');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: `Delete ${user.name}?`,
+            text: 'This user will lose access to the application.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Delete user',
         });
-        fetchData(page, searchTerm);
-        Swal.fire({
-          title: "Deleted!",
-          text: "The user has been deleted.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        Swal.fire("Oops!", "Something went wrong.", "error");
-      }
-    }
-  };
 
-  const handleEdit = (row) => {
-    onEdit?.(row);
-  };
+        if (!result.isConfirmed) {
+            return;
+        }
 
-  const handleGoto = (id) => {
-    if (id) Inertia.visit(`/users/assign-roles/${id}`);
-  };
+        try {
+            await axios.delete(`/users/delete/${user.id}`);
+            toast.success(`${user.name} deleted.`);
 
-  const totalPages = Math.ceil(totalRows / perPage);
+            if (rows.length === 1 && page > 1) {
+                setPage((current) => current - 1);
+                return;
+            }
 
-  return (
-    <div className="p-3 mr-3 ml-3 mt-3">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center space-x-2">
-          <List size={16} />
-          <h2 className="text-lg font-semibold">Users</h2>
-        </div>
-        <Input
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-2 py-1 border rounded-md text-sm w-56"
-        />
-      </div>
+            await fetchData(page, deferredSearchTerm.trim());
+        } catch (error: any) {
+            console.error('Error deleting user:', error);
 
-      {/* Table or Loader */}
-      {loading ? (
-        <div className="flex justify-center items-center py-4">
-          <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm text-blue-600 ml-2">Please wait...</span>
-        </div>
-      ) : (
-        <>
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead>
-              <tr>
-                <th className="px-2 py-1 text-left font-medium">ID</th>
-                <th className="px-2 py-1 text-left font-medium">Name</th>
-                <th className="px-2 py-1 text-left font-medium">Email</th>
-                <th className="px-2 py-1 text-left font-medium">Status</th>
-                <th className="px-2 py-1 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {data.length > 0 ? (
-                data.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-2 py-1">{row.id}</td>
-                    <td className="px-2 py-1">{row.name}</td>
-                    <td className="px-2 py-1">{row.email}</td>
-                    <td className="px-2 py-1">{row.status}</td>
-                    <td className="px-2 py-1 text-right">
-                      <div className="flex justify-end space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(row.id)}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(row.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleGoto(row.id)}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          <CircleArrowRight size={16} />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="text-center text-gray-500 italic py-4">
-                    No users found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            const message = error.response?.data?.message ?? 'Something went wrong while deleting this user.';
 
-          {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 px-2 space-y-2 sm:space-y-0">
-            <div className="text-xs text-gray-600">
-              Page <span className="font-medium">{page}</span> of{" "}
-              <span className="font-medium">{totalPages}</span> &nbsp;(
-              {totalRows} {totalRows === 1 ? "record" : "records"})
-            </div>
+            Swal.fire('Unable to delete', message, 'error');
+        }
+    };
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                className="text-xs p-1"
-              >
-                Previous
-              </Button>
+    const handleRoles = (id: number) => {
+        router.visit(`/users/assign-roles/${id}`);
+    };
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))
-                .map((pNum) => (
-                  <Button
-                    key={pNum}
-                    variant={pNum === page ? "default" : "outline"}
-                    className="px-3 py-1 text-xs"
-                    onClick={() => setPage(pNum)}
-                  >
-                    {pNum}
-                  </Button>
-                ))}
+    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    const recordStart = totalRows === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    const recordEnd = Math.min(page * PAGE_SIZE, totalRows);
 
-              <Button
-                variant="outline"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                className="text-xs p-1"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+    return (
+        <Card className="overflow-hidden shadow-sm">
+            <CardHeader className="bg-muted/20 gap-4 border-b sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-1">
+                    <CardTitle className="text-base">User Accounts</CardTitle>
+                    <CardDescription>Review active accounts, update their access scope, or jump into role assignment.</CardDescription>
+                </div>
+
+                <div className="relative w-full sm:w-72">
+                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                    <Input
+                        type="search"
+                        placeholder="Search name, email, type, or status"
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4 p-0">
+                {loading ? (
+                    <div className="text-muted-foreground flex items-center justify-center gap-2 py-12 text-sm">
+                        <div className="border-primary size-5 animate-spin rounded-full border-2 border-t-transparent" />
+                        Loading users...
+                    </div>
+                ) : (
+                    <>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Access</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+
+                            <TableBody>
+                                {rows.length > 0 ? (
+                                    rows.map((row) => {
+                                        const isCurrentUser = row.id === currentUserId;
+
+                                        return (
+                                            <TableRow key={row.id}>
+                                                <TableCell>
+                                                    <div className="space-y-1">
+                                                        <p className="font-medium">{row.name}</p>
+                                                        <p className="text-muted-foreground text-sm">{row.email}</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {row.primary_role ? (
+                                                        <Badge variant="outline">{row.primary_role}</Badge>
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-sm">No role assigned</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="space-y-1">
+                                                        <Badge variant="outline">{row.access_type || 'General'}</Badge>
+                                                        <p className="text-muted-foreground text-xs">{row.access_label || 'No scoped access'}</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={row.status === 'A' ? 'default' : 'outline'}>
+                                                        {row.status === 'A' ? 'Active' : 'Inactive'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex justify-end gap-2">
+                                                        {canEdit && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() => onEdit(row)}
+                                                                title={`Edit ${row.name}`}
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </Button>
+                                                        )}
+
+                                                        {canDelete && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() => handleDelete(row)}
+                                                                disabled={isCurrentUser}
+                                                                title={
+                                                                    isCurrentUser
+                                                                        ? 'You cannot delete your own signed-in account'
+                                                                        : `Delete ${row.name}`
+                                                                }
+                                                            >
+                                                                <Trash2 className="text-destructive size-4" />
+                                                            </Button>
+                                                        )}
+
+                                                        {canAssign && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() => handleRoles(row.id)}
+                                                                title={`Manage roles for ${row.name}`}
+                                                            >
+                                                                <ArrowRight className="size-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="py-12 text-center">
+                                            <div className="space-y-1">
+                                                <p className="font-medium">No users found</p>
+                                                <p className="text-muted-foreground text-sm">Try a different search term or create a new account.</p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+
+                        <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-muted-foreground text-sm">
+                                Showing {recordStart}-{recordEnd} of {totalRows} user{totalRows === 1 ? '' : 's'}
+                            </p>
+
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={page <= 1}
+                                    onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                                >
+                                    Previous
+                                </Button>
+
+                                <span className="text-muted-foreground text-sm">
+                                    Page {page} of {totalPages}
+                                </span>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
 };
 
 export default UserList;

@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link } from '@inertiajs/react';
+import React, { useState, useEffect } from "react";
+import { Link, router } from '@inertiajs/react';
 import {
-  Pencil,
-  Trash2,
   List,
   Hospital,
   Mars,
@@ -10,151 +8,96 @@ import {
   Printer,
   ArrowRightIcon,
   Plus,
-  QrCode,
-  Scan,
 } from "lucide-react";
 import axios from "axios";
-import Swal from "sweetalert2";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PermissionProps } from "./types";
+import IncomingDashboard from "./IncomingDashboard";
+import type { IncomingReferralRow, IncomingSummary, PermissionProps } from "./types";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
 } from "@/components/ui/avatar";
-import { Inertia } from "@inertiajs/inertia";
-import { Html5Qrcode } from "html5-qrcode";
 
-const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
-  const [scanned, setScanned] = useState<string | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const scannerRef = useRef<any>(null);
-  const qrBoxRef = useRef(null);
+const emptySummary: IncomingSummary = {
+  totalIncoming: 0,
+  todayIncoming: 0,
+  emergencyCount: 0,
+  outpatientCount: 0,
+  receivingFacilities: 0,
+  topReasons: [],
+  topProvinces: [],
+  topCities: [],
+  topBarangays: [],
+  generatedAt: '',
+};
 
-  const [data, setData] = useState([]);
+const Lists = ({ canCreate, refreshKey, onEdit }: PermissionProps) => {
+  const [data, setData] = useState<IncomingReferralRow[]>([]);
+  const [summary, setSummary] = useState<IncomingSummary>(emptySummary);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [perPage, setPerPage] = useState(5);
 
-  const fetchData = async (pageNumber = 1, search = "") => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `/incoming/list?page=${pageNumber}&search=${search}&per_page=${perPage}`
-      );
-      setData(response.data.data);
-      setTotalRows(response.data.total);
-    } catch (error) {
-      console.error("Error fetching referrals:", error);
-    }
-    setLoading(false);
-  };
-
   const handleGoto = (id: string) => {
     if (!id) return;
     const encodedId = btoa(id.toString());
-    Inertia.visit(`/incoming/profile/${encodedId}`);
-  };
-
-  const startScanner = async () => {
-    if (isScanning) return;
-    setScanned(null);
-    setIsScanning(true);
-
-    const html5QrCode = new Html5Qrcode("qr-reader");
-    scannerRef.current = html5QrCode;
-
-    try {
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText: string) => {
-          html5QrCode.stop();
-          setIsScanning(false);
-          setScanned(decodedText);
-          const encodedId = btoa(decodedText.trim());
-          Inertia.visit(`/incoming/profile/${encodedId}`);
-        },
-        (errorMessage: string) => {
-          // optional: console.log("QR Scan error", errorMessage);
-        }
-      );
-    } catch (err: any) {
-      console.error("Failed to start camera:", err);
-      Swal.fire("Camera Error", err.message || "Failed to access camera.", "error");
-      setIsScanning(false);
-    }
-  };
-
-  const stopScanner = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stop().then(() => {
-        setIsScanning(false);
-      });
-    }
+    router.visit(`/incoming/profile/${encodedId}`);
   };
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      fetchData(page, searchTerm);
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const response = await axios.get(
+            `/incoming/list?page=${page}&search=${searchTerm}&per_page=${perPage}`
+          );
+          setData(response.data.data ?? []);
+          setTotalRows(response.data.total ?? 0);
+          setSummary(response.data.summary ?? emptySummary);
+        } catch (error) {
+          console.error("Error fetching referrals:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      void fetchData();
     }, 500);
+
     return () => clearTimeout(delayDebounce);
   }, [refreshKey, page, searchTerm, perPage]);
 
-  const handleDelete = async (id: number) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await axios.delete(`/permission/delete/${id}`);
-        fetchData(page, searchTerm);
-        Swal.fire("Deleted!", "The record has been deleted.", "success");
-      } catch (error) {
-        console.error("Error deleting record:", error);
-        Swal.fire("Oops!", "Something went wrong.", "error");
-      }
-    }
-  };
-
-  const handleEdit = (row: any) => {
+  const handleEdit = (row: IncomingReferralRow) => {
     onEdit?.(row);
   };
 
   const totalPages = Math.ceil(totalRows / perPage);
 
   return (
-    <div className="p-4 w-full h-full overflow-x-auto">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <List size={20} />
-          <h2 className="text-xl">Incoming Referrals</h2>
+    <div className="flex w-full flex-col gap-6">
+      <IncomingDashboard summary={summary} canCreate={!!canCreate} />
+
+      <div className="w-full overflow-x-auto rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <List size={20} />
+            <h2 className="text-xl font-semibold tracking-tight">Incoming Referrals</h2>
+          </div>
+          {canCreate && (
+            <Link href="/referrals/create">
+              <Button variant="outline">
+                <Plus className="mr-2" /> Add Referral
+              </Button>
+            </Link>
+          )}
         </div>
-        <Link href="/referrals/create">
-          <Button variant="outline">
-            <Plus className="mr-2" /> Add Referral
-          </Button>
-      </Link>
 
-        
-      </div>
-
-      
-
-      <div className="flex justify-between items-center mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <label htmlFor="perPage">Rows per page:</label>
           <select
@@ -205,7 +148,7 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
             </thead>
             <tbody>
               {data.length > 0 ? (
-                data.map((row: any) => (
+                data.map((row) => (
                   <tr key={row.LogID}>
                     <td className="px-1 py-2">
                       <div className="flex flex-col items-start gap-1">
@@ -329,6 +272,7 @@ const Lists = ({ canEdit, canDelete, refreshKey, onEdit }: PermissionProps) => {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 };

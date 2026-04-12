@@ -8,12 +8,17 @@ use Spatie\Permission\Traits\HasRoles;
 
 class ReferralInformationModel extends Model
 {
-    use HasFactory; use HasRoles;
+    use HasFactory;
+    use HasRoles;
 
     protected $table = 'referral_information';
+
     protected $primaryKey = 'LogID';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -34,6 +39,7 @@ class ReferralInformationModel extends Model
         'status',
         'refferalDate',
         'refferalTime',
+        'calledDate',
         'srfcode',
         'logDate',
         'tdcode',
@@ -46,9 +52,9 @@ class ReferralInformationModel extends Model
     protected $casts = [
         'logDate' => 'datetime',
         'created_at' => 'datetime',
+        'calledDate' => 'datetime',
     ];
 
-  
     public function demographics()
     {
         return $this->hasOne(ReferralPatientDemoModel::class, 'LogID', 'LogID');
@@ -58,6 +64,7 @@ class ReferralInformationModel extends Model
     {
         return $this->hasOne(ReferralClinicalModel::class, 'LogID', 'LogID');
     }
+
     public function patientinformation()
     {
         return $this->hasOne(ReferralPatientInfoModel::class, 'LogID', 'LogID');
@@ -87,7 +94,4 @@ class ReferralInformationModel extends Model
     {
         return $this->belongsTo(ReferralTrackModel::class, 'LogID', 'LogID');
     }
-
-   
-
 }

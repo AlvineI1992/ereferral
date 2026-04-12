@@ -11,16 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('referral_information')) {
+            return;
+        }
+
         Schema::table('referral_information', function (Blueprint $table) {
-            if (!Schema::hasColumn('referral_information', 'updated_at')) {
+            if (! Schema::hasColumn('referral_information', 'updated_at')) {
                 $table->timestamp('updated_at')->nullable(); // Ensures updated_at exists
             }
 
-            if (!Schema::hasColumn('referral_information', 'deleted_at')) {
+            if (! Schema::hasColumn('referral_information', 'deleted_at')) {
                 $table->softDeletes(); // Adds deleted_at for soft deletes
             }
-            if (!Schema::hasColumn('referral_information', 'updated_at')) {
-                $table->char('status',1)->nullable(); // Ensures updated_at exists
+            if (! Schema::hasColumn('referral_information', 'status')) {
+                $table->char('status', 1)->nullable();
             }
         });
     }
@@ -30,6 +34,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('referral_information')) {
+            return;
+        }
+
         Schema::table('referral_information', function (Blueprint $table) {
             if (Schema::hasColumn('referral_information', 'updated_at')) {
                 $table->dropColumn('updated_at');

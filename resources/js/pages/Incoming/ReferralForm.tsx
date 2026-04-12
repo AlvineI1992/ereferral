@@ -1,246 +1,326 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
+import { FloatingInput, FloatingSelect, FloatingTextarea } from '@/components/ui/FloatingInput';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import axios from 'axios';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import HospitalSelector from '../Ref_Facilities/HospitalSelector';
-import { InfoIcon } from 'lucide-react';
+import { ClipboardList, LoaderCircle, Phone, RefreshCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import HospitalSelector, { type HospitalOption } from '../Ref_Facilities/HospitalSelector';
 
 type ReferralFormProps = {
-  LogID?: string;
-  typeOfReferral?: string;
-  referralCategory?: string;
-  referralReason?: string;
-  otherTypeOfReferral?: string;
-  otherReferralReason?: string;
-  refferalDate?: string;
-  errors?: Record<string, string>;
+    hospitals: HospitalOption[];
+    lockGeneratedCode?: boolean;
+    referringFacility: string;
+    referralFacility: string;
+    calledDate: string;
+    refferalDate: string;
+    transactionCode: string;
+    typeOfReferral: string;
+    referralCategory: string;
+    referralReason: string;
+    otherReferralReason: string;
+    contactPerson: string;
+    contactDesignation: string;
+    referralContactNumber: string;
+    referralRemarks: string;
+    errors?: Record<string, string>;
+    onChange: (key: string, value: string) => void;
 };
 
-const ReferralForm = ({
-  LogID = '',
-  typeOfReferral = '',
-  referralCategory = '',
-  referralReason = '',
-  otherTypeOfReferral = '',
-  otherReferralReason = '',
-  refferalDate = '',
-  errors: pageErrors = {},
-}: ReferralFormProps) => {
-  const nameInputRef = useRef<HTMLInputElement>(null);
-  const [referringFacilityCode, setReferringFacilityCode] = useState('');
-  const [referralFacilityCode, setReferralFacilityCode] = useState('');
-  const [responseCode, setResponseCode] = useState(null);
-  const [error, setError] = useState(null);
-  const [hospitals, setHospitals] = useState([]);
-  const [referringPopoverOpen, setReferringPopoverOpen] = useState(false);
-  const [referralPopoverOpen, setReferralPopoverOpen] = useState(false);
+const referralTypeOptions = [
+    { value: 'CONSU', label: 'Consultation' },
+    { value: 'DIAGT', label: 'Diagnostic Test' },
+    { value: 'TRANS', label: 'Transfer' },
+    { value: 'OTHER', label: 'Others' },
+];
 
-  const { data, setData, post, processing, errors } = useForm({
-    LogID,
+const referralCategoryOptions = [
+    { value: 'ER', label: 'Emergency' },
+    { value: 'OPD', label: 'Outpatient' },
+];
+
+const referralReasonOptions = [
+    { value: 'NOROM', label: 'No room available' },
+    { value: 'SEASO', label: 'Seek advise/second opinion' },
+    { value: 'SESPE', label: 'Seek specialized evaluation' },
+    { value: 'SEFTA', label: 'Seek further treatment' },
+    { value: 'NOEQP', label: 'No equipment available' },
+    { value: 'NOPRO', label: 'No procedure available' },
+    { value: 'NOLAB', label: 'No laboratory available' },
+    { value: 'NODOC', label: 'No available doctor' },
+    { value: 'OTHER', label: 'Other' },
+];
+
+export default function ReferralForm({
+    hospitals,
+    lockGeneratedCode = false,
+    referringFacility,
+    referralFacility,
+    calledDate,
+    refferalDate,
+    transactionCode,
     typeOfReferral,
     referralCategory,
     referralReason,
-    otherTypeOfReferral,
     otherReferralReason,
-    refferalDate,
-    referringFacility: '',
-    referralFacility: '',
-  });
+    contactPerson,
+    contactDesignation,
+    referralContactNumber,
+    referralRemarks,
+    errors = {},
+    onChange,
+}: ReferralFormProps) {
+    const [referringPopoverOpen, setReferringPopoverOpen] = useState(false);
+    const [referralPopoverOpen, setReferralPopoverOpen] = useState(false);
+    const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+    const [codeHint, setCodeHint] = useState('Choose the referring facility to generate a reference preview.');
 
-  useEffect(() => {
-    axios.get('/facilities-list')
-      .then(res => setHospitals(res.data.data))
-      .catch(err => console.error(err));
+    const selectedOrigin = hospitals.find((item) => item.hfhudcode === referringFacility);
+    const selectedDestination = hospitals.find((item) => item.hfhudcode === referralFacility);
 
-    nameInputRef.current?.focus();
-  }, []);
+    useEffect(() => {
+        if (lockGeneratedCode) {
+            setIsGeneratingCode(false);
+            setCodeHint('Reference code is locked for this saved referral.');
+            return;
+        }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('profile.store'), {
-      forceFormData: true,
-    });
-  };
+        if (!referringFacility) {
+            onChange('transactionCode', '');
+            setCodeHint('Choose the referring facility to generate a reference preview.');
+            return;
+        }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, files } = e.target as HTMLInputElement;
-    if (type === 'file' && files) {
-      setData(name, files[0]);
-    } else {
-      setData(name, value);
-    }
-  };
+        let cancelled = false;
+        setIsGeneratingCode(true);
 
-  const getError = (field: string) => errors[field] || pageErrors[field];
+        axios
+            .get(route('generate.hfhudcode', { hfhudcode: referringFacility }, false))
+            .then((response) => {
+                if (cancelled) {
+                    return;
+                }
 
-  return (
-    <form onSubmit={handleSubmit} className="sm:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-1">
-      <h1 className="flex items-center gap-2 text-md font-semibold md:col-span-2 mb-1 ">
-        <InfoIcon className="w-5 h-5" />
-        Referral Information
-      </h1>
+                const generatedCode = response.data.code ?? response.data.hfhudcode ?? '';
+                onChange('transactionCode', generatedCode);
+                setCodeHint('This preview will be used when the referral is submitted, as long as it is still available.');
+            })
+            .catch(() => {
+                if (cancelled) {
+                    return;
+                }
 
-      <div className="md:col-span-1">
-        <Label htmlFor="calledDate" className="text-semibold">Datetime called</Label>
-        <Input
-          type="datetime-local"
-          id="calledDate"
-          name="calledDate"
-          value={data.LogID}
-          onChange={handleChange}
-          ref={nameInputRef}
-        />
-        {getError('calledDate') && <p className="text-[10px] text-red-500 mt-1">{getError('calledDate')}</p>}
-      </div>
+                onChange('transactionCode', '');
+                setCodeHint('Unable to generate a reference preview right now.');
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsGeneratingCode(false);
+                }
+            });
 
-      <div className="md:col-span-1">
-        <Label htmlFor="refferalDate" className="text-semibold">Datetime referred</Label>
-        <Input
-          type="datetime-local"
-          id="refferalDate"
-          name="refferalDate"
-          value={data.refferalDate}
-          placeholder="Referral date"
-          onChange={handleChange}
-        />
-        {getError('refferalDate') && <p className="text-[10px] text-red-500 mt-1">{getError('refferalDate')}</p>}
-      </div>
+        return () => {
+            cancelled = true;
+        };
+    }, [lockGeneratedCode, referringFacility, onChange]);
 
-      <div className="md:col-span-1">
-        <Label className="text-semibold">Referring Facility</Label>
-        <HospitalSelector
-          hospitals={hospitals}
-          selectedHospital={referringFacilityCode}
-          setSelectedHospital={(code) => {
-            setReferringFacilityCode(code);
-            setData('referringFacility', code);
-          }}
-          setData={setData}
-          hospitalPopoverOpen={referringPopoverOpen}
-          setHospitalPopoverOpen={setReferringPopoverOpen}
-          errors={errors}
-        />
-      </div>
+    const handleFieldChange = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        onChange(key, event.target.value);
+    };
 
-      <div className="md:col-span-1">
-        <Label className="text-semibold">Referral Facility</Label>
-        <HospitalSelector
-          hospitals={hospitals}
-          selectedHospital={referralFacilityCode}
-          setSelectedHospital={(code) => {
-            setReferralFacilityCode(code);
-            setData('referralFacility', code);
-          }}
-          setData={setData}
-          hospitalPopoverOpen={referralPopoverOpen}
-          setHospitalPopoverOpen={setReferralPopoverOpen}
-          errors={errors}
-        />
-      </div>
+    return (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+                <div className="mb-3 flex items-center gap-2">
+                    <ClipboardList className="text-primary size-5" />
+                    <div>
+                        <h2 className="text-base font-semibold">Referral Details</h2>
+                        <p className="text-muted-foreground text-sm">
+                            Capture the transfer route, timing, and the receiving contact who should expect this patient.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-      <div className="md:col-span-2">
-        <Label htmlFor="transactionCode" className="text-semibold">Transaction code</Label>
-        <Input
-          id="transactionCode"
-          name="transactionCode"
-          value={data.LogID}
-          placeholder="Transaction code"
-          onChange={handleChange}
-        />
-        {getError('transactionCode') && <p className="text-[10px] text-red-500 mt-1">{getError('transactionCode')}</p>}
-      </div>
+            <div className="space-y-2 md:col-span-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                        Reference Preview
+                    </Badge>
+                    {isGeneratingCode && (
+                        <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                            <LoaderCircle className="size-3 animate-spin" />
+                            Updating code
+                        </span>
+                    )}
+                </div>
 
-      <div className="md:col-span-1">
-        <Label htmlFor="typeOfReferral" className="text-semibold">Type of referral</Label>
-        <Select
-          value={data.typeOfReferral}
-          onValueChange={(value) => setData('typeOfReferral', value)}
-          disabled={processing}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Type of referral" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="CONSU">CONSULTATION</SelectItem>
-            <SelectItem value="DIAGT">DIAGNOSTIC</SelectItem>
-            <SelectItem value="TRANS">TRANSFER</SelectItem>
-            <SelectItem value="OTHER">OTHERS</SelectItem>
-          </SelectContent>
-        </Select>
-        {getError('typeOfReferral') && <p className="text-[10px] text-red-500 mt-1">{getError('typeOfReferral')}</p>}
-        {data.typeOfReferral === 'OTHER' && (
-          <div className="mt-4">
-            <Label htmlFor="otherTypeOfReferral" className="font-semibold">Please specify</Label>
-            <Input
-              id="otherTypeOfReferral"
-              name="otherTypeOfReferral"
-              value={data.otherTypeOfReferral}
-              onChange={handleChange}
-              placeholder="Specify other referral type"
+                <div
+                    className={cn(
+                        'rounded-2xl border border-dashed p-4',
+                        transactionCode
+                            ? 'border-emerald-300 bg-emerald-50/70 dark:border-emerald-900 dark:bg-emerald-950/20'
+                            : 'border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50',
+                    )}
+                >
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <p className="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">Generated code</p>
+                            <p className="mt-1 font-mono text-lg font-semibold break-all text-slate-900 dark:text-slate-100">
+                                {transactionCode || 'Waiting for referring facility'}
+                            </p>
+                        </div>
+                        <RefreshCcw className={cn('text-muted-foreground size-4', isGeneratingCode && 'animate-spin')} />
+                    </div>
+                    <p className="text-muted-foreground mt-2 text-xs">{codeHint}</p>
+                </div>
+                {errors.transactionCode && <p className="text-destructive text-[11px]">{errors.transactionCode}</p>}
+            </div>
+
+            <div>
+                <label className="text-muted-foreground mb-1 block px-0.5 text-[10px] font-medium tracking-[0.2em] uppercase">
+                    Referring Facility *
+                </label>
+                <HospitalSelector
+                    hospitals={hospitals}
+                    selectedHospital={referringFacility}
+                    setSelectedHospital={(code) => onChange('referringFacility', code)}
+                    hospitalPopoverOpen={referringPopoverOpen}
+                    setHospitalPopoverOpen={setReferringPopoverOpen}
+                    placeholder="Select the originating facility"
+                    error={errors.referringFacility}
+                />
+                {selectedOrigin && <p className="text-muted-foreground mt-1 text-xs">{selectedOrigin.facility_name}</p>}
+            </div>
+
+            <div>
+                <label className="text-muted-foreground mb-1 block px-0.5 text-[10px] font-medium tracking-[0.2em] uppercase">
+                    Receiving Facility *
+                </label>
+                <HospitalSelector
+                    hospitals={hospitals}
+                    selectedHospital={referralFacility}
+                    setSelectedHospital={(code) => onChange('referralFacility', code)}
+                    hospitalPopoverOpen={referralPopoverOpen}
+                    setHospitalPopoverOpen={setReferralPopoverOpen}
+                    placeholder="Select the receiving facility"
+                    error={errors.referralFacility}
+                />
+                {selectedDestination && <p className="text-muted-foreground mt-1 text-xs">{selectedDestination.facility_name}</p>}
+            </div>
+
+            <FloatingInput
+                id="calledDate"
+                label="Datetime called"
+                type="datetime-local"
+                value={calledDate}
+                onChange={handleFieldChange('calledDate')}
+                error={errors.calledDate}
             />
-            {getError('otherTypeOfReferral') && <p className="text-xs text-red-500 mt-1">{getError('otherTypeOfReferral')}</p>}
-          </div>
-        )}
-      </div>
 
-      <div className="md:col-span-1">
-        <Label htmlFor="referralCategory" className="text-semibold">Category</Label>
-        <Select
-          value={data.referralCategory}
-          onValueChange={(value) => setData('referralCategory', value)}
-          disabled={processing}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Referral category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ER">Emergency</SelectItem>
-            <SelectItem value="OPD">Outpatient</SelectItem>
-          </SelectContent>
-        </Select>
-        {getError('referralCategory') && <p className="text-xs text-red-500 mt-1">{getError('referralCategory')}</p>}
-      </div>
-
-      <div className="md:col-span-1">
-        <Label className="mb-1 block text-sm font-medium">Reason for Referral</Label>
-        <Select
-          value={data.referralReason}
-          onValueChange={(value) => setData('referralReason', value)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="NOROM">No room available</SelectItem>
-            <SelectItem value="SEASO">Seek advise/second opinion</SelectItem>
-            <SelectItem value="SESPE">Seek specialized evaluation</SelectItem>
-            <SelectItem value="SEFTA">Seek further treatment appropriate to the case</SelectItem>
-            <SelectItem value="NOEQP">No equipment available</SelectItem>
-            <SelectItem value="NOPRO">No procedure available</SelectItem>
-            <SelectItem value="NOLAB">No laboratory available</SelectItem>
-            <SelectItem value="NODOC">No available doctor</SelectItem>
-            <SelectItem value="OTHER">Other</SelectItem>
-          </SelectContent>
-        </Select>
-        {getError('referralReason') && <p className="text-xs text-red-500 mt-1">{getError('referralReason')}</p>}
-        {data.referralReason === 'OTHER' && (
-          <div className="mt-4">
-            <Label htmlFor="otherReferralReason" className="font-semibold">Please specify</Label>
-            <Input
-              id="otherReferralReason"
-              name="otherReferralReason"
-              value={data.otherReferralReason}
-              onChange={handleChange}
-              placeholder="Specify other referral reason"
+            <FloatingInput
+                id="refferalDate"
+                label="Datetime referred"
+                type="datetime-local"
+                required
+                value={refferalDate}
+                onChange={handleFieldChange('refferalDate')}
+                error={errors.refferalDate}
             />
-            {getError('otherReferralReason') && <p className="text-xs text-red-500 mt-1">{getError('otherReferralReason')}</p>}
-          </div>
-        )}
-      </div>
-    </form>
-  );
-};
 
-export default ReferralForm;
+            <FloatingSelect
+                id="typeOfReferral"
+                label="Type of referral"
+                required
+                value={typeOfReferral}
+                onChange={handleFieldChange('typeOfReferral')}
+                error={errors.typeOfReferral}
+                options={referralTypeOptions}
+            />
+
+            <FloatingSelect
+                id="referralCategory"
+                label="Referral category"
+                required
+                value={referralCategory}
+                onChange={handleFieldChange('referralCategory')}
+                error={errors.referralCategory}
+                options={referralCategoryOptions}
+            />
+
+            <div className="md:col-span-2">
+                <FloatingSelect
+                    id="referralReason"
+                    label="Reason for referral"
+                    required
+                    value={referralReason}
+                    onChange={handleFieldChange('referralReason')}
+                    error={errors.referralReason}
+                    options={referralReasonOptions}
+                />
+            </div>
+
+            {referralReason === 'OTHER' && (
+                <div className="md:col-span-2">
+                    <FloatingInput
+                        id="otherReferralReason"
+                        label="Specify referral reason"
+                        required={referralReason === 'OTHER'}
+                        value={otherReferralReason}
+                        onChange={handleFieldChange('otherReferralReason')}
+                        error={errors.otherReferralReason}
+                    />
+                </div>
+            )}
+
+            <FloatingInput
+                id="contactPerson"
+                label="Receiving contact person"
+                required
+                value={contactPerson}
+                onChange={handleFieldChange('contactPerson')}
+                error={errors.contactPerson}
+            />
+
+            <FloatingInput
+                id="contactDesignation"
+                label="Designation / department"
+                value={contactDesignation}
+                onChange={handleFieldChange('contactDesignation')}
+                error={errors.contactDesignation}
+            />
+
+            <FloatingInput
+                id="referralContactNumber"
+                label="Receiving contact number"
+                type="tel"
+                value={referralContactNumber}
+                onChange={handleFieldChange('referralContactNumber')}
+                error={errors.referralContactNumber}
+                hint="Optional but helpful for call-backs or handoff updates."
+            />
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-start gap-2">
+                    <Phone className="text-muted-foreground mt-0.5 size-4" />
+                    <div>
+                        <p className="text-sm font-medium">Handoff ready</p>
+                        <p className="text-muted-foreground text-xs leading-5">
+                            Add a contact person whenever possible so the receiving team knows who to look for during follow-up.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="md:col-span-2">
+                <FloatingTextarea
+                    id="referralRemarks"
+                    label="Referral remarks"
+                    value={referralRemarks}
+                    onChange={handleFieldChange('referralRemarks')}
+                    error={errors.referralRemarks}
+                    hint="Use this for urgency context, transport details, or special instructions."
+                />
+            </div>
+        </div>
+    );
+}

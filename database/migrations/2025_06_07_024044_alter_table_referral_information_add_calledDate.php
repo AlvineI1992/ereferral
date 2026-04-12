@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('referral_information') || Schema::hasColumn('referral_information', 'calledDate')) {
+            return;
+        }
+
         Schema::table('referral_information', function (Blueprint $table) {
-            $table->timestamp('calledDate')->nullable()->after('refferalDate'); 
+            $table->timestamp('calledDate')->nullable()->after('refferalDate');
         });
     }
 

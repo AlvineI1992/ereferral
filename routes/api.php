@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BedTrackerController;
 use App\Http\Controllers\Api\Referral;
 use App\Http\Controllers\Api\References;
 
@@ -76,6 +77,15 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
+    Route::get('/bed-trackers', [BedTrackerController::class, 'index'])->name('bed_trackers.index');
+    Route::get('/bed-trackers/facilities', [BedTrackerController::class, 'facilityOptions'])->name('bed_trackers.facilities');
+    Route::get('/bed-trackers/{id}', [BedTrackerController::class, 'show'])->name('bed_trackers.show');
+    Route::post('/bed-trackers', [BedTrackerController::class, 'store'])->name('bed_trackers.store');
+    Route::put('/bed-trackers/{id}', [BedTrackerController::class, 'update'])->name('bed_trackers.update');
+    Route::delete('/bed-trackers/{id}', [BedTrackerController::class, 'destroy'])->name('bed_trackers.destroy');
+});
+
+Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::get('/referral-status', [Referral::class, 'getReferralStatus'])->name('get_referral_status');
 });
 
@@ -89,5 +99,4 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 
 
  
-
 

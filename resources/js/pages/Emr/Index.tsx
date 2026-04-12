@@ -1,31 +1,23 @@
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 import Manage from './Manage';
+import { type EmrPermissionProps } from './types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Provider',
-        href: '/Provider',
+        href: '/emr',
     },
 ];
-export default function list() {
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const handleCreated = () => {
-        setRefreshKey((prev) => prev + 1); 
-    };
-    useEffect(() => {
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-        }, 2000); // Simulate loading for 2 seconds
-    }, [refreshKey]);
+
+export default function Index({ canCreate, canEdit, canDelete, canView }: EmrPermissionProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Users" />
+            <Head title="Providers" />
+
             <div className="lg:col-span-1">
-                <Manage  />
+                <Manage canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} canView={canView} />
             </div>
         </AppLayout>
     );

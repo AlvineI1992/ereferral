@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import Manage from './Manage';
-import { BreadcrumbItem, PermissionProps } from './types';
+import type { BreadcrumbItem, PermissionProps } from './types';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -12,47 +11,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Incoming({
-  canCreatePermission,
-  canEditPermission,
-  canDeletePermission,
-  canViewPermission,
-}: {
-  canCreatePermission: boolean;
-  canEditPermission: boolean;
-  canDeletePermission: boolean;
-  canViewPermission: boolean;
-}) {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  const handleCreated = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    const timeout = setTimeout(() => setLoading(false), 2000); // Simulated delay
-    return () => clearTimeout(timeout);
-  }, [refreshKey]);
-
+  canCreate,
+  canEdit,
+  canDelete,
+  canView,
+}: PermissionProps) {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Incoming Referral Management" />
-      <div className="p-2 w-full h-full">
-        {loading ? (
-         <div className="flex flex-col justify-center items-center h-64">
-         <img src="/bagong_pilipinas.png" alt="Bagong Pilipinas" className="w-19 h-19 mb-4" />
-         <span className="text-lg font-semibold text-gray-500">Please wait...</span>
-       </div>
-        ) : (
-          <Manage
-            onCreated={handleCreated}
-            canCreate={canCreatePermission}
-            canEdit={canEditPermission}
-            canDelete={canDeletePermission}
-            canView={canViewPermission}
-          />
-        )}
+      <div className="flex flex-1 flex-col p-4 md:p-6">
+        <Manage
+          canCreate={canCreate}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          canView={canView}
+        />
       </div>
     </AppLayout>
   );
