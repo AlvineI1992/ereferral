@@ -28,6 +28,11 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    'fhir' => [
+        'base_url' => env('FHIR_SERVER_BASE_URL', 'http://10.11.133.129:8080/'),
+        'timeout' => env('FHIR_SERVER_TIMEOUT', 30),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

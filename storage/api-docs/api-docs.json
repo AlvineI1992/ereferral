@@ -68,6 +68,38 @@
                 "summary": "Referral a patient to another facility",
                 "description": "Patient Referral.",
                 "operationId": "1f00e2d08007a4df55970d986e2def76",
+                "parameters": [
+                    {
+                        "name": "service_mode",
+                        "in": "query",
+                        "description": "Choose where the referral is transmitted. Use current for the existing referral service, fhir for the configured FHIR server, or both.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "current",
+                            "enum": [
+                                "current",
+                                "fhir",
+                                "both"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "response_format",
+                        "in": "query",
+                        "description": "Choose the response shape. Use current for the existing JSON response, fhir for a FHIR resource response, or both.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "current",
+                            "enum": [
+                                "current",
+                                "fhir",
+                                "both"
+                            ]
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -313,6 +345,15 @@
                                             },
                                             "type": "object"
                                         }
+                                    },
+                                    "attachments": {
+                                        "description": "Optional JPEG, PNG, WebP, or PDF files. Submit the request as multipart/form-data; each file may be up to 10 MB.",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        },
+                                        "maxItems": 5
                                     }
                                 },
                                 "type": "object"

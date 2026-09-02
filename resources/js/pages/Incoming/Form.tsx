@@ -7,7 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { Check, ChevronLeft, ChevronRight, ClipboardList, HeartPulse, LoaderCircle, Map, Save, User } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, ClipboardList, FileText, HeartPulse, LoaderCircle, Map, Paperclip, Save, Trash2, User } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import DemographicSelector from '../Demographics/Demographics_selector';
@@ -24,6 +24,7 @@ const STEPS = [
 
 type FormType = {
     profilePic: File | null;
+    attachments: File[];
     patientFirstName: string;
     patientMiddleName: string;
     patientLastName: string;
@@ -116,6 +117,7 @@ const ReviewRow = ({ label, value }: { label: string; value?: string | null }) =
 
 const defaultFormData: FormType = {
     profilePic: null,
+    attachments: [],
     patientFirstName: '',
     patientMiddleName: '',
     patientLastName: '',
@@ -194,7 +196,7 @@ export default function CreateReferral({ id, mode = 'create' }: ReferralFormPage
 
     useEffect(() => {
         axios
-            .get('/api/religions', {
+            .get('/religions/list', {
                 withCredentials: true,
                 headers: {
                     Accept: 'application/json',
@@ -237,6 +239,7 @@ export default function CreateReferral({ id, mode = 'create' }: ReferralFormPage
                     ...current,
                     ...payload,
                     profilePic: null,
+                    attachments: [],
                 }));
             })
             .catch(() => {
@@ -286,6 +289,30 @@ export default function CreateReferral({ id, mode = 'create' }: ReferralFormPage
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setValue(event.target.id as keyof FormType, event.target.value);
+    };
+
+    const handleAttachments = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFiles = Array.from(event.target.files ?? []);
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        const acceptedFiles = selectedFiles.filter((file) => allowedTypes.includes(file.type) && file.size <= 10 * 1024 * 1024);
+        const remainingSlots = Math.max(0, 5 - data.attachments.length);
+
+        if (acceptedFiles.length !== selectedFiles.length) {
+            toast.error('Only JPEG, PNG, WebP, and PDF files up to 10 MB are allowed.');
+        }
+        if (selectedFiles.length > remainingSlots) {
+            toast.error('A maximum of 5 attachments is allowed.');
+        }
+
+        setValue('attachments', [...data.attachments, ...acceptedFiles.slice(0, remainingSlots)]);
+        event.target.value = '';
+    };
+
+    const removeAttachment = (index: number) => {
+        setValue(
+            'attachments',
+            data.attachments.filter((_, fileIndex) => fileIndex !== index),
+        );
     };
 
     const validateStep = (currentStep: number) => {
@@ -771,6 +798,48 @@ export default function CreateReferral({ id, mode = 'create' }: ReferralFormPage
 
                             {step === 4 && (
                                 <div className="space-y-5">
+                                    <div className="rounded-2xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                                    <Paperclip className="size-4 text-teal-600" />
+                                                    Supporting attachments
+                                                </p>
+                                                <p className="mt-1 text-xs text-slate-500">Up to 5 JPEG, PNG, WebP, or PDF files, 10 MB each.</p>
+                                            </div>
+                                            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
+                                                Choose files
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                                                    className="sr-only"
+                                                    onChange={handleAttachments}
+                                                    disabled={processing || data.attachments.length >= 5}
+                                                />
+                                            </label>
+                                        </div>
+
+                                        {data.attachments.length > 0 && (
+                                            <div className="mt-3 divide-y rounded-xl border dark:border-slate-800">
+                                                {data.attachments.map((file, index) => (
+                                                    <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center gap-3 px-3 py-2">
+                                                        <FileText className="size-4 shrink-0 text-teal-600" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-medium" title={file.name}>{file.name}</p>
+                                                            <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                        </div>
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(index)} aria-label={`Remove ${file.name}`}>
+                                                            <Trash2 className="size-4 text-red-600" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {mergedErrors.attachments && <p className="mt-2 text-sm text-red-600">{mergedErrors.attachments}</p>}
+                                    </div>
+
                                     <div className="divide-y rounded-2xl border dark:border-slate-800">
                                         <ReviewRow
                                             label="Patient name"
@@ -809,6 +878,10 @@ export default function CreateReferral({ id, mode = 'create' }: ReferralFormPage
                                         />
                                         <ReviewRow label="Diagnosis" value={diagnosisItems.join(', ')} />
                                         <ReviewRow label="Chief complaint" value={data.chiefComplaint} />
+                                        <ReviewRow
+                                            label="Attachments"
+                                            value={data.attachments.length > 0 ? `${data.attachments.length} file(s) selected` : 'None'}
+                                        />
                                         <ReviewRow
                                             label="Referring provider"
                                             value={`${data.providerFirstName} ${data.providerMiddleName} ${data.providerLastName} ${data.providerSuffix}`

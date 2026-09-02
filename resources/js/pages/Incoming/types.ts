@@ -39,6 +39,7 @@ export type IncomingSummary = {
 };
 
 export type IncomingReferralRow = {
+    index: number;
     LogID: string;
     avatar?: string;
     patient_name: string;

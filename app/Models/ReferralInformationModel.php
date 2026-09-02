@@ -94,4 +94,9 @@ class ReferralInformationModel extends Model
     {
         return $this->belongsTo(ReferralTrackModel::class, 'LogID', 'LogID');
     }
+
+    public function attachments()
+    {
+        return $this->hasMany(ReferralAttachment::class, 'LogID', 'LogID');
+    }
 }

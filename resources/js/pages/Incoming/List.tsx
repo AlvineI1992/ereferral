@@ -135,6 +135,7 @@ const Lists = ({ canCreate, refreshKey, onEdit }: PermissionProps) => {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-t mb-1">
+                <th className="w-12 px-1 py-2 text-left">#</th>
                 <th className="px-1 py-2 text-left">Patient</th>
                 <th className="px-1 py-2 text-left">LogID</th>
                 <th className="px-1 py-2 text-left">Referral Date</th>
@@ -150,6 +151,7 @@ const Lists = ({ canCreate, refreshKey, onEdit }: PermissionProps) => {
               {data.length > 0 ? (
                 data.map((row) => (
                   <tr key={row.LogID}>
+                    <td className="px-1 py-2 align-top font-medium text-slate-600">{row.index}</td>
                     <td className="px-1 py-2">
                       <div className="flex flex-col items-start gap-1">
                         <div className="flex items-center gap-1">
@@ -226,7 +228,7 @@ const Lists = ({ canCreate, refreshKey, onEdit }: PermissionProps) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="text-center text-gray-500 italic py-6">
+                  <td colSpan={10} className="text-center text-gray-500 italic py-6">
                     No referrals found.
                   </td>
                 </tr>

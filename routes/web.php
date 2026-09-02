@@ -3,12 +3,14 @@
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BedTrackerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataEncryptionController;
 use App\Http\Controllers\DemographicController;
 use App\Http\Controllers\PatientMasterController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RefEmrController;
 use App\Http\Controllers\ReferralClinicalController;
 use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\ReferralFacilityReportController;
 use App\Http\Controllers\ReferralPatientInfoController;
 use App\Http\Controllers\RefFacilitiesController;
 use App\Http\Controllers\RefFacilitytypeController;
@@ -252,6 +254,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     })->middleware('can:facility list')->name('facilities/profile_form');
 
 });
+
+Route::middleware(['auth:sanctum', 'verified', 'can:incoming list'])
+    ->prefix('reports/referrals-by-facility')
+    ->group(function () {
+        Route::get('/', [ReferralFacilityReportController::class, 'index'])->name('reports.referrals-by-facility.index');
+        Route::get('/data', [ReferralFacilityReportController::class, 'data'])->name('reports.referrals-by-facility.data');
+        Route::get('/patients', [ReferralFacilityReportController::class, 'patients'])->name('reports.referrals-by-facility.patients');
+        Route::get('/csv', [ReferralFacilityReportController::class, 'csv'])->name('reports.referrals-by-facility.csv');
+    });
 /* Route::get('/api/facilities', [RefFacilitiesController::class, 'index']); */
 Route::middleware(['auth:sanctum', 'can:facility list'])->get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
 // API Routes (Sanctum-protected)
@@ -484,6 +495,12 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         ->middleware('can:patient delete')
         ->name('patient_registry.destroy');
 
+});
+
+Route::middleware(['auth:sanctum', 'verified'])->prefix('admin/data-encryption')->group(function () {
+    Route::get('/', [DataEncryptionController::class, 'index'])->name('admin.data-encryption.index');
+    Route::get('/status', [DataEncryptionController::class, 'status'])->name('admin.data-encryption.status');
+    Route::put('/', [DataEncryptionController::class, 'update'])->name('admin.data-encryption.update');
 });
 
 require __DIR__.'/settings.php';

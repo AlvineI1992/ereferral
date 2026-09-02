@@ -2,33 +2,31 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
-use App\Services\ReferralService;
+use App\Helpers\ReferralHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientReferralRequest;
-use Illuminate\Support\Facades\Auth;
-
-
-use Illuminate\Auth\AuthenticationException;
-use App\Models\RefRegionModel;
-use App\Models\RefProvinceModel;
-use App\Models\RefCityModel;
 use App\Models\RefBarangayModel;
-
-use App\Models\RefFacilitiesModel;
-
+use App\Models\RefCityModel;
+use App\Models\ReferralAttachment;
 use App\Models\ReferralInformationModel as ReferralModel;
-use App\Models\ReferralTrackModel;
-use App\Models\RefFacilityModel;
 use App\Models\ReferralPatientInfoModel;
-use App\Helpers\ReferralHelper;
-use Illuminate\Support\Facades\Crypt;
+use App\Models\ReferralTrackModel;
+use App\Models\RefFacilitiesModel;
+use App\Models\RefFacilityModel;
+use App\Models\RefProvinceModel;
+use App\Models\RefRegionModel;
+use App\Services\FhirReferralService;
+use App\Services\ReferralAttachmentService;
+use App\Services\ReferralService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
+ *
  * @OA\SecurityScheme(
  *     type="http",
  *     description="Use a Sanctum Bearer token to access secured endpoints",
@@ -43,9 +41,18 @@ class Referral extends Controller
 {
     protected $referralService;
 
-    public function __construct(ReferralService $referralService)
-    {
+    protected $fhirReferralService;
+
+    protected $referralAttachmentService;
+
+    public function __construct(
+        ReferralService $referralService,
+        FhirReferralService $fhirReferralService,
+        ReferralAttachmentService $referralAttachmentService
+    ) {
         $this->referralService = $referralService;
+        $this->fhirReferralService = $fhirReferralService;
+        $this->referralAttachmentService = $referralAttachmentService;
     }
 
     /**
@@ -55,22 +62,29 @@ class Referral extends Controller
      *     path="/api/login",
      *     tags={"Auth"},
      *     summary="User Login",
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             required={"email", "password"},
+     *
      *             @OA\Property(property="email", type="string", example="user@example.com"),
      *             @OA\Property(property="password", type="string", example="password123")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful login with token",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="token", type="string", example="ACCESS_TOKEN")
      *         )
      *     ),
+     *
      *     @OA\Response(response=401, description="Unauthorized")
      * )
      */
@@ -91,7 +105,7 @@ class Referral extends Controller
 
             // Return token as response
             return response()->json([
-                'token' => $token
+                'token' => $token,
             ]);
         }
 
@@ -99,139 +113,502 @@ class Referral extends Controller
     }
 
     /**
- * Patient Referral.
- *
- * @OA\Post(
- *     path="/api/refer_patient",
- *     tags={"Transactions"},
- *     summary="Referral a patient to another facility",
- *     security={{ "sanctum": {} }},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="referral", type="object",
- *                 @OA\Property(property="facility_from", type="string", example="DOH000000000007520"),
- *                 @OA\Property(property="facility_to", type="string", example="DOH000000000005280"),
- *                 @OA\Property(property="contact_no", type="string", example="1234567810"),
- *                 @OA\Property(property="type_referral", type="string", example="TRANS"),
- *                 @OA\Property(property="category", type="string", example="ER"),
- *                 @OA\Property(property="reason", type="string", example="SEFTA"),
- *                 @OA\Property(property="other_reason", type="string", example=""),
- *                 @OA\Property(property="remarks", type="string", example=""),
- *                 @OA\Property(property="contact_person", type="string", example="RECEIVING PERSONNEL"),
- *                 @OA\Property(property="designation", type="string", example=""),
- *                 @OA\Property(property="refer_date", type="string", example="12-12-2012"),
- *                 @OA\Property(property="refer_time", type="string", example="13:00")
- *             ),
- *             @OA\Property(property="patient", type="object",
- *                 @OA\Property(property="family_number", type="string", example="0001"),
- *                 @OA\Property(property="phic_number", type="string", example="123123123"),
- *                 @OA\Property(property="case_no", type="string", example="2022-000001"),
- *                 @OA\Property(property="last_name", type="string", example="REFERRAL"),
- *                 @OA\Property(property="first_name", type="string", example="PATIENT"),
- *                 @OA\Property(property="suffix", type="string", example="N/A"),
- *                 @OA\Property(property="middle_name", type="string", example="TEST"),
- *                 @OA\Property(property="birthdate", type="string", example="12-12-2012"),
- *                 @OA\Property(property="sex", type="string", example="M"),
- *                 @OA\Property(property="civil_status", type="string", example="D"),
- *                 @OA\Property(property="religion", type="string", example="CATHO"),
- *                 @OA\Property(property="blood_type", type="string", example="A"),
- *                 @OA\Property(property="blood_rh", type="string", example="+"),
- *                 @OA\Property(property="contact_no", type="string", example="")
- *             ),
- *             @OA\Property(property="demographics", type="object",
- *                 @OA\Property(property="street", type="string", example="#4"),
- *                 @OA\Property(property="brgy_code", type="string", example="043405061"),
- *                 @OA\Property(property="city_code", type="string", example="043405"),
- *                 @OA\Property(property="prov_code", type="string", example="0434"),
- *                 @OA\Property(property="reg_code", type="string", example="04"),
- *                 @OA\Property(property="zipcode", type="string", example="4027")
- *             ),
- *             @OA\Property(property="clinical", type="object",
- *                 @OA\Property(property="diagnosis", type="string", example="INJURY"),
- *                 @OA\Property(property="history", type="string", example=""),
- *                 @OA\Property(property="physical_examination", type="string", example=""),
- *                 @OA\Property(property="chief_complaint", type="string", example="CHIEF COMPLAINT"),
- *                 @OA\Property(property="findings", type="string", example="INJURY")
- *             ),
- *             @OA\Property(property="ICD", type="array",
- *                 @OA\Items(type="string", example="S91.0")
- *             ),
- *             @OA\Property(property="vital_signs", type="object",
- *                 @OA\Property(property="BP", type="string", example=""),
- *                 @OA\Property(property="temp", type="string", example=""),
- *                 @OA\Property(property="HR", type="string", example=""),
- *                 @OA\Property(property="RR", type="string", example=""),
- *                 @OA\Property(property="O2_sats", type="string", example=""),
- *                 @OA\Property(property="weight", type="string", example=""),
- *                 @OA\Property(property="height", type="string", example="")
- *             ),
- *             @OA\Property(property="patient_providers", type="array",
- *                 @OA\Items(type="object",
- *                     @OA\Property(property="provider_last_name", type="string", example="DOCTOR"),
- *                     @OA\Property(property="provider_first_name", type="string", example="DOCTOR"),
- *                     @OA\Property(property="provider_middle_name", type="string", example="DOCTOR"),
- *                     @OA\Property(property="provider_suffix", type="string", example=""),
- *                     @OA\Property(property="provider_contact_no", type="string", example="12345678910"),
- *                     @OA\Property(property="provider_type", type="string", example="REFER|CONSU")
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Patient referred successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Patient referred successfully!"),
- *             @OA\Property(property="data", type="object")
- *         )
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid input data",
- *         @OA\JsonContent(
- *             @OA\Property(property="error", type="string", example="Invalid data format")
- *         )
- *     )
- * )
- */
+     * Patient Referral.
+     *
+     * @OA\Post(
+     *     path="/api/refer_patient",
+     *     tags={"Transactions"},
+     *     summary="Referral a patient to another facility",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="service_mode",
+     *         in="query",
+     *         required=false,
+     *         description="Choose where the referral is transmitted. Use current for the existing referral service, fhir for the configured FHIR server, or both.",
+     *
+     *         @OA\Schema(type="string", enum={"current", "fhir", "both"}, default="current")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="response_format",
+     *         in="query",
+     *         required=false,
+     *         description="Choose the response shape. Use current for the existing JSON response, fhir for a FHIR resource response, or both.",
+     *
+     *         @OA\Schema(type="string", enum={"current", "fhir", "both"}, default="current")
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="referral", type="object",
+     *                 @OA\Property(property="facility_from", type="string", example="DOH000000000007520"),
+     *                 @OA\Property(property="facility_to", type="string", example="DOH000000000005280"),
+     *                 @OA\Property(property="contact_no", type="string", example="1234567810"),
+     *                 @OA\Property(property="type_referral", type="string", example="TRANS"),
+     *                 @OA\Property(property="category", type="string", example="ER"),
+     *                 @OA\Property(property="reason", type="string", example="SEFTA"),
+     *                 @OA\Property(property="other_reason", type="string", example=""),
+     *                 @OA\Property(property="remarks", type="string", example=""),
+     *                 @OA\Property(property="contact_person", type="string", example="RECEIVING PERSONNEL"),
+     *                 @OA\Property(property="designation", type="string", example=""),
+     *                 @OA\Property(property="refer_date", type="string", example="12-12-2012"),
+     *                 @OA\Property(property="refer_time", type="string", example="13:00")
+     *             ),
+     *             @OA\Property(property="patient", type="object",
+     *                 @OA\Property(property="family_number", type="string", example="0001"),
+     *                 @OA\Property(property="phic_number", type="string", example="123123123"),
+     *                 @OA\Property(property="case_no", type="string", example="2022-000001"),
+     *                 @OA\Property(property="last_name", type="string", example="REFERRAL"),
+     *                 @OA\Property(property="first_name", type="string", example="PATIENT"),
+     *                 @OA\Property(property="suffix", type="string", example="N/A"),
+     *                 @OA\Property(property="middle_name", type="string", example="TEST"),
+     *                 @OA\Property(property="birthdate", type="string", example="12-12-2012"),
+     *                 @OA\Property(property="sex", type="string", example="M"),
+     *                 @OA\Property(property="civil_status", type="string", example="D"),
+     *                 @OA\Property(property="religion", type="string", example="CATHO"),
+     *                 @OA\Property(property="blood_type", type="string", example="A"),
+     *                 @OA\Property(property="blood_rh", type="string", example="+"),
+     *                 @OA\Property(property="contact_no", type="string", example="")
+     *             ),
+     *             @OA\Property(property="demographics", type="object",
+     *                 @OA\Property(property="street", type="string", example="#4"),
+     *                 @OA\Property(property="brgy_code", type="string", example="043405061"),
+     *                 @OA\Property(property="city_code", type="string", example="043405"),
+     *                 @OA\Property(property="prov_code", type="string", example="0434"),
+     *                 @OA\Property(property="reg_code", type="string", example="04"),
+     *                 @OA\Property(property="zipcode", type="string", example="4027")
+     *             ),
+     *             @OA\Property(property="clinical", type="object",
+     *                 @OA\Property(property="diagnosis", type="string", example="INJURY"),
+     *                 @OA\Property(property="history", type="string", example=""),
+     *                 @OA\Property(property="physical_examination", type="string", example=""),
+     *                 @OA\Property(property="chief_complaint", type="string", example="CHIEF COMPLAINT"),
+     *                 @OA\Property(property="findings", type="string", example="INJURY")
+     *             ),
+     *             @OA\Property(property="ICD", type="array",
+     *
+     *                 @OA\Items(type="string", example="S91.0")
+     *             ),
+     *
+     *             @OA\Property(property="vital_signs", type="object",
+     *                 @OA\Property(property="BP", type="string", example=""),
+     *                 @OA\Property(property="temp", type="string", example=""),
+     *                 @OA\Property(property="HR", type="string", example=""),
+     *                 @OA\Property(property="RR", type="string", example=""),
+     *                 @OA\Property(property="O2_sats", type="string", example=""),
+     *                 @OA\Property(property="weight", type="string", example=""),
+     *                 @OA\Property(property="height", type="string", example="")
+     *             ),
+     *             @OA\Property(property="patient_providers", type="array",
+     *
+     *                 @OA\Items(type="object",
+     *
+     *                     @OA\Property(property="provider_last_name", type="string", example="DOCTOR"),
+     *                     @OA\Property(property="provider_first_name", type="string", example="DOCTOR"),
+     *                     @OA\Property(property="provider_middle_name", type="string", example="DOCTOR"),
+     *                     @OA\Property(property="provider_suffix", type="string", example=""),
+     *                     @OA\Property(property="provider_contact_no", type="string", example="12345678910"),
+     *                     @OA\Property(property="provider_type", type="string", example="REFER|CONSU")
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="attachments",
+     *                 type="array",
+     *                 maxItems=5,
+     *                 description="Optional JPEG, PNG, WebP, or PDF files. Submit the request as multipart/form-data; each file may be up to 10 MB.",
+     *
+     *                 @OA\Items(type="string", format="binary")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Patient referred successfully",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="message", type="string", example="Patient referred successfully!"),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input data",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="error", type="string", example="Invalid data format")
+     *         )
+     *     )
+     * )
+     */
+    public function patient_referral(Request $request)
+    {
+        $serviceMode = $this->fhirReferralService->normalizeOption(
+            (string) $request->input('service_mode', $request->query('service_mode', $request->input('transmission_mode', 'current'))),
+            ['current', 'fhir', 'both'],
+            'current'
+        );
+        $responseFormat = $this->fhirReferralService->normalizeOption(
+            (string) $request->input('response_format', $request->query('response_format', 'current')),
+            ['current', 'fhir', 'both'],
+            'current'
+        );
+        $mergedData = $this->fhirReferralService->normalizeForCurrentService($request->all());
+        $patientReferralRequest = new PatientReferralRequest;
+        $validator = Validator::make($mergedData, $patientReferralRequest->rules(), $patientReferralRequest->messages());
 
- public function patient_referral(PatientReferralRequest $request)
- {
-     // You can get both raw and validated data easily
- 
-      $validatedData = $request->validated();
-     
-     $rawData = $request->all(); // Already parsed JSON
- 
-     // Optional: Merge if needed
-     $mergedData = array_merge($rawData, $validatedData);
- 
-     // Check referring facility
-     $check_from = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_from'])->first();
- 
-     if (!$check_from || empty($check_from->emr_id)) {
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $attachments = $request->file('attachments', []);
+        $attachments = is_array($attachments) ? $attachments : [$attachments];
+        unset($mergedData['attachments']);
+
+        if ($attachments !== [] && $serviceMode === 'fhir') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attachments require service_mode=current or service_mode=both so they can be linked to a local referral record.',
+                'errors' => [
+                    'attachments' => ['Attachments are not supported for FHIR-only transmission.'],
+                ],
+            ], 422);
+        }
+
+        if (in_array($serviceMode, ['current', 'both'], true)) {
+            $facilityError = $this->validateFacilityEmrRegistration($mergedData);
+
+            if ($facilityError !== null) {
+                return response()->json($facilityError, 400);
+            }
+        }
+
+        $currentOutput = [
+            'code' => '200',
+            'message' => 'Referral prepared for FHIR transmission.',
+        ];
+
+        if (in_array($serviceMode, ['current', 'both'], true)) {
+            $currentOutput = $this->referralService->refer_patient($mergedData);
+
+            $logId = $this->fhirReferralService->extractLogId($currentOutput, $mergedData);
+            if ($attachments !== [] && $logId && ReferralModel::where('LogID', $logId)->exists()) {
+                try {
+                    $currentOutput['attachments'] = $this->referralAttachmentService->store(
+                        $logId,
+                        $attachments,
+                        $request->user()?->id
+                    );
+                } catch (\Throwable $exception) {
+                    Log::error('Referral attachment storage failed.', [
+                        'log_id' => $logId,
+                        'exception' => $exception,
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The referral was saved, but its attachments could not be stored.',
+                        'log_id' => $logId,
+                    ], 500);
+                }
+            }
+        }
+
+        $fhirResult = null;
+        if (in_array($serviceMode, ['fhir', 'both'], true)) {
+            $fhirResult = $this->fhirReferralService->submitReferral(
+                $mergedData,
+                $this->fhirReferralService->extractLogId($currentOutput, $mergedData)
+            );
+
+            if ($serviceMode === 'fhir') {
+                $currentOutput = [
+                    'code' => $fhirResult['success'] ? '200' : (string) ($fhirResult['status'] ?? 500),
+                    'message' => $fhirResult['success']
+                        ? 'Referral successfully transmitted to FHIR server'
+                        : 'Referral failed to transmit to FHIR server',
+                ];
+            }
+        }
+
+        $output = $this->fhirReferralService->formatReferralResponse(
+            $currentOutput,
+            $fhirResult,
+            $responseFormat,
+            $serviceMode,
+            $mergedData
+        );
+
+        if ($serviceMode === 'current' && $responseFormat === 'current') {
+            return $output;
+        }
+
+        return response()->json($output, $this->referralResponseStatus($currentOutput, $fhirResult));
+    }
+
+    public function download_attachment(ReferralAttachment $attachment)
+    {
+        abort_unless(ReferralModel::where('LogID', $attachment->LogID)->exists(), 404);
+        abort_unless(\Illuminate\Support\Facades\Storage::disk($attachment->disk)->exists($attachment->path), 404);
+
+        return \Illuminate\Support\Facades\Storage::disk($attachment->disk)->download(
+            $attachment->path,
+            $attachment->original_name,
+            ['Content-Type' => $attachment->mime_type]
+        );
+    }
+
+    public function incoming_fhir_referral(Request $request)
+    {
+        if (! $this->fhirReferralService->isFhirPayload($request->all())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'FHIR Bundle or resource payload is required.',
+            ], 422);
+        }
+
+        $rawFhir = $request->input('fhir')
+            ?? $request->input('fhir_bundle')
+            ?? $request->input('bundle')
+            ?? $request->all();
+
+        $normalized = $this->prepareIncomingFhirPayload(
+            $this->fhirReferralService->normalizeForCurrentService($request->all())
+        );
+
+        $patientReferralRequest = new PatientReferralRequest;
+        $validator = Validator::make($normalized, $patientReferralRequest->rules(), $patientReferralRequest->messages());
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+                'normalized' => $normalized,
+            ], 422);
+        }
+
+        $result = $this->referralService->refer_patient($normalized);
+        $logId = $this->fhirReferralService->extractLogId($result, $normalized);
+        $status = $this->referralResponseStatus($result, null);
+
         return response()->json([
-            'error' => $check_from->facility_name.' '.'is not registered to any EMR/HITP provider!'
-        ], 400);
-     }
- 
-     // Check referred-to facility
-     $check_to = RefFacilityModel::where('hfhudcode', $mergedData['referral']['facility_to'])->first();
- 
-     if (!$check_to || empty($check_to->emr_id)) {
-         return response()->json([
-             'error' => $check_to->facility_name.' '.'is not registered to any EMR/HITP provider!'
-         ], 400);
-     }
- 
-     // Send to referral service
-     $output = $this->referralService->refer_patient($mergedData);
- 
-     return $output;
- }
- 
+            'success' => $status < 400,
+            'message' => $result['message'] ?? 'Incoming FHIR referral processed.',
+            'log_id' => $logId,
+            'current' => $result,
+            'normalized' => $normalized,
+            'fhir' => [
+                'source' => 'PH eReferral FHIR incoming',
+                'response' => $rawFhir,
+            ],
+        ], $status);
+    }
+
+    public function fetch_incoming_fhir_referral(string $LogID)
+    {
+        $referral = ReferralModel::with([
+            'patientinformation',
+            'facility_to',
+            'attachments',
+            'facility_from',
+            'demographics',
+            'clinical',
+        ])->where('LogID', $LogID)
+            ->whereDoesntHave('track')
+            ->first();
+
+        if (! $referral) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incoming referral not found.',
+            ], 404);
+        }
+
+        $normalized = $this->incomingReferralPayload($referral);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Incoming FHIR referral fetched.',
+            'log_id' => $referral->LogID,
+            'current' => [
+                'LogID' => $referral->LogID,
+                'referral_origin_code' => $referral->fhudFrom,
+                'referral_origin_name' => optional($referral->facility_from)->facility_name,
+                'referral_destination_code' => $referral->fhudTo,
+                'referral_destination_name' => optional($referral->facility_to)->facility_name,
+                'referral_reason' => $referral->referralReason,
+                'referral_type' => $referral->typeOfReferral,
+                'referral_category' => $referral->referralCategory,
+                'referral_date' => $referral->refferalDate,
+                'referral_time' => $referral->refferalTime,
+                'patient' => $referral->patientinformation,
+                'demographics' => $referral->demographics,
+                'clinical' => $referral->clinical,
+            ],
+            'normalized' => $normalized,
+            'fhir' => [
+                'source' => 'PH eReferral FHIR incoming',
+                'response' => $this->fhirReferralService->buildReferralBundle($normalized, $referral->LogID),
+            ],
+        ]);
+    }
+
+    private function prepareIncomingFhirPayload(array $payload): array
+    {
+        $payload['referral']['type_referral'] = strtoupper((string) ($payload['referral']['type_referral'] ?? 'TRANS'));
+        if (! ReferralHelper::getReferralTypebyCode($payload['referral']['type_referral'])) {
+            $payload['referral']['type_referral'] = 'TRANS';
+        }
+
+        $payload['referral']['category'] = strtoupper((string) ($payload['referral']['category'] ?? 'ER'));
+        if (! in_array($payload['referral']['category'], ['ER', 'OP'], true)) {
+            $payload['referral']['category'] = 'ER';
+        }
+
+        $payload['referral']['reason'] = strtoupper((string) ($payload['referral']['reason'] ?? 'OTHER'));
+        if (! ReferralHelper::getReferralReasonbyCode($payload['referral']['reason'])) {
+            $payload['referral']['other_reason'] = trim((string) (($payload['referral']['other_reason'] ?? '') ?: $payload['referral']['reason']));
+            $payload['referral']['reason'] = 'OTHER';
+        }
+
+        $payload['referral']['contact_person'] = $payload['referral']['contact_person'] ?: 'N/A';
+        $payload['referral']['refer_date'] = $payload['referral']['refer_date'] ?: now()->toDateString();
+        $payload['referral']['refer_time'] = $payload['referral']['refer_time'] ?: now()->format('H:i');
+        $payload['patient']['religion'] = $payload['patient']['religion'] ?: 'N/A';
+        $payload['patient']['civil_status'] = $payload['patient']['civil_status'] ?: 'N';
+        $payload['demographics']['street'] = $payload['demographics']['street'] ?: 'N/A';
+        $payload['demographics']['zipcode'] = $payload['demographics']['zipcode'] ?: '0000';
+        $payload['clinical']['diagnosis'] = $payload['clinical']['diagnosis'] ?: ['N/A'];
+        $payload['clinical']['chief_complaint'] = $payload['clinical']['chief_complaint'] ?: $payload['clinical']['diagnosis'][0];
+        $payload['ICD'] = $payload['ICD'] ?: ['Z00.0'];
+
+        return $payload;
+    }
+
+    private function incomingReferralPayload(ReferralModel $referral): array
+    {
+        $patient = $referral->patientinformation;
+        $demographics = $referral->demographics;
+        $clinical = $referral->clinical;
+        $provider = DB::table('referral_provider')
+            ->where('LogID', $referral->LogID)
+            ->where('provider_type', 'REFER')
+            ->first();
+        $vitals = json_decode((string) ($clinical?->vitals ?? '{}'), true) ?: [];
+        $diagnosis = array_values(array_filter(array_map(
+            fn (string $item): string => trim($item),
+            explode(',', (string) ($clinical?->clinicalDiagnosis ?? ''))
+        )));
+
+        return [
+            'referral' => [
+                'facility_from' => $referral->fhudFrom,
+                'facility_to' => $referral->fhudTo,
+                'type_referral' => $referral->typeOfReferral,
+                'category' => $referral->referralCategory,
+                'reason' => $referral->referralReason,
+                'other_reason' => $referral->otherReasons,
+                'remarks' => $referral->remarks,
+                'contact_person' => $referral->referralContactPerson,
+                'designation' => $referral->referralContactPersonDesignation,
+                'contact_no' => $referral->referringProviderContactNumber,
+                'refer_date' => $referral->refferalDate,
+                'refer_time' => $referral->refferalTime,
+                'generated_code' => $referral->LogID,
+            ],
+            'patient' => [
+                'family_number' => $patient?->FamilyID,
+                'phic_number' => $patient?->phicNum,
+                'case_no' => $patient?->caseNum,
+                'last_name' => $patient?->patientLastName,
+                'first_name' => $patient?->patientFirstName,
+                'middle_name' => $patient?->patientMiddlename,
+                'suffix' => $patient?->patientSuffix === '.' ? null : $patient?->patientSuffix,
+                'birthdate' => $patient?->patientBirthDate,
+                'sex' => $patient?->patientSex,
+                'civil_status' => $patient?->patientCivilStatus,
+                'religion' => $patient?->patientReligion,
+                'contact_no' => $patient?->patientContactNumber,
+                'blood_type' => $patient?->patientBloodType,
+                'blood_rh' => $patient?->patientBloodTypeRH,
+            ],
+            'demographics' => [
+                'street' => $demographics?->patientStreetAddress,
+                'brgy_code' => $demographics?->patientBrgyCode,
+                'city_code' => $demographics?->patientMundCode,
+                'prov_code' => $demographics?->patientProvCode,
+                'reg_code' => $demographics?->patientRegCode,
+                'zipcode' => $demographics?->patientZipCode,
+            ],
+            'clinical' => [
+                'diagnosis' => $diagnosis ?: ['N/A'],
+                'history' => $clinical?->clinicalHistory,
+                'physical_examination' => $clinical?->physicalExamination,
+                'chief_complaint' => $clinical?->chiefComplaint,
+                'findings' => $clinical?->findings,
+            ],
+            'ICD' => ['Z00.0'],
+            'vital_signs' => $vitals,
+            'patient_providers' => [[
+                'provider_last' => $provider->provider_last ?? 'N/A',
+                'provider_first' => $provider->provider_first ?? 'N/A',
+                'provider_middle' => $provider->provider_middle ?? null,
+                'provider_suffix' => $provider->provider_suffix ?? null,
+                'provider_type' => 'REFER',
+            ]],
+        ];
+    }
+
+    private function validateFacilityEmrRegistration(array $data): ?array
+    {
+        $fromCode = $data['referral']['facility_from'] ?? null;
+        $toCode = $data['referral']['facility_to'] ?? null;
+        $check_from = RefFacilityModel::where('hfhudcode', $fromCode)->first();
+
+        if (! $check_from) {
+            return ['error' => 'Referring facility does not exist!'];
+        }
+
+        if (empty($check_from->emr_id)) {
+            return ['error' => $check_from->facility_name.' is not registered to any EMR/HITP provider!'];
+        }
+
+        $check_to = RefFacilityModel::where('hfhudcode', $toCode)->first();
+
+        if (! $check_to) {
+            return ['error' => 'Referral facility does not exist!'];
+        }
+
+        if (empty($check_to->emr_id)) {
+            return ['error' => $check_to->facility_name.' is not registered to any EMR/HITP provider!'];
+        }
+
+        return null;
+    }
+
+    private function referralResponseStatus(array $currentOutput, ?array $fhirResult): int
+    {
+        if ($fhirResult !== null && ! $fhirResult['success']) {
+            return (int) ($fhirResult['status'] ?? 500);
+        }
+
+        $code = (string) ($currentOutput['code'] ?? '200');
+
+        return in_array($code, ['400', '401', '404', '422', '500'], true) ? (int) $code : 200;
+    }
 
     /**
      * Generate a reference code.
@@ -241,26 +618,34 @@ class Referral extends Controller
      *     tags={"References"},
      *     summary="Generate reference code",
      *     security={{ "sanctum": {} }},
+     *
      *     @OA\Parameter(
      *         name="fhudcode",
      *         in="path",
      *         required=true,
      *         description="The FHUD code for the referral",
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful response with generated code",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="reference", type="string", example="HOSP-6050225100146")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Facility not found",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Facility not found")
      *         )
      *     )
@@ -272,6 +657,7 @@ class Referral extends Controller
         if ($code) {
             return response()->json(['code' => $code]);
         }
+
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
@@ -283,29 +669,40 @@ class Referral extends Controller
      *     tags={"References"},
      *     summary="Generate demographic library",
      *     security={{ "sanctum": {} }},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful response with demographic data",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="regions", type="array",
+     *
      *                 @OA\Items(
      *                     type="object",
+     *
      *                     @OA\Property(property="code", type="string"),
      *                     @OA\Property(property="name", type="string"),
      *                     @OA\Property(property="provinces", type="array",
+     *
      *                         @OA\Items(
      *                             type="object",
+     *
      *                             @OA\Property(property="code", type="string"),
      *                             @OA\Property(property="name", type="string"),
      *                             @OA\Property(property="cities", type="array",
+     *
      *                                 @OA\Items(
      *                                     type="object",
+     *
      *                                     @OA\Property(property="code", type="string"),
      *                                     @OA\Property(property="name", type="string"),
      *                                     @OA\Property(property="barangays", type="array",
+     *
      *                                         @OA\Items(
      *                                             type="object",
+     *
      *                                             @OA\Property(property="code", type="string"),
      *                                             @OA\Property(property="name", type="string")
      *                                         )
@@ -318,19 +715,25 @@ class Referral extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Not Found",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="No Found")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized access",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Unauthorized")
      *         )
      *     )
@@ -338,17 +741,15 @@ class Referral extends Controller
      */
     public function demographic_reference(Request $request)
     {
-    
 
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
             return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
         }
 
-
         // Retrieve the regions, provinces, cities, and barangays data
         $regions = RefRegionModel::with([
-            'provinces.cities.barangays'
+            'provinces.cities.barangays',
         ])->get();
 
         // Format the data into the required structure
@@ -379,470 +780,507 @@ class Referral extends Controller
 
         // Return the formatted data as JSON response
         return response()->json([
-            'regions' => $result
+            'regions' => $result,
         ])->header('Content-Type', 'application/json');
     }
 
-  /**
- * Get a specific region by ID.
- *
- * @OA\Get(
- *     path="/api/region/{id}",
- *     tags={"References"},
- *     summary="Get a specific region by ID",
- *     description="Returns a region with the given ID",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="The ID of the region",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with region data",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="region", type="object",
- *                 @OA\Property(property="regcode", type="string", example="01"),
- *                 @OA\Property(property="regname", type="string", example="Ilocos Region")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Region not found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="error", type="string", example="Region not found")
- *         )
- *     )
- * )
- */
-public function region($id)
-{
-    if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-
-
-    $region = RefRegionModel::select('regcode', 'regname')->where('regcode', $id)->first();
-
-    if (!$region) {
-        return response()->json(['error' => 'Region not found'], 404);
-    }
-
-    return response()->json([
-        'region' => $region
-    ])->header('Content-Type', 'application/json');
-}
-
-/**
- * Get a specific province by name.
- *
- * @OA\Get(
- *     path="/api/province/{id}",
- *     tags={"References"},
- *     summary="Get a specific province by name",
- *     description="Returns a province with the given name",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="name",
- *         in="path",
- *         required=true,
- *         description="The name of the province",
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with province data",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="province", type="object",
- *                 @OA\Property(property="provcode", type="string", example="0128"),
- *                 @OA\Property(property="provname", type="string", example="Ilocos Norte")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Province not found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="error", type="string", example="Province not found")
- *         )
- *     )
- * )
- */
-public function province($id)
-{
-
-    if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-
-
-    $province = RefProvinceModel::select('regcode','provcode', 'provname')->where('provcode', $id)->first();
-
-    if (!$province) {
-        return response()->json(['error' => 'Province not found'], 404);
-    }
-
-    return response()->json([
-        'province' => $province
-    ])->header('Content-Type', 'application/json');
-}
-
-/**
- * Get a specific city by code.
- *
- * @OA\Get(
- *     path="/api/city/{id}",
- *     tags={"References"},
- *     summary="Get a specific city by code",
- *     description="Returns a city with the given citycode",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="City code",
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with city data",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="city", type="object",
- *                 @OA\Property(property="citycode", type="string", example="012801"),
- *                 @OA\Property(property="cityname", type="string", example="Laoag City")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="City not found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="error", type="string", example="City not found")
- *         )
- *     )
- * )
- */
-
-
-public function city($id)
-{
-
-    if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-
-
-    $province = RefCityModel::select('provcode','citycode', 'cityname')->where('citycode', $id)->first();
-
-    if (!$province) {
-        return response()->json(['error' => 'City not found'], 404);
-    }
-
-    return response()->json([
-        'province' => $province
-    ])->header('Content-Type', 'application/json');
-}
-
-/**
- * Get a specific barangay by ID.
- *
- * @OA\Get(
- *     path="/api/barangay/{id}",
- *     tags={"References"},
- *     summary="Get a specific barangay by ID",
- *     description="Returns a barangay with the given ID",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="The ID of the barangay",
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with barangay data",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="barangay", type="object",
- *                 @OA\Property(property="citycode", type="string", example="0128"),
- *                 @OA\Property(property="bgycode", type="string", example="012801001"),
- *                 @OA\Property(property="bgyname", type="string", example="Barangay Uno")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Barangay not found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="error", type="string", example="Barangay not found")
- *         )
- *     )
- * )
- */
-public function barangay($id)
-{
-    if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-
-
-    $barangay = RefBarangayModel::select('citycode', 'bgycode', 'bgyname')
-        ->where('bgycode', $id)
-        ->first();
-
-    if (!$barangay) {
-        return response()->json(['error' => 'Barangay not found'], 404);
-    }
-
-    return response()->json([
-        'barangay' => $barangay
-    ])->header('Content-Type', 'application/json');
-}
-
-
-/**
- * 
- *  Get Facility Information.
- *
- * @OA\Get(
- *     path="/api/facility/{id}",
- *     tags={"References"},
- *     summary="Get facility by ID",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="Facility HFHUDCODE",
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="data", type="object",
- *                 @OA\Property(property="hfhudcode", type="string", example="12345"),
- *                 @OA\Property(property="facility_name", type="string", example="General Hospital")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Facility not found",
- *         @OA\JsonContent(
- *             @OA\Property(property="error", type="string", example="Facility not found")
- *         )
- *     )
- * )
- */
-
-public function get_facility_list($id)
-{
-    if (!Auth::check()) {
-        // If not authenticated, this will trigger the unauthenticated handler
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-    
-
-    $facility = RefFacilitiesModel::select([
-        'ref_facilities.hfhudcode',
-        'ref_facilities.facility_name',
-        'ref_facilities.status',
-        'ref_facilitytype.description',
-        'ref_facilities.fhudaddress as address',
-        'ref_region.regname as region',
-        'ref_province.provname as province',
-        'ref_city.cityname as city',
-        'ref_barangay.bgyname as barangay',
-    ])
-         ->leftJoin('ref_region', 'ref_facilities.region_code', '=', 'ref_region.regcode')
-         ->leftJoin('ref_province', 'ref_region.regcode', '=', 'ref_province.regcode')
-         ->leftJoin('ref_city', 'ref_city.provcode', '=', 'ref_province.provcode')
-         ->leftJoin('ref_barangay', 'ref_barangay.citycode', '=', 'ref_city.citycode')
-         ->leftJoin('ref_facilitytype', 'ref_facilitytype.factype_code', '=', 'ref_facilities.facility_type')
-         ->orderBy('ref_facilities.fhud_seq','desc')
-    ->where('hfhudcode', $id)
-    ->first();
-
-    if (!$facility) {
-        return response()->json(['error' => 'Facility not found'], 404);
-    }
-
-    return response()->json([
-        'data' => $facility
-    ])->header('Content-Type', 'application/json');
-}
-/**
- * Get referral data with related patient and clinical information.
- *
- * @OA\Get(
- *     path="/api/get-referral-information/{id}",
- *     tags={"Transactions"},
- *     summary="Get full referral data by LogID",
- *     description="Returns referral data including clinical, patient info, and demographic data.",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="LogID of the referral",
- *         @OA\Schema(type="string", example="LOG123456")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with referral data",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="data", type="object",
- *                 @OA\Property(property="LogID", type="string", example="LOG123456"),
- *                 @OA\Property(property="referral_information", type="object",
- *                     @OA\Property(property="LogID", type="string", example="LOG123456"),
- *                     @OA\Property(property="referral_reason", type="string", example="SEFTA")
- *                 ),
- *                 @OA\Property(property="patient_information", type="object",
- *                     @OA\Property(property="patient_lastname", type="string", example="Doe")
- *                 ),
- *                 @OA\Property(property="demographic_information", type="object",
- *                     @OA\Property(property="address", type="string", example="123 Main St.")
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Referral not found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="error", type="string", example="Referral not found")
- *         )
- *     )
- * )
- */
-
- public function getReferralData($id)
- {
-    if (!Auth::check()) {
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-
-     $referral = ReferralModel::with([
-         'patientinformation',
-         'facility_to',
-         'facility_from',
-         'medication',
-         'demographics',
-         'clinical',
-     ])->where('LogID', $id)->first();
-
-
-     $consulting = DB::table('referral_provider')
-     ->where('LogID', $id)
-     ->where('provider_type', 'CONSU')
-     ->first();
-
-      $referring = DB::table('referral_provider')
-     ->where('LogID', $id)
-     ->where('provider_type', 'REFER')
-     ->first();
-
-     if (!$referral) {
-         return response()->json(['error' => 'Referral not found'], 404);
-     }
- 
-     if (!empty($referral->clinical) && !empty($referral->clinical->vitals)) {
-         
-         if (is_string($referral->clinical->vitals)) {
-             $referral->clinical->vitals = json_decode($referral->clinical->vitals, true);
-         }
-     }
-
-     $transformedDemographics = [];
-     if ($referral->demographics) {
-         $transformedDemographics['address'] = $referral->demographics->patientStreetAddress ?? null;
-         $transformedDemographics['barangay_code'] = $referral->demographics->patientBrgyCode;
-         $transformedDemographics['barangay'] = ReferralHelper::getBarangay($referral->demographics->patientBrgyCode);
-         $transformedDemographics['city_code'] = $referral->demographics->patientMundCode;
-         $transformedDemographics['city'] = ReferralHelper::getCity($referral->demographics->patientMundCode); 
-         $transformedDemographics['province_code'] = $referral->demographics->patientProvCode;
-         $transformedDemographics['province'] = ReferralHelper::getProvince($referral->demographics->patientProvCode); 
-         $transformedDemographics['region_code'] = $referral->demographics->patientRegCode;
-         $transformedDemographics['region'] = ReferralHelper::getRegion($referral->demographics->patientRegCode); 
-         $transformedDemographics['zipcode'] =$referral->demographics->patientZipCode;
-     }else{
-        $transformedDemographics['address'] = '';
-        $transformedDemographics['barangay_code'] = '';
-        $transformedDemographics['barangay'] = '';
-        $transformedDemographics['city_code'] = '';
-        $transformedDemographics['city'] = '';
-        $transformedDemographics['province_code'] = '';
-        $transformedDemographics['province'] = '';
-        $transformedDemographics['region_code'] = '';
-        $transformedDemographics['region'] = '';
-        $transformedDemographics['zipcode'] = '';
-     }
- 
-  
-     $transformedClinical = [];
-     if ($referral->clinical) {
-        $diagnosis = $referral->clinical->clinicalDiagnosis;
-        $transformedClinical['diagnosis'] = is_string($diagnosis) ? trim($diagnosis) : null;
-         $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
-         $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
-
-         $vitalsRaw = $referral->clinical->vitals;
-         $vitalsigns = null;
-        
-        if (is_string($vitalsRaw)) {
-            $decoded = json_decode(stripslashes(trim($vitalsRaw, '"')), true);
-            $vitalsigns = $decoded ?: null;
+    /**
+     * Get a specific region by ID.
+     *
+     * @OA\Get(
+     *     path="/api/region/{id}",
+     *     tags={"References"},
+     *     summary="Get a specific region by ID",
+     *     description="Returns a region with the given ID",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the region",
+     *
+     *         @OA\Schema(type="integer")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with region data",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="region", type="object",
+     *                 @OA\Property(property="regcode", type="string", example="01"),
+     *                 @OA\Property(property="regname", type="string", example="Ilocos Region")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Region not found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="error", type="string", example="Region not found")
+     *         )
+     *     )
+     * )
+     */
+    public function region($id)
+    {
+        if (! Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
         }
-         
-         $transformedClinical['vitalsigns'] = $vitalsigns;
-         $transformedClinical['findings'] = $referral->clinical->findings ?? null;
-         $transformedClinical['physical_examination'] = $referral->clinical->physicalExamination ?? null;
-     }else{
-        $transformedClinical['diagnosis'] = '';
-         $transformedClinical['history'] = '';
-         $transformedClinical['chief_complaint'] = '';
-         $transformedClinical['vitalsigns'] =  [];
-         $transformedClinical['findings'] = '';
-         $transformedClinical['physical_examination']='';
-     }
 
-      $transformedPatient = [];
+        $region = RefRegionModel::select('regcode', 'regname')->where('regcode', $id)->first();
 
-      if ($referral->patientinformation) {
-          $transformedPatient['patient_lastname'] = strtoupper($referral->patientinformation->patientLastName ?? null);
-          $transformedPatient['patient_firstname'] = strtoupper($referral->patientinformation->patientFirstName ?? null);
-          $transformedPatient['patient_middlename'] = strtoupper($referral->patientinformation->patientMiddlename ?? null);
-          $transformedPatient['patient_suffix'] = strtoupper($referral->patientinformation->patientSuffix ?? null);
-          $transformedPatient['patient_birthdate'] = date('m/d/Y',strtotime($referral->patientinformation->patientBirthDate));
-          $transformedPatient['patient_sex'] = $referral->patientinformation->patientSex ?? null;
-          $transformedPatient['patient_civilstatus'] = $referral->patientinformation->patientCivilStatus ?? null;
-          $transformedPatient['patient_contact'] = $referral->patientinformation->patientContactNumber ?? null;
-          $transformedPatient['patient_religion'] = $referral->patientinformation->patientReligion ?? null;
-          $transformedPatient['patient_blood'] = $referral->patientinformation->patientBloodType ?? null;
-          $transformedPatient['patient_bloodRH'] = $referral->patientinformation->patientBloodRH ?? null;
-      }else{
-            $transformedPatient['patient_lastname'] ='';
+        if (! $region) {
+            return response()->json(['error' => 'Region not found'], 404);
+        }
+
+        return response()->json([
+            'region' => $region,
+        ])->header('Content-Type', 'application/json');
+    }
+
+    /**
+     * Get a specific province by name.
+     *
+     * @OA\Get(
+     *     path="/api/province/{id}",
+     *     tags={"References"},
+     *     summary="Get a specific province by name",
+     *     description="Returns a province with the given name",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="path",
+     *         required=true,
+     *         description="The name of the province",
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with province data",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="province", type="object",
+     *                 @OA\Property(property="provcode", type="string", example="0128"),
+     *                 @OA\Property(property="provname", type="string", example="Ilocos Norte")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Province not found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="error", type="string", example="Province not found")
+     *         )
+     *     )
+     * )
+     */
+    public function province($id)
+    {
+
+        if (! Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+
+        $province = RefProvinceModel::select('regcode', 'provcode', 'provname')->where('provcode', $id)->first();
+
+        if (! $province) {
+            return response()->json(['error' => 'Province not found'], 404);
+        }
+
+        return response()->json([
+            'province' => $province,
+        ])->header('Content-Type', 'application/json');
+    }
+
+    /**
+     * Get a specific city by code.
+     *
+     * @OA\Get(
+     *     path="/api/city/{id}",
+     *     tags={"References"},
+     *     summary="Get a specific city by code",
+     *     description="Returns a city with the given citycode",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="City code",
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with city data",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="city", type="object",
+     *                 @OA\Property(property="citycode", type="string", example="012801"),
+     *                 @OA\Property(property="cityname", type="string", example="Laoag City")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="City not found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="error", type="string", example="City not found")
+     *         )
+     *     )
+     * )
+     */
+    public function city($id)
+    {
+
+        if (! Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+
+        $province = RefCityModel::select('provcode', 'citycode', 'cityname')->where('citycode', $id)->first();
+
+        if (! $province) {
+            return response()->json(['error' => 'City not found'], 404);
+        }
+
+        return response()->json([
+            'province' => $province,
+        ])->header('Content-Type', 'application/json');
+    }
+
+    /**
+     * Get a specific barangay by ID.
+     *
+     * @OA\Get(
+     *     path="/api/barangay/{id}",
+     *     tags={"References"},
+     *     summary="Get a specific barangay by ID",
+     *     description="Returns a barangay with the given ID",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the barangay",
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with barangay data",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="barangay", type="object",
+     *                 @OA\Property(property="citycode", type="string", example="0128"),
+     *                 @OA\Property(property="bgycode", type="string", example="012801001"),
+     *                 @OA\Property(property="bgyname", type="string", example="Barangay Uno")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Barangay not found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="error", type="string", example="Barangay not found")
+     *         )
+     *     )
+     * )
+     */
+    public function barangay($id)
+    {
+        if (! Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+
+        $barangay = RefBarangayModel::select('citycode', 'bgycode', 'bgyname')
+            ->where('bgycode', $id)
+            ->first();
+
+        if (! $barangay) {
+            return response()->json(['error' => 'Barangay not found'], 404);
+        }
+
+        return response()->json([
+            'barangay' => $barangay,
+        ])->header('Content-Type', 'application/json');
+    }
+
+    /**
+     *  Get Facility Information.
+     *
+     * @OA\Get(
+     *     path="/api/facility/{id}",
+     *     tags={"References"},
+     *     summary="Get facility by ID",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Facility HFHUDCODE",
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="hfhudcode", type="string", example="12345"),
+     *                 @OA\Property(property="facility_name", type="string", example="General Hospital")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Facility not found",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="error", type="string", example="Facility not found")
+     *         )
+     *     )
+     * )
+     */
+    public function get_facility_list($id)
+    {
+        if (! Auth::check()) {
+            // If not authenticated, this will trigger the unauthenticated handler
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+
+        $facility = RefFacilitiesModel::select([
+            'ref_facilities.hfhudcode',
+            'ref_facilities.facility_name',
+            'ref_facilities.status',
+            'ref_facilitytype.description',
+            'ref_facilities.fhudaddress as address',
+            'ref_region.regname as region',
+            'ref_province.provname as province',
+            'ref_city.cityname as city',
+            'ref_barangay.bgyname as barangay',
+        ])
+            ->leftJoin('ref_region', 'ref_facilities.region_code', '=', 'ref_region.regcode')
+            ->leftJoin('ref_province', 'ref_region.regcode', '=', 'ref_province.regcode')
+            ->leftJoin('ref_city', 'ref_city.provcode', '=', 'ref_province.provcode')
+            ->leftJoin('ref_barangay', 'ref_barangay.citycode', '=', 'ref_city.citycode')
+            ->leftJoin('ref_facilitytype', 'ref_facilitytype.factype_code', '=', 'ref_facilities.facility_type')
+            ->orderBy('ref_facilities.fhud_seq', 'desc')
+            ->where('hfhudcode', $id)
+            ->first();
+
+        if (! $facility) {
+            return response()->json(['error' => 'Facility not found'], 404);
+        }
+
+        return response()->json([
+            'data' => $facility,
+        ])->header('Content-Type', 'application/json');
+    }
+
+    /**
+     * Get referral data with related patient and clinical information.
+     *
+     * @OA\Get(
+     *     path="/api/get-referral-information/{id}",
+     *     tags={"Transactions"},
+     *     summary="Get full referral data by LogID",
+     *     description="Returns referral data including clinical, patient info, and demographic data.",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="LogID of the referral",
+     *
+     *         @OA\Schema(type="string", example="LOG123456")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with referral data",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="LogID", type="string", example="LOG123456"),
+     *                 @OA\Property(property="referral_information", type="object",
+     *                     @OA\Property(property="LogID", type="string", example="LOG123456"),
+     *                     @OA\Property(property="referral_reason", type="string", example="SEFTA")
+     *                 ),
+     *                 @OA\Property(property="patient_information", type="object",
+     *                     @OA\Property(property="patient_lastname", type="string", example="Doe")
+     *                 ),
+     *                 @OA\Property(property="demographic_information", type="object",
+     *                     @OA\Property(property="address", type="string", example="123 Main St.")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Referral not found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="error", type="string", example="Referral not found")
+     *         )
+     *     )
+     * )
+     */
+    public function getReferralData($id)
+    {
+        if (! Auth::check()) {
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
+
+        $referral = ReferralModel::with([
+            'patientinformation',
+            'facility_to',
+            'facility_from',
+            'medication',
+            'demographics',
+            'clinical',
+            'attachments',
+        ])->where('LogID', $id)->first();
+
+        $consulting = DB::table('referral_provider')
+            ->where('LogID', $id)
+            ->where('provider_type', 'CONSU')
+            ->first();
+
+        $referring = DB::table('referral_provider')
+            ->where('LogID', $id)
+            ->where('provider_type', 'REFER')
+            ->first();
+
+        if (! $referral) {
+            return response()->json(['error' => 'Referral not found'], 404);
+        }
+
+        if (! empty($referral->clinical) && ! empty($referral->clinical->vitals)) {
+
+            if (is_string($referral->clinical->vitals)) {
+                $referral->clinical->vitals = json_decode($referral->clinical->vitals, true);
+            }
+        }
+
+        $transformedDemographics = [];
+        if ($referral->demographics) {
+            $transformedDemographics['address'] = $referral->demographics->patientStreetAddress ?? null;
+            $transformedDemographics['barangay_code'] = $referral->demographics->patientBrgyCode;
+            $transformedDemographics['barangay'] = ReferralHelper::getBarangay($referral->demographics->patientBrgyCode);
+            $transformedDemographics['city_code'] = $referral->demographics->patientMundCode;
+            $transformedDemographics['city'] = ReferralHelper::getCity($referral->demographics->patientMundCode);
+            $transformedDemographics['province_code'] = $referral->demographics->patientProvCode;
+            $transformedDemographics['province'] = ReferralHelper::getProvince($referral->demographics->patientProvCode);
+            $transformedDemographics['region_code'] = $referral->demographics->patientRegCode;
+            $transformedDemographics['region'] = ReferralHelper::getRegion($referral->demographics->patientRegCode);
+            $transformedDemographics['zipcode'] = $referral->demographics->patientZipCode;
+        } else {
+            $transformedDemographics['address'] = '';
+            $transformedDemographics['barangay_code'] = '';
+            $transformedDemographics['barangay'] = '';
+            $transformedDemographics['city_code'] = '';
+            $transformedDemographics['city'] = '';
+            $transformedDemographics['province_code'] = '';
+            $transformedDemographics['province'] = '';
+            $transformedDemographics['region_code'] = '';
+            $transformedDemographics['region'] = '';
+            $transformedDemographics['zipcode'] = '';
+        }
+
+        $transformedClinical = [];
+        if ($referral->clinical) {
+            $diagnosis = $referral->clinical->clinicalDiagnosis;
+            $transformedClinical['diagnosis'] = is_string($diagnosis) ? trim($diagnosis) : null;
+            $transformedClinical['history'] = $referral->clinical->clinicalHistory ?? null;
+            $transformedClinical['chief_complaint'] = $referral->clinical->chiefComplaint ?? null;
+
+            $vitalsRaw = $referral->clinical->vitals;
+            $vitalsigns = null;
+
+            if (is_string($vitalsRaw)) {
+                $decoded = json_decode(stripslashes(trim($vitalsRaw, '"')), true);
+                $vitalsigns = $decoded ?: null;
+            }
+
+            $transformedClinical['vitalsigns'] = $vitalsigns;
+            $transformedClinical['findings'] = $referral->clinical->findings ?? null;
+            $transformedClinical['physical_examination'] = $referral->clinical->physicalExamination ?? null;
+        } else {
+            $transformedClinical['diagnosis'] = '';
+            $transformedClinical['history'] = '';
+            $transformedClinical['chief_complaint'] = '';
+            $transformedClinical['vitalsigns'] = [];
+            $transformedClinical['findings'] = '';
+            $transformedClinical['physical_examination'] = '';
+        }
+
+        $transformedPatient = [];
+
+        if ($referral->patientinformation) {
+            $transformedPatient['patient_lastname'] = strtoupper($referral->patientinformation->patientLastName ?? null);
+            $transformedPatient['patient_firstname'] = strtoupper($referral->patientinformation->patientFirstName ?? null);
+            $transformedPatient['patient_middlename'] = strtoupper($referral->patientinformation->patientMiddlename ?? null);
+            $transformedPatient['patient_suffix'] = strtoupper($referral->patientinformation->patientSuffix ?? null);
+            $transformedPatient['patient_birthdate'] = date('m/d/Y', strtotime($referral->patientinformation->patientBirthDate));
+            $transformedPatient['patient_sex'] = $referral->patientinformation->patientSex ?? null;
+            $transformedPatient['patient_civilstatus'] = $referral->patientinformation->patientCivilStatus ?? null;
+            $transformedPatient['patient_contact'] = $referral->patientinformation->patientContactNumber ?? null;
+            $transformedPatient['patient_religion'] = $referral->patientinformation->patientReligion ?? null;
+            $transformedPatient['patient_blood'] = $referral->patientinformation->patientBloodType ?? null;
+            $transformedPatient['patient_bloodRH'] = $referral->patientinformation->patientBloodRH ?? null;
+        } else {
+            $transformedPatient['patient_lastname'] = '';
             $transformedPatient['patient_firstname'] = '';
-            $transformedPatient['patient_middlename'] ='';
+            $transformedPatient['patient_middlename'] = '';
             $transformedPatient['patient_birthdate'] = '';
             $transformedPatient['patient_sex'] = '';
             $transformedPatient['patient_civilstatus'] = '';
@@ -850,617 +1288,667 @@ public function get_facility_list($id)
             $transformedPatient['patient_religion'] = '';
             $transformedPatient['patient_blood'] = '';
             $transformedPatient['patient_bloodRH'] = '';
-      }
+        }
 
-      $transformedMedication = [];
+        $transformedMedication = [];
 
-      if ($referral->medications) {
-          $transformedMedication['drugcode'] = $referral->medications->drugcode ?? null;
-          $transformedMedication['generic_name'] = $referral->medications->generic ?? null;
-          $transformedMedication['instructions'] = $referral->medications->instruction ?? null;
-      }else{
-          $transformedMedication['drugcode'] = '';
-          $transformedMedication['generic_name'] = '';
-          $transformedMedication['instructions'] ='';
-      }
+        if ($referral->medications) {
+            $transformedMedication['drugcode'] = $referral->medications->drugcode ?? null;
+            $transformedMedication['generic_name'] = $referral->medications->generic ?? null;
+            $transformedMedication['instructions'] = $referral->medications->instruction ?? null;
+        } else {
+            $transformedMedication['drugcode'] = '';
+            $transformedMedication['generic_name'] = '';
+            $transformedMedication['instructions'] = '';
+        }
 
-      $transformedFacility_origin = [];
-      if ($referral->facility_from) {
-          $transformedFacility_origin['referral_hfhudcode'] = $referral->facility_from->hfhudcode ;
-          $transformedFacility_origin['referral_facility_name'] = $referral->facility_from->facility_name;
-          $transformedFacility_origin['referral_facility_type'] = ReferralHelper::getFacilityType($referral->facility_from->facility_type);
-          $transformedFacility_origin['referral_address'] = $referral->facility_from->fhudaddress;
-          $transformedFacility_origin['referral_region'] = ReferralHelper::getRegion($referral->facility_from->region_code);
-          $transformedFacility_origin['referral_province'] = ReferralHelper::getProvince($referral->facility_from->province_code);
-          $transformedFacility_origin['referral_city'] = ReferralHelper::getCity($referral->facility_from->city_code);
-          $transformedFacility_origin['referral_barangay'] = ReferralHelper::getBarangay($referral->facility_from->bgycode);
-          $transformedFacility_origin['referral_zipcode'] = $referral->facility_from->zip_code;
-      }
+        $transformedFacility_origin = [];
+        if ($referral->facility_from) {
+            $transformedFacility_origin['referral_hfhudcode'] = $referral->facility_from->hfhudcode;
+            $transformedFacility_origin['referral_facility_name'] = $referral->facility_from->facility_name;
+            $transformedFacility_origin['referral_facility_type'] = ReferralHelper::getFacilityType($referral->facility_from->facility_type);
+            $transformedFacility_origin['referral_address'] = $referral->facility_from->fhudaddress;
+            $transformedFacility_origin['referral_region'] = ReferralHelper::getRegion($referral->facility_from->region_code);
+            $transformedFacility_origin['referral_province'] = ReferralHelper::getProvince($referral->facility_from->province_code);
+            $transformedFacility_origin['referral_city'] = ReferralHelper::getCity($referral->facility_from->city_code);
+            $transformedFacility_origin['referral_barangay'] = ReferralHelper::getBarangay($referral->facility_from->bgycode);
+            $transformedFacility_origin['referral_zipcode'] = $referral->facility_from->zip_code;
+        }
 
+        $transformedFacility_destination = [];
+        if ($referral->facility_to) {
+            $transformedFacility_destination['referring_hfhudcode'] = $referral->facility_to->hfhudcode;
+            $transformedFacility_destination['referring_facility_name'] = $referral->facility_to->facility_name;
+            $transformedFacility_destination['referring_facility_type'] = ReferralHelper::getFacilityType($referral->facility_to->facility_type);
+            $transformedFacility_destination['referring_address'] = $referral->facility_to->fhudaddress;
+            $transformedFacility_destination['referring_region'] = ReferralHelper::getRegion($referral->facility_to->region_code);
+            $transformedFacility_destination['referring_province'] = ReferralHelper::getProvince($referral->facility_to->province_code);
+            $transformedFacility_destination['referring_city'] = ReferralHelper::getCity($referral->facility_to->city_code);
+            $transformedFacility_destination['referring_barangay'] = ReferralHelper::getBarangay($referral->facility_to->bgycode);
+            $transformedFacility_destination['referring_zipcode'] = $referral->facility_to->zip_code;
+        }
 
-      $transformedFacility_destination = [];
-      if ($referral->facility_to) {
-          $transformedFacility_destination['referring_hfhudcode'] = $referral->facility_to->hfhudcode ;
-          $transformedFacility_destination['referring_facility_name'] = $referral->facility_to->facility_name;
-          $transformedFacility_destination['referring_facility_type'] = ReferralHelper::getFacilityType($referral->facility_to->facility_type);
-          $transformedFacility_destination['referring_address'] = $referral->facility_to->fhudaddress;
-          $transformedFacility_destination['referring_region'] = ReferralHelper::getRegion($referral->facility_to->region_code);
-          $transformedFacility_destination['referring_province'] = ReferralHelper::getProvince($referral->facility_to->province_code);
-          $transformedFacility_destination['referring_city'] = ReferralHelper::getCity($referral->facility_to->city_code);
-          $transformedFacility_destination['referring_barangay'] = ReferralHelper::getBarangay($referral->facility_to->bgycode);
-          $transformedFacility_destination['referring_zipcode'] = $referral->facility_to->zip_code;
-      }
-      
-     $transformedReferral = [
-         'LogID' => $referral->LogID,
-         'referral_origin' => $referral->fhudFrom,
-         'referral_destination' => $referral->fhudTo,
-         'referral_type_code' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['code'],
-         'referral_type' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
-         'referral_reason_code' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['code'],
-         'referral_reason' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
-         'referral_date' => date('m/d/Y',strtotime($referral->refferalDate)),
-         'referral_time' => $referral->refferalTime,
-         
-         'referral_category' => $referral->referralCategory,
-         'referring_provider' => $consulting ?? '' ,
-         'referral_provider' => $referring ?? '',
-         'medications' => $referral->medication,
-         'special_instructions' => $referral->specialinstruct,
-         'referral_contact_name'=>$referral->referralContactPerson,
-         'referral_contact_number' => $referral->referringProviderContactNumber,
-         'referral_contact_designation' => $referral->referralPersonDesignation,
-         'patient_information' => $transformedPatient,
-         'patient_demographics' => $transformedDemographics,
-         'clinical' => $transformedClinical,
-         'facility_origin' => $transformedFacility_origin,
-         'facility_destination' => $transformedFacility_destination,
-     ];
-
-     // Return the transformed data in the expected format
-     return response()->json($transformedReferral);
- }
-/**
- *  Get referral line list/s.
- *
- * @OA\Get(
- *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
- *     summary="Get referral list by HFHUDCODE and EMR ID",
- *     tags={"Transactions"},
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="hfhudcode",
- *         in="path",
- *         description="HFH UDCODE of the facility",
- *         required=true,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="emr_id",
- *         in="path",
- *         description="EMR ID of the referral",
- *         required=true,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="List of referrals",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     type="object",
- *                     @OA\Property(property="LogID", type="integer", example=1),
- *                     @OA\Property(property="referral_origin_code", type="string", example="12345"),
- *                     @OA\Property(property="referral_origin_name", type="string", example="Facility A"),
- *                     @OA\Property(property="referral_destination_code", type="string", example="67890"),
- *                     @OA\Property(property="referral_destination_name", type="string", example="Facility B"),
- *                     @OA\Property(property="referral_reason", type="string", example="Consultation"),
- *                     @OA\Property(property="referral_date", type="string", format="date", example="05/04/2025"),
- *                     @OA\Property(property="referral_time", type="string", format="time", example="10:30 AM"),
- *                     @OA\Property(property="referral_category", type="string", example="Routine"),
- *                     @OA\Property(property="referring_provider", type="string", example="Dr. John Doe"),
- *                     @OA\Property(property="contact_number", type="string", example="09171234567"),
- *                     @OA\Property(property="emr", type="string", example="Facility A")
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="No referrals found",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="error", type="string", example="No referrals found")
- *         )
- *     )
- * )
- */
-public function get_referral_list(Request $request, $hfhudcode, $emr_id)
-{
-    if (!Auth::check()) {
-        return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-    }
-
-    if (empty($emr_id)) {
-        return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
-    }
-
-    $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
-    ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
-        $query->where('emr_id', $emr_id)
-              ->where('fhudTo', $hfhudcode);
-    })
-    ->whereDoesntHave('track') // This excludes referrals with any related track
-    ->get();
-
-    if ($referrals->isEmpty()) {
-        return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
-    }
-
-
-    $transformedList = $referrals->map(function ($referral) {
-        $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
-        
-        $fullName = strtoupper($patient->patientFirstName) . ' ' .
-        strtoupper($patient->patientMiddlename) . ' ' .
-        strtoupper($patient->patientLastName) . ' ' .
-        (($patient->patientSuffix === 'NOTAP') ? '' : strtoupper($patient->patientSuffix));
-        
-        return [    
+        $transformedReferral = [
             'LogID' => $referral->LogID,
-            'referral_origin_code' => $referral->fhudFrom,
-            'referral_origin_name' => optional(RefFacilityModel::where('hfhudcode', $referral->fhudFrom)->first())->facility_name,
-            'referral_destination_code' => $referral->fhudTo,
-       
-            'referral_reason' => $referral->referralReason,
-            'referral_patient'=>$fullName, 
-            'referral_patient_sex'=>strtoupper($patient->patientSex),
-            'referral_patSex'=>($patient->patientSex=="M")? 'Male': 'Female' ,
-            'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
-            'referral_time' => date('h:i A', strtotime($referral->referralTime ?? $referral->refferalTime)),
+            'referral_origin' => $referral->fhudFrom,
+            'referral_destination' => $referral->fhudTo,
+            'referral_type_code' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['code'],
+            'referral_type' => ReferralHelper::getReferralTypebyCode($referral->typeOfReferral)['description'],
+            'referral_reason_code' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['code'],
+            'referral_reason' => ReferralHelper::getReferralReasonbyCode($referral->referralReason)['description'],
+            'referral_date' => date('m/d/Y', strtotime($referral->refferalDate)),
+            'referral_time' => $referral->refferalTime,
+
             'referral_category' => $referral->referralCategory,
-            'referral_contact_person' => $referral->referralContactPerson,
-            'referral_contact_person_designation' => $referral->referralContactPersonDesignation,
-            'referral_remarks'=>$referral->remarks,
-            'referring_type' => $referral->typeOfReferral,
-            'referring_provider' => $referral->referringProvider,
-            'patient_pan'=>$referral->patientPan,
-            'contact_number' => $referral->referringProviderContactNumber
+            'referring_provider' => $consulting ?? '',
+            'referral_provider' => $referring ?? '',
+            'medications' => $referral->medication,
+            'special_instructions' => $referral->specialinstruct,
+            'referral_contact_name' => $referral->referralContactPerson,
+            'referral_contact_number' => $referral->referringProviderContactNumber,
+            'referral_contact_designation' => $referral->referralPersonDesignation,
+            'patient_information' => $transformedPatient,
+            'patient_demographics' => $transformedDemographics,
+            'clinical' => $transformedClinical,
+            'facility_origin' => $transformedFacility_origin,
+            'facility_destination' => $transformedFacility_destination,
+            'attachments' => $referral->attachments
+                ->map(fn (ReferralAttachment $attachment) => $this->referralAttachmentService->metadata($attachment))
+                ->values(),
         ];
-    });
 
-    return response()->json($transformedList);
-}
-
-
-
-/**
- *  Received patient from the facility.
- *
- * @OA\Post(
- *     path="/api/received",
- *     summary="Store received referral data",
- *     description="Receives referral tracking information and stores it.",
- *     operationId="storeReceivedReferral",
- *     tags={"Transactions"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"LogID", "received_date", "received_by"},
- *             @OA\Property(property="LogID", type="integer", example=123),
- *             @OA\Property(property="received_date", type="string", format="date-time", example="05/18/2025 14:30:00"),
- *             @OA\Property(property="received_by", type="string", example="Dr. Smith")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Data saved successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Data saved successfully")
- *         )
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid data",
- *         @OA\JsonContent(
- *             @OA\Property(property="error", type="string", example="Invalid data")
- *         )
- *     )
- * )
- */
-public function received(Request $request)
-{
-    if (empty($request->all())) {
-        return response()->json(['error' => 'Invalid data'], 400);
+        // Return the transformed data in the expected format
+        return response()->json($transformedReferral);
     }
 
-    $validated = $request->validate([
-        'LogID' => 'required',
-        'received_date' => 'required|date_format:m/d/Y H:i:s',
-        'received_by' => 'required'
-    ]);
+    /**
+     *  Get referral line list/s.
+     *
+     * @OA\Get(
+     *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
+     *     summary="Get referral list by HFHUDCODE and EMR ID",
+     *     tags={"Transactions"},
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="hfhudcode",
+     *         in="path",
+     *         description="HFH UDCODE of the facility",
+     *         required=true,
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="emr_id",
+     *         in="path",
+     *         description="EMR ID of the referral",
+     *         required=true,
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of referrals",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(
+     *                     type="object",
+     *
+     *                     @OA\Property(property="LogID", type="integer", example=1),
+     *                     @OA\Property(property="referral_origin_code", type="string", example="12345"),
+     *                     @OA\Property(property="referral_origin_name", type="string", example="Facility A"),
+     *                     @OA\Property(property="referral_destination_code", type="string", example="67890"),
+     *                     @OA\Property(property="referral_destination_name", type="string", example="Facility B"),
+     *                     @OA\Property(property="referral_reason", type="string", example="Consultation"),
+     *                     @OA\Property(property="referral_date", type="string", format="date", example="05/04/2025"),
+     *                     @OA\Property(property="referral_time", type="string", format="time", example="10:30 AM"),
+     *                     @OA\Property(property="referral_category", type="string", example="Routine"),
+     *                     @OA\Property(property="referring_provider", type="string", example="Dr. John Doe"),
+     *                     @OA\Property(property="contact_number", type="string", example="09171234567"),
+     *                     @OA\Property(property="emr", type="string", example="Facility A")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="No referrals found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="error", type="string", example="No referrals found")
+     *         )
+     *     )
+     * )
+     */
+    public function get_referral_list(Request $request, $hfhudcode, $emr_id)
+    {
+        if (! Auth::check()) {
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
 
-   
+        if (empty($emr_id)) {
+            return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
+        }
+
+        $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
+            ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
+                $query->where('emr_id', $emr_id)
+                    ->where('fhudTo', $hfhudcode);
+            })
+            ->whereDoesntHave('track') // This excludes referrals with any related track
+            ->get();
+
+        if ($referrals->isEmpty()) {
+            return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
+        }
+
+        $transformedList = $referrals->map(function ($referral) {
+            $patient = ReferralPatientInfoModel::where('LogID', $referral->LogID)->first();
+
+            $fullName = strtoupper($patient->patientFirstName).' '.
+            strtoupper($patient->patientMiddlename).' '.
+            strtoupper($patient->patientLastName).' '.
+            (($patient->patientSuffix === 'NOTAP') ? '' : strtoupper($patient->patientSuffix));
+
+            return [
+                'LogID' => $referral->LogID,
+                'referral_origin_code' => $referral->fhudFrom,
+                'referral_origin_name' => optional(RefFacilityModel::where('hfhudcode', $referral->fhudFrom)->first())->facility_name,
+                'referral_destination_code' => $referral->fhudTo,
+
+                'referral_reason' => $referral->referralReason,
+                'referral_patient' => $fullName,
+                'referral_patient_sex' => strtoupper($patient->patientSex),
+                'referral_patSex' => ($patient->patientSex == 'M') ? 'Male' : 'Female',
+                'referral_date' => date('m/d/Y', strtotime($referral->referralDate ?? $referral->refferalDate)),
+                'referral_time' => date('h:i A', strtotime($referral->referralTime ?? $referral->refferalTime)),
+                'referral_category' => $referral->referralCategory,
+                'referral_contact_person' => $referral->referralContactPerson,
+                'referral_contact_person_designation' => $referral->referralContactPersonDesignation,
+                'referral_remarks' => $referral->remarks,
+                'referring_type' => $referral->typeOfReferral,
+                'referring_provider' => $referral->referringProvider,
+                'patient_pan' => $referral->patientPan,
+                'contact_number' => $referral->referringProviderContactNumber,
+            ];
+        });
+
+        return response()->json($transformedList);
+    }
+
+    /**
+     *  Received patient from the facility.
+     *
+     * @OA\Post(
+     *     path="/api/received",
+     *     summary="Store received referral data",
+     *     description="Receives referral tracking information and stores it.",
+     *     operationId="storeReceivedReferral",
+     *     tags={"Transactions"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             required={"LogID", "received_date", "received_by"},
+     *
+     *             @OA\Property(property="LogID", type="integer", example=123),
+     *             @OA\Property(property="received_date", type="string", format="date-time", example="05/18/2025 14:30:00"),
+     *             @OA\Property(property="received_by", type="string", example="Dr. Smith")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Data saved successfully",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="message", type="string", example="Data saved successfully")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid data",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="error", type="string", example="Invalid data")
+     *         )
+     *     )
+     * )
+     */
+    public function received(Request $request)
+    {
+        if (empty($request->all())) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        $validated = $request->validate([
+            'LogID' => 'required',
+            'received_date' => 'required|date_format:m/d/Y H:i:s',
+            'received_by' => 'required',
+        ]);
 
         // Prevent duplicate insert
         $existing = ReferralTrackModel::find($validated['LogID']);
 
-         $referral_data = ReferralModel::with([
-         'patientinformation',
-         'facility_to',
-         'facility_from',
-        
-         'demographics',
-         'clinical',
-          ])->where('LogID', $validated['LogID'])->first();
-       
+        $referral_data = ReferralModel::with([
+            'patientinformation',
+            'facility_to',
+            'facility_from',
+
+            'demographics',
+            'clinical',
+        ])->where('LogID', $validated['LogID'])->first();
+
         if ($existing) {
             return response()->json([
-                'data'=>$referral_data,
-                'message' => 'Referral already marked as received.'], 
+                'data' => $referral_data,
+                'message' => 'Referral already marked as received.'],
                 400);
         }
-      // Insert new record
-      ReferralTrackModel::create([
-        'LogID' => $validated['LogID'],
-        'receivedDate' => $validated['received_date'],
-        'receivedPerson' => $validated['received_by'],
-    ]);
+        // Insert new record
+        ReferralTrackModel::create([
+            'LogID' => $validated['LogID'],
+            'receivedDate' => $validated['received_date'],
+            'receivedPerson' => $validated['received_by'],
+        ]);
 
-
-    return response()->json([
-        'data'=>$referral_data,
-        'message' => 'Referral successfully received'], 200);
-}
+        return response()->json([
+            'data' => $referral_data,
+            'message' => 'Referral successfully received'], 200);
+    }
 
     /**
-     *  
      *  Admit patient on the facility.
-     * 
+     *
      * @OA\Post(
      *     path="/api/admit",
      *     operationId="admitReferral",
      *     tags={"Transactions"},
      *     summary="Admit a referral",
      *     description="Updates a referral record with LogID, received date, and received by person.",
+     *
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
      *         description="LogID of the referral to update",
+     *
      *         @OA\Schema(type="integer")
      *     ),
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             required={"LogID", "received_date", "received_by"},
+     *
      *             @OA\Property(property="LogID", type="string", example="123456"),
      *             @OA\Property(property="admission_date", type="string", format="date-time", example="05/19/2025 14:30:00")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Referral updated successfully",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Referral updated successfully")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=400,
      *         description="Invalid data",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="error", type="string", example="Invalid data")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Referral not found",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="error", type="string", example="Referral not found")
      *         )
      *     )
      * )
      */
-
     public function admit(Request $request)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
             return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
         }
         if (empty($request->all())) {
             return response()->json(['error' => 'Invalid data'], 400);
         }
-    
+
         // Validate the request data
         $validated = $request->validate([
             'LogID' => 'required',
-            'admission_date' => 'required|date_format:m/d/Y H:i:s'
+            'admission_date' => 'required|date_format:m/d/Y H:i:s',
         ]);
-    
+
         // Find the referral record
         $referral = ReferralTrackModel::find($request->LogID);
-    
-        if (!$referral) {
+
+        if (! $referral) {
             return response()->json(['error' => 'Referral not found'], 404);
         }
-    
+
         // Update the record with validated data
         $referral->LogID = $validated['LogID'];
         $referral->admDate = $validated['admission_date'];
         $referral->save();
-    
+
         return response()->json([
-            'message' => 'Patient admitted successfully'
+            'message' => 'Patient admitted successfully',
         ], 200);
     }
-/**
-     *  
+
+    /**
      *  Discharge patient.
-     * 
- * @OA\Post(
- *     path="/api/discharge",
- *     operationId="dischargePatient",
- *     tags={"Transactions"},
- *     summary="Discharge a patient",
- *     description="Submits discharge information including medicine and follow-up schedule. Requires authentication.",
- *     security={{"bearerAuth":{}}},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             required={"LogID", "admDate", "dischDate", "disposition", "condition", "hasFollowUp", "hasMedicine"},
- *             @OA\Property(property="LogID", type="string", example="HOSP-2071422083643"),
- *             @OA\Property(property="admDate", type="string", format="date-time", example="2022-02-02 13:03:13"),
- *             @OA\Property(property="dischDate", type="string", format="date-time", example="2022-02-03 13:03:13"),
- *             @OA\Property(property="disposition", type="string", example="DISCH"),
- *             @OA\Property(property="condition", type="string", example="IMPRO"),
- *             @OA\Property(property="diagnosis", type="string", example="Diagnosis not specified"),
- *             @OA\Property(property="remarks", type="string", example="REMARKS"),
- *             @OA\Property(property="disnotes", type="string", example="Discharge notes here."),
- *             @OA\Property(property="hasFollowUp", type="string", example="Y"),
- *             @OA\Property(property="hasMedicine", type="string", example="Y"),
- *             @OA\Property(
- *                 property="drugs",
- *                 type="array",
- *                 @OA\Items(
- *                     type="object",
- *                     required={"LogID", "generic", "instruction", "drugcode"},
- *                     @OA\Property(property="LogID", type="string", example="HOSP-2071422032507"),
- *                     @OA\Property(property="generic", type="string", example="AMOXICILLIN"),
- *                     @OA\Property(property="instruction", type="string", example="INUMIN ARAW ARAW"),
- *                     @OA\Property(property="drugcode", type="string", example="130182083180928321")
- *                 )
- *             ),
- *             @OA\Property(
- *                 property="schedule",
- *                 type="object",
- *                 @OA\Property(property="LogID", type="string", example="HOSP-2071422032507"),
- *                 @OA\Property(property="date", type="string", format="date-time", example="2022-02-04 13:03:13")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Discharge successful",
- *         @OA\JsonContent(
- *             type="object",
- *             example={
- *                 "status": "success",
- *                 "message": "Patient discharged successfully",
- *                 "data": {
- *                     "LogID": "HOSP-2071422083643",
- *                     "dischargeSummary": "Details..."
- *                 }
- *             }
- *         )
- *     ),
- *     @OA\Response(
- *         response=400,
- *         description="Invalid data",
- *         @OA\JsonContent(
- *             type="object",
- *             example={"error": "Invalid data"}
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthenticated",
- *         @OA\JsonContent(
- *             type="object",
- *             example={"message": "Unauthenticated."}
- *         )
- *     )
- * )
- */
+     *
+     * @OA\Post(
+     *     path="/api/discharge",
+     *     operationId="dischargePatient",
+     *     tags={"Transactions"},
+     *     summary="Discharge a patient",
+     *     description="Submits discharge information including medicine and follow-up schedule. Requires authentication.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"LogID", "admDate", "dischDate", "disposition", "condition", "hasFollowUp", "hasMedicine"},
+     *
+     *             @OA\Property(property="LogID", type="string", example="HOSP-2071422083643"),
+     *             @OA\Property(property="admDate", type="string", format="date-time", example="2022-02-02 13:03:13"),
+     *             @OA\Property(property="dischDate", type="string", format="date-time", example="2022-02-03 13:03:13"),
+     *             @OA\Property(property="disposition", type="string", example="DISCH"),
+     *             @OA\Property(property="condition", type="string", example="IMPRO"),
+     *             @OA\Property(property="diagnosis", type="string", example="Diagnosis not specified"),
+     *             @OA\Property(property="remarks", type="string", example="REMARKS"),
+     *             @OA\Property(property="disnotes", type="string", example="Discharge notes here."),
+     *             @OA\Property(property="hasFollowUp", type="string", example="Y"),
+     *             @OA\Property(property="hasMedicine", type="string", example="Y"),
+     *             @OA\Property(
+     *                 property="drugs",
+     *                 type="array",
+     *
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"LogID", "generic", "instruction", "drugcode"},
+     *
+     *                     @OA\Property(property="LogID", type="string", example="HOSP-2071422032507"),
+     *                     @OA\Property(property="generic", type="string", example="AMOXICILLIN"),
+     *                     @OA\Property(property="instruction", type="string", example="INUMIN ARAW ARAW"),
+     *                     @OA\Property(property="drugcode", type="string", example="130182083180928321")
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="schedule",
+     *                 type="object",
+     *                 @OA\Property(property="LogID", type="string", example="HOSP-2071422032507"),
+     *                 @OA\Property(property="date", type="string", format="date-time", example="2022-02-04 13:03:13")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Discharge successful",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *             example={
+     *                 "status": "success",
+     *                 "message": "Patient discharged successfully",
+     *                 "data": {
+     *                     "LogID": "HOSP-2071422083643",
+     *                     "dischargeSummary": "Details..."
+     *                 }
+     *             }
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid data",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *             example={"error": "Invalid data"}
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *             example={"message": "Unauthenticated."}
+     *         )
+     *     )
+     * )
+     */
+    public function discharge(Request $request)
+    {
+        if (! Auth::check()) {
+            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+        }
 
- public function discharge(Request $request)
- {
-     if (!Auth::check()) {
-         return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
-     }
- 
-     $validated = $request->validate([
-         'LogID' => 'required|exists:referral_track,LogID',
-         'admDate' => 'required|date',
-         'dischDate' => 'required|date|after_or_equal:admDate',
-         'disposition' => 'required|string',
-         'condition' => 'required|string',
-         'diagnosis' => 'nullable|string',
-         'remarks' => 'nullable|string',
-         'disnotes' => 'nullable|string',
-         'hasFollowUp' => 'required|boolean',
-         'hasMedicine' => 'required|boolean',
-         'schedule.date' => 'nullable|date',
-         'schedule.LogID' => 'nullable|string',
-         'drugs' => 'nullable|array'
-     ]);
- 
+        $validated = $request->validate([
+            'LogID' => 'required|exists:referral_track,LogID',
+            'admDate' => 'required|date',
+            'dischDate' => 'required|date|after_or_equal:admDate',
+            'disposition' => 'required|string',
+            'condition' => 'required|string',
+            'diagnosis' => 'nullable|string',
+            'remarks' => 'nullable|string',
+            'disnotes' => 'nullable|string',
+            'hasFollowUp' => 'required|boolean',
+            'hasMedicine' => 'required|boolean',
+            'schedule.date' => 'nullable|date',
+            'schedule.LogID' => 'nullable|string',
+            'drugs' => 'nullable|array',
+        ]);
 
-     $discharge = [
-         'LogID'        => $validated['LogID'],
-         'admDate'      => date("Y-m-d H:i:s", strtotime($validated['admDate'])),
-         'dischDate'    => date("Y-m-d H:i:s", strtotime($validated['dischDate'])),
-         'dischDisp'    => $validated['disposition'],
-         'dischCond'    => $validated['condition'],
-         'diagnosis'    => $validated['diagnosis'] ?? null,
-         'trackRemarks' => $validated['remarks'] ?? null,
-         'disnotes'     => $validated['disnotes'] ?? null,
-         'hasFollowUp'  => $validated['hasFollowUp'],
-         'hasMedicine'  => $validated['hasMedicine'],
-     ];
- 
-     $folUp = [  
-         'LogID' => $validated['schedule']['LogID'] ?? null,
-         'scheduleDateTime' => isset($validated['schedule']['date'])
-             ? date("Y-m-d H:i:s", strtotime($validated['schedule']['date']))
-             : null,
-     ];
- 
-     $param = [
-         'LogID'     => $validated['LogID'],
-         'discharge' => $discharge,
-         'medicine'  => $validated['drugs'] ?? [],
-         'followup'  => $folUp,
-     ];
- 
-     $referral = ReferralTrackModel::find($validated['LogID']);
+        $discharge = [
+            'LogID' => $validated['LogID'],
+            'admDate' => date('Y-m-d H:i:s', strtotime($validated['admDate'])),
+            'dischDate' => date('Y-m-d H:i:s', strtotime($validated['dischDate'])),
+            'dischDisp' => $validated['disposition'],
+            'dischCond' => $validated['condition'],
+            'diagnosis' => $validated['diagnosis'] ?? null,
+            'trackRemarks' => $validated['remarks'] ?? null,
+            'disnotes' => $validated['disnotes'] ?? null,
+            'hasFollowUp' => $validated['hasFollowUp'],
+            'hasMedicine' => $validated['hasMedicine'],
+        ];
 
-     if ($referral) {
-         $referral->dischDate = $discharge['dischDate'];
-         $referral->dischDisp = $discharge['disposition'];
-         $referral->dischCond = $discharge['condition'];
-         $referral->save();
-     }
-    
-     return response()->json([
-        'message' => 'Patient discharged successfully'
-    ], 200);
+        $folUp = [
+            'LogID' => $validated['schedule']['LogID'] ?? null,
+            'scheduleDateTime' => isset($validated['schedule']['date'])
+                ? date('Y-m-d H:i:s', strtotime($validated['schedule']['date']))
+                : null,
+        ];
 
- }
- 
- 
+        $param = [
+            'LogID' => $validated['LogID'],
+            'discharge' => $discharge,
+            'medicine' => $validated['drugs'] ?? [],
+            'followup' => $folUp,
+        ];
 
-/**
-     *  
+        $referral = ReferralTrackModel::find($validated['LogID']);
+
+        if ($referral) {
+            $referral->dischDate = $discharge['dischDate'];
+            $referral->dischDisp = $discharge['disposition'];
+            $referral->dischCond = $discharge['condition'];
+            $referral->save();
+        }
+
+        return response()->json([
+            'message' => 'Patient discharged successfully',
+        ], 200);
+
+    }
+
+    /**
      *  Get Discharged Data.
-     * 
- * @OA\Get(
- *     path="/api/get-discharged-data/{logID}",
- *     operationId="getDischargedData",
- *     tags={"Transactions"},
- *     summary="Get discharged patient data",
- *     description="Retrieves discharged patient data by the provided log ID. Requires authentication.",
- *     security={{ "sanctum": {} }},
- *     @OA\Parameter(
- *         name="logID",
- *         in="path",
- *         required=true,
- *         description="The log ID of the patient",
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Response(response=200, description="Successful response"),
- *     @OA\Response(response=400, description="Invalid data"),
- *     @OA\Response(response=401, description="Unauthenticated")
- * )
- */
-public function get_discharged_data(Request $request, $logID)
-{
-    if (empty($logID)) {
-        return response()->json(['error' => 'Invalid data'], 400);
+     *
+     * @OA\Get(
+     *     path="/api/get-discharged-data/{logID}",
+     *     operationId="getDischargedData",
+     *     tags={"Transactions"},
+     *     summary="Get discharged patient data",
+     *     description="Retrieves discharged patient data by the provided log ID. Requires authentication.",
+     *     security={{ "sanctum": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="logID",
+     *         in="path",
+     *         required=true,
+     *         description="The log ID of the patient",
+     *
+     *         @OA\Schema(type="string")
+     *     ),
+     *
+     *     @OA\Response(response=200, description="Successful response"),
+     *     @OA\Response(response=400, description="Invalid data"),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
+     */
+    public function get_discharged_data(Request $request, $logID)
+    {
+        if (empty($logID)) {
+            return response()->json(['error' => 'Invalid data'], 400);
+        }
+
+        $output = $this->referralService->getDischargeInformation($logID);
+
+        return response()->json($output);
     }
 
-    $output = $this->referralService->getDischargeInformation($logID);
-    return response()->json($output);
-}
-/**
-     *  
+    /**
      *  Get all the accredited facilities.
-     * 
- * @OA\Get(
- *     path="/api/get-accredited-facilities",
- *     summary="Get list of accredited facilities",
- *     description="Returns all accredited facilities filtered by status A. You can optionally filter by facility_name using a wildcard.",
- *     tags={"References"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="facility_name",
- *         in="query",
- *         required=false,
- *         description="Optional facility name filter (wildcard search)",
- *         @OA\Schema(type="string", example="general")
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="List of accredited facilities",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="code", type="integer", example=200),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     @OA\Property(property="hfhudcode", type="string", example="12345"),
- *                     @OA\Property(property="facility_name", type="string", example="Benguet General Hospital"),
- *                     @OA\Property(property="facility_type", type="string", example="Hospital"),
- *                     @OA\Property(property="status", type="string", example="A")
- *                 )
- *             ),
- *             @OA\Property(property="message", type="string", example="Success!")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=401,
- *         description="Unauthenticated",
- *         @OA\JsonContent(example={"error": "Unauthenticated"})
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Server error",
- *         @OA\JsonContent(example={"error": "Server Error"})
- *     )
- * )
- */
-public function get_accredited_facilities(Request $request)
-{
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
+     *
+     * @OA\Get(
+     *     path="/api/get-accredited-facilities",
+     *     summary="Get list of accredited facilities",
+     *     description="Returns all accredited facilities filtered by status A. You can optionally filter by facility_name using a wildcard.",
+     *     tags={"References"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="facility_name",
+     *         in="query",
+     *         required=false,
+     *         description="Optional facility name filter (wildcard search)",
+     *
+     *         @OA\Schema(type="string", example="general")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of accredited facilities",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="code", type="integer", example=200),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(
+     *
+     *                     @OA\Property(property="hfhudcode", type="string", example="12345"),
+     *                     @OA\Property(property="facility_name", type="string", example="Benguet General Hospital"),
+     *                     @OA\Property(property="facility_type", type="string", example="Hospital"),
+     *                     @OA\Property(property="status", type="string", example="A")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Success!")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *
+     *         @OA\JsonContent(example={"error": "Unauthenticated"})
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *
+     *         @OA\JsonContent(example={"error": "Server Error"})
+     *     )
+     * )
+     */
+    public function get_accredited_facilities(Request $request)
+    {
+        if (! Auth::check()) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $facility_name = $request->query('facility_name'); // optional wildcard filter
+        $output = $this->referralService->getActiveFacilities($facility_name);
+
+        return response()->json($output);
     }
 
-    $facility_name = $request->query('facility_name'); // optional wildcard filter
-    $output = $this->referralService->getActiveFacilities($facility_name);
-
-    return response()->json($output);
-}
-
-   /**
-     *  
+    /**
      * Get blood types.
-     * 
+     *
      * @OA\Get(
      *     path="/api/blood-types",
      *     summary="Get list of blood types",
      *     description="Returns all blood types",
      *     tags={"References"},
-     *    
+     *
      *     @OA\Response(
      *         response=200,
      *         description="List of blood types",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="count", type="integer", example=8),
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *
      *                 @OA\Items(
+     *
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string", example="A+"),
      *                     @OA\Property(property="value", type="string", example="A+"),
@@ -1476,170 +1964,182 @@ public function get_accredited_facilities(Request $request)
      *     )
      * )
      */
- public function getBloodtype(Request $request)
-{
+    public function getBloodtype(Request $request)
+    {
 
-  if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
+        if (! Auth::check()) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        // Get request parameters
+        $search = $request->query('search');
+        $is_active = $request->query('is_active');
+
+        // Call service
+        $response = $this->referralService->getBloodTypes($search, $is_active);
+
+        // Return JSON response
+        return response()->json($response, $response['code']);
     }
 
-    // Get request parameters
-    $search = $request->query('search');
-    $is_active = $request->query('is_active');
-
-    // Call service
-    $response = $this->referralService->getBloodTypes($search, $is_active);
-
-    // Return JSON response
-    return response()->json($response, $response['code']);
-}
-
-/**
-     *  
+    /**
      *  Get all the Religion/s.
-     * 
- * @OA\Get(
- *     path="/api/religions",
- *     summary="Get list of religions",
- *     description="Returns list of religions. Defaults to active (relstat = A). Supports search by description.",
- *     tags={"References"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="relstat",
- *         in="query",
- *         required=false,
- *         description="Religion status filter (A = Active, I = Inactive)",
- *         @OA\Schema(type="string", example="A")
- *     ),
- *
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         required=false,
- *         description="Search religion description (wildcard search)",
- *         @OA\Schema(type="string", example="christ")
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="List of religions",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="count", type="integer", example=22),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     @OA\Property(property="relcode", type="string", example="CATHO"),
- *                     @OA\Property(property="reldesc", type="string", example="Catholic"),
- *                     @OA\Property(property="relstat", type="string", example="A")
- *                 )
- *             ),
- *             @OA\Property(property="message", type="string", example="Success!")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=401,
- *         description="Unauthenticated",
- *         @OA\JsonContent(example={"error": "Unauthenticated"})
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Server error",
- *         @OA\JsonContent(example={"error": "Server Error"})
- *     )
- * )
- */
-
+     *
+     * @OA\Get(
+     *     path="/api/religions",
+     *     summary="Get list of religions",
+     *     description="Returns list of religions. Defaults to active (relstat = A). Supports search by description.",
+     *     tags={"References"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="relstat",
+     *         in="query",
+     *         required=false,
+     *         description="Religion status filter (A = Active, I = Inactive)",
+     *
+     *         @OA\Schema(type="string", example="A")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         required=false,
+     *         description="Search religion description (wildcard search)",
+     *
+     *         @OA\Schema(type="string", example="christ")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of religions",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="count", type="integer", example=22),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(
+     *
+     *                     @OA\Property(property="relcode", type="string", example="CATHO"),
+     *                     @OA\Property(property="reldesc", type="string", example="Catholic"),
+     *                     @OA\Property(property="relstat", type="string", example="A")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Success!")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *
+     *         @OA\JsonContent(example={"error": "Unauthenticated"})
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *
+     *         @OA\JsonContent(example={"error": "Server Error"})
+     *     )
+     * )
+     */
     public function getReligion(Request $request)
     {
         $data = $this->referralService->getreligion($request->all());
 
         return response()->json([
             'success' => true,
-            'count'   => $data->count(),
-            'data'    => $data,
-            'message' => 'Success!'
+            'count' => $data->count(),
+            'data' => $data,
+            'message' => 'Success!',
         ]);
     }
-/**
- * Get referral status.
- * @OA\Post(
- *     path="/api/referral-status",
- *     summary="Get Referral Status",
- *     description="Retrieve referral status based on given filters",
- *     operationId="getReferralStatus",
- *     tags={"References"},
- *
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(
- *                 property="referral_id",
- *                 type="string",
- *                 example="REF123456"
- *             ),
- *             @OA\Property(
- *                 property="patient_id",
- *                 type="string",
- *                 example="PAT001"
- *             ),
- *             @OA\Property(
- *                 property="status",
- *                 type="string",
- *                 example="approved"
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Successful Response",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="count", type="integer", example=1),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(type="object")
- *             ),
- *             @OA\Property(property="message", type="string", example="Success!")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Server Error"
- *     )
- * )
- */
+
+    /**
+     * Get referral status.
+     *
+     * @OA\Post(
+     *     path="/api/referral-status",
+     *     summary="Get Referral Status",
+     *     description="Retrieve referral status based on given filters",
+     *     operationId="getReferralStatus",
+     *     tags={"References"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="referral_id",
+     *                 type="string",
+     *                 example="REF123456"
+     *             ),
+     *             @OA\Property(
+     *                 property="patient_id",
+     *                 type="string",
+     *                 example="PAT001"
+     *             ),
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="string",
+     *                 example="approved"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful Response",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="count", type="integer", example=1),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(type="object")
+     *             ),
+     *
+     *             @OA\Property(property="message", type="string", example="Success!")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server Error"
+     *     )
+     * )
+     */
     public function getReferralStatus(Request $request)
     {
-          if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
-    }
+        if (! Auth::check()) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
 
         $data = $this->referralService->getReferralStatus($request->all());
 
         return response()->json([
             'success' => true,
-           
-            'data'    => $data,
-            'message' => 'Success!'
-        ]); 
+
+            'data' => $data,
+            'message' => 'Success!',
+        ]);
     }
 
-
-
     /**
-     * 
      * Update Referral Status.
+     *
      * @OA\Post(
      *     path="/api/referral-status/update",
      *     summary="Update Referral Status",
@@ -1649,8 +2149,10 @@ public function get_accredited_facilities(Request $request)
      *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="LogID", type="string", example="REF123456"),
      *             @OA\Property(
      *                 property="statusData",
@@ -1663,8 +2165,10 @@ public function get_accredited_facilities(Request $request)
      *     @OA\Response(
      *         response=200,
      *         description="Referral status saved successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object"),
      *             @OA\Property(property="message", type="string", example="Success!")
@@ -1677,118 +2181,112 @@ public function get_accredited_facilities(Request $request)
      *     )
      * )
      */
-   public function saveReferralStatus(Request $request)
-{
-   $requestData = $request->only(['LogID', 'status','remarks']);
+    public function saveReferralStatus(Request $request)
+    {
+        $requestData = $request->only(['LogID', 'status', 'remarks']);
 
-$validator = \Validator::make($requestData, [
-    'LogID' => 'required|string',
-    'date' => 'required|date_format:m/d/Y H:i:s',
-    'status' => 'required|string',
-    'remarks' => 'string',
-]);
+        $validator = \Validator::make($requestData, [
+            'LogID' => 'required|string',
+            'date' => 'required|date_format:m/d/Y H:i:s',
+            'status' => 'required|string',
+            'remarks' => 'string',
+        ]);
 
-if ($validator->fails()) {
-    return response()->json([
-        'success' => false,
-        'message' => 'Validation failed',
-        'errors' => $validator->errors()
-    ], 422);
-}
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
-$data = $this->referralService->saveReferralStatus($requestData);
-    return response()->json([
-        'success' => true,
-        'data'    => $data,
-        'message' => 'Success!'
-    ]);
-}
+        $data = $this->referralService->saveReferralStatus($requestData);
 
-/**
- * Get All Patient Status.
- *
- * @OA\Get(
- *     path="/api/referral-status/patient",
- *     summary="Get All Patient Status",
- *     description="Retrieve all patient referral statuses. Requires authentication.",
- *     operationId="getAllPatientStatus",
- *     tags={"Referral"},
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="LogID",
- *         in="query",
- *         required=false,
- *         description="Optional LogID to filter patient status",
- *         @OA\Schema(
- *             type="string",
- *             example="REF123456"
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Successful response",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     type="object",
- *                     @OA\Property(property="LogID", type="string", example="REF123456"),
- *                     @OA\Property(property="referral_status", type="string", example="approved"),
- *                     @OA\Property(property="remarks", type="string", example="Patient referred successfully"),
- *                     @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-11T14:13:01Z"),
- *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-11T14:13:01Z")
- *                 )
- *             ),
- *             @OA\Property(property="message", type="string", example="Success!")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=401,
- *         description="Unauthenticated",
- *         @OA\JsonContent(
- *             @OA\Property(property="error", type="string", example="Unauthenticated")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Server Error"
- *     )
- * )
- */
-
-
-public function getAllPatientstatus(Request $request)
-{
-    if (!Auth::check()) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'message' => 'Success!',
+        ]);
     }
-     $requestData = $request->only(['LogID']);
 
-    $data = $this->referralService->getAllPatientStatus();
+    /**
+     * Get All Patient Status.
+     *
+     * @OA\Get(
+     *     path="/api/referral-status/patient",
+     *     summary="Get All Patient Status",
+     *     description="Retrieve all patient referral statuses. Requires authentication.",
+     *     operationId="getAllPatientStatus",
+     *     tags={"Referral"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="LogID",
+     *         in="query",
+     *         required=false,
+     *         description="Optional LogID to filter patient status",
+     *
+     *         @OA\Schema(
+     *             type="string",
+     *             example="REF123456"
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *
+     *                 @OA\Items(
+     *                     type="object",
+     *
+     *                     @OA\Property(property="LogID", type="string", example="REF123456"),
+     *                     @OA\Property(property="referral_status", type="string", example="approved"),
+     *                     @OA\Property(property="remarks", type="string", example="Patient referred successfully"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2026-02-11T14:13:01Z"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2026-02-11T14:13:01Z")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Success!")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="error", type="string", example="Unauthenticated")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server Error"
+     *     )
+     * )
+     */
+    public function getAllPatientstatus(Request $request)
+    {
+        if (! Auth::check()) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+        $requestData = $request->only(['LogID']);
 
-    return response()->json([
-        'success' => true,
-        'data'    => $data,
-        'message' => 'Success!'
-    ]);
+        $data = $this->referralService->getAllPatientStatus();
 
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'message' => 'Success!',
+        ]);
+
+    }
 }
-
-
-}
-
-
-  
-
-  
-    
-   
-
-    
-

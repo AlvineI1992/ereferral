@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ReferralHelper;
 use App\Models\ReferralInformationModel;
 use App\Services\ReferralService;
+use App\Services\ReferralAttachmentService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -17,17 +18,20 @@ class ReferralController extends Controller
 {
     protected $referralService;
 
-    public function __construct(ReferralService $referralService)
+    protected $referralAttachmentService;
+
+    public function __construct(ReferralService $referralService, ReferralAttachmentService $referralAttachmentService)
     {
         $this->referralService = $referralService;
+        $this->referralAttachmentService = $referralAttachmentService;
     }
 
     public function index(Request $request)
     {
         $user = auth()->user();
 
-        $perPage = $request->input('per_page', 5);
-        $page = $request->input('page', 1); // default to page 1
+        $perPage = max(1, (int) $request->input('per_page', 5));
+        $page = max(1, (int) $request->input('page', 1));
 
         $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to', 'destination', 'track'])
             ->whereDoesntHave('track'); // This ensures you get referrals without a track
@@ -95,9 +99,10 @@ class ReferralController extends Controller
 
         // Perform pagination (role filters should already be applied here)
         $paginated = $query->orderBy('refferalDate', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $rowOffset = ($paginated->currentPage() - 1) * $paginated->perPage();
 
         // Transform the data for response
-        $transformedList = $paginated->getCollection()->map(function ($referral) {
+        $transformedList = $paginated->getCollection()->values()->map(function ($referral, $index) use ($rowOffset) {
             $referral_reason_desc = ReferralHelper::getReferralReasonbyCode($referral->referralReason);
             $referral_type_desc = ReferralHelper::getReferralTypebyCode($referral->typeOfReferral);
             $patientInformation = $referral->patientinformation;
@@ -108,6 +113,7 @@ class ReferralController extends Controller
             ])));
 
             return [
+                'index' => $rowOffset + $index + 1,
                 'LogID' => $referral->LogID,
                 'patient_name' => $patientName,
                 'patient_sex' => $patientInformation?->patientSex === 'M'
@@ -167,6 +173,16 @@ class ReferralController extends Controller
         }
 
         if (! $isErrorCode) {
+            $attachments = $request->file('attachments', []);
+
+            if ($attachments !== []) {
+                $this->referralAttachmentService->store(
+                    $resultCode,
+                    is_array($attachments) ? $attachments : [$attachments],
+                    $request->user()?->id
+                );
+            }
+
             return redirect('/incoming', 303);
         }
 
@@ -182,7 +198,7 @@ class ReferralController extends Controller
     {
         $decodedID = base64_decode($LogID);
 
-        $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to'])
+        $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to', 'attachments'])
             ->where('LogID', $decodedID);
 
         $this->applyIncomingScope($query, auth()->user());
@@ -201,6 +217,9 @@ class ReferralController extends Controller
             'patient' => $referral->patientinformation,
             'origin' => $referral->facility_from,
             'destination' => $referral->facility_to,
+            'attachments' => $referral->attachments
+                ->map(fn ($attachment) => $this->referralAttachmentService->metadata($attachment))
+                ->values(),
             'referral_info' => [
                 'LogID' => $referral->LogID,
                 'date' => $referral->refferalDate,
@@ -318,6 +337,16 @@ class ReferralController extends Controller
             throw ValidationException::withMessages([
                 'form' => $resultMessage !== '' ? $resultMessage : 'Unable to update the referral right now.',
             ]);
+        }
+
+        $attachments = $request->file('attachments', []);
+
+        if ($attachments !== []) {
+            $this->referralAttachmentService->store(
+                $decodedID,
+                is_array($attachments) ? $attachments : [$attachments],
+                $request->user()?->id
+            );
         }
 
         return redirect('/incoming/profile/'.base64_encode($decodedID), 303);
@@ -477,6 +506,8 @@ class ReferralController extends Controller
     {
         return [
             'profilePic' => 'nullable|image|max:5120',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,webp,pdf',
             'patientFirstName' => 'required|string|max:50',
             'patientMiddleName' => 'nullable|string|max:50',
             'patientLastName' => 'required|string|max:50',
@@ -537,6 +568,10 @@ class ReferralController extends Controller
             'diagnosis.required' => 'Add at least one diagnosis.',
             'chiefComplaint.required' => 'Chief complaint is required.',
             'patientCivilStatus.in' => 'Choose a valid civil status.',
+            'attachments.max' => 'A maximum of 5 attachments is allowed per upload.',
+            'attachments.*.file' => 'Each attachment must be a valid uploaded file.',
+            'attachments.*.max' => 'Each attachment must not exceed 10 MB.',
+            'attachments.*.mimes' => 'Attachments must be JPEG, PNG, WebP, or PDF files.',
         ];
     }
 

@@ -42,6 +42,10 @@ Route::post('login', [Referral::class, 'login']);
 //Transactions
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
     Route::post('/refer_patient', [Referral::class, 'patient_referral'])->name('referral.patient_referral');
+    Route::get('/referral-attachments/{attachment}/download', [Referral::class, 'download_attachment'])
+        ->name('referral.attachments.download');
+    Route::post('/incoming/fhir', [Referral::class, 'incoming_fhir_referral'])->name('referral.incoming_fhir');
+    Route::get('/incoming/fhir/{LogID}', [Referral::class, 'fetch_incoming_fhir_referral'])->name('referral.incoming_fhir.show');
 });
 
 Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
@@ -99,4 +103,3 @@ Route::middleware(['auth:sanctum', 'auth.sanctum.custom'])->group(function () {
 
 
  
-

@@ -2,6 +2,7 @@ import { NavAdministrator } from '@/components/nav-admin';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavReference } from '@/components/nav-references';
+import { NavReports } from '@/components/nav-reports';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
@@ -10,13 +11,14 @@ import {
     BedDouble,
     BriefcaseMedical,
     Calendar1,
+    ChartNoAxesColumnIncreasing,
     CircleChevronRight,
-    ExternalLink,
     FileBadge,
     Hospital,
     Inbox,
     LayoutGrid,
     MapPinned,
+    ShieldCheck,
     User,
 } from 'lucide-react';
 import AppLogo from './app-logo';
@@ -26,9 +28,8 @@ import { useMemo } from 'react';
 const mainNavItems: NavItem[] = [
     { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid }, // Changed to route
     { title: 'Referral/s', href: '/incoming', icon: Inbox }, // Changed to route
-   
     { title: 'Patient registry', href: '/patient_registry', icon: BriefcaseMedical }, // Changed to route
-  
+
     { title: 'Appointments', href: '/appointments', icon: Calendar1 }, // Changed to route
     { title: 'Bed Tracker', href: '/bed_tracker', icon: BedDouble }, // Changed to route
 ];
@@ -38,6 +39,8 @@ const navReferences: NavItem[] = [
     { title: 'Facilities', href: '/facilities', icon: Hospital }, // Changed to route
     { title: 'Religions', href: '/religions', icon: FileBadge },
 ];
+
+const navReports: NavItem[] = [{ title: 'Referral Report', href: '/reports/referrals-by-facility', icon: ChartNoAxesColumnIncreasing }];
 
 const footerNavItems: NavItem[] = [];
 
@@ -70,6 +73,7 @@ export function AppSidebar() {
                 { title: 'Users', href: 'user.index', icon: CircleChevronRight },
                 { title: 'Roles', href: 'roles.index', icon: CircleChevronRight },
                 { title: 'Permissions', href: 'permission.index', icon: CircleChevronRight },
+                { title: 'Data Encryption', href: 'admin.data-encryption.index', icon: ShieldCheck },
             ],
         },
     ];
@@ -91,6 +95,7 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={mainNavItems} />
                 <NavReference items={navReferences} />
+                <NavReports items={navReports} />
                 {hasAdminRole && <NavAdministrator items={adminNavItems} />} {/* Conditionally render the admin menu */}
             </SidebarContent>
 
