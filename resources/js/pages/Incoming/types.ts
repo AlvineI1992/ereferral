@@ -54,3 +54,26 @@ export type IncomingReferralRow = {
     referral_date: string;
     referral_time: string;
 };
+
+export type IncomingFilterOption = {
+    code: string;
+    name?: string;
+    description?: string;
+};
+
+export type IncomingFilterOptions = {
+    origins: IncomingFilterOption[];
+    destinations: IncomingFilterOption[];
+    types: IncomingFilterOption[];
+    reasons: IncomingFilterOption[];
+};
+
+export type IncomingAdvancedFilters = {
+    date_from: string;
+    date_to: string;
+    origin: string;
+    destination: string;
+    type: string;
+    category: string;
+    reason: string;
+};

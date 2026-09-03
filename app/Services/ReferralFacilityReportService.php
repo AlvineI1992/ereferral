@@ -143,6 +143,27 @@ class ReferralFacilityReportService
             $query->where('facility.emr_id', $filters['provider']);
         }
 
+        $trend = (clone $query)
+            ->selectRaw('referral.refferalDate as date')
+            ->selectRaw('COUNT(DISTINCT referral.LogID) as sent_count')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN track.LogID IS NOT NULL AND track.receivedDate IS NOT NULL THEN referral.LogID END) as received_count')
+            ->groupBy('referral.refferalDate')
+            ->orderBy('referral.refferalDate')
+            ->get()
+            ->keyBy(fn ($row) => CarbonImmutable::parse($row->date)->toDateString());
+
+        $dailyTrend = collect();
+        for ($date = $dateFrom; $date->lte($dateTo); $date = $date->addDay()) {
+            $dateKey = $date->toDateString();
+            $daily = $trend->get($dateKey);
+            $dailyTrend->push([
+                'date' => $dateKey,
+                'label' => $date->format('M j'),
+                'sent_count' => (int) ($daily->sent_count ?? 0),
+                'received_count' => (int) ($daily->received_count ?? 0),
+            ]);
+        }
+
         $rhuRows = (clone $query)
             ->where('origin_facility.facility_type', '17')
             ->selectRaw('referral.fhudFrom as rhu_code, origin_facility.facility_name as rhu_name')
@@ -198,6 +219,8 @@ class ReferralFacilityReportService
 
         $sentTotal = (int) $rows->sum('sent_count');
         $receivedTotal = (int) $rows->sum('received_count');
+        $periodDays = max($dateFrom->diffInDays($dateTo->startOfDay()) + 1, 1);
+        $busiestDay = $dailyTrend->sortByDesc('sent_count')->first();
 
         return [
             'filters' => [
@@ -215,7 +238,11 @@ class ReferralFacilityReportService
                 'received_count' => $receivedTotal,
                 'pending_count' => max($sentTotal - $receivedTotal, 0),
                 'receipt_rate' => $sentTotal > 0 ? round(($receivedTotal / $sentTotal) * 100, 1) : 0,
+                'average_daily_referrals' => round($sentTotal / $periodDays, 1),
+                'busiest_day' => ($busiestDay['sent_count'] ?? 0) > 0 ? $busiestDay['label'] : null,
+                'busiest_day_count' => (int) ($busiestDay['sent_count'] ?? 0),
             ],
+            'trend' => $dailyTrend->all(),
             'data' => $rows->all(),
             'rhu_data' => $rhuRows->all(),
             'options' => $options,

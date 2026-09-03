@@ -104,12 +104,19 @@ it('counts referrals sent and confirmed received by destination facility', funct
         'received_count' => 1,
         'pending_count' => 1,
         'receipt_rate' => 50.0,
+        'average_daily_referrals' => 1.0,
+        'busiest_day' => 'Sep 1',
+        'busiest_day_count' => 1,
     ])->and($report['data'][0]['facility_code'])->toBe('FAC-A')
         ->and($report['data'][0]['facility_type'])->toBe('Hospital')
         ->and($report['options']['referring_facilities'])->toHaveCount(2)
         ->and($report['options']['referral_facilities'])->toHaveCount(1)
         ->and($report['options']['providers'])->toBe([
             ['id' => 'EMR-1', 'name' => 'Provider One'],
+        ])
+        ->and($report['trend'])->toBe([
+            ['date' => '2026-09-01', 'label' => 'Sep 1', 'sent_count' => 1, 'received_count' => 1],
+            ['date' => '2026-09-02', 'label' => 'Sep 2', 'sent_count' => 1, 'received_count' => 0],
         ])
         ->and($report['rhu_data'][0])->toMatchArray([
             'rhu_code' => 'RHU-A',

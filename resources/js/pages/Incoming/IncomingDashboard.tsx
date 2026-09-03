@@ -100,90 +100,94 @@ export default function IncomingDashboard({ summary, canCreate }: IncomingDashbo
     ];
 
     return (
-        <div className="space-y-3">
-            <section className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-gradient-to-br from-teal-950 via-teal-900 to-emerald-800 p-4 text-white shadow-lg shadow-teal-950/10">
+        <div className="space-y-2">
+            <section className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-teal-950 via-teal-900 to-emerald-800 p-3 text-white shadow-md shadow-teal-950/10">
                 <div className="absolute top-0 -left-10 h-32 w-32 rounded-full bg-cyan-300/10 blur-3xl" />
                 <div className="absolute right-0 bottom-0 h-36 w-36 rounded-full bg-emerald-200/10 blur-3xl" />
-                <div className="relative flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="space-y-2">
-                        <Badge className="w-fit border-white/15 bg-white/12 px-2.5 py-1 text-[11px] text-white backdrop-blur-sm">Incoming Command Center</Badge>
-                        <div className="space-y-1.5">
-                            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                <div className="relative flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="space-y-1.5">
+                        <Badge className="w-fit border-white/15 bg-white/12 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm">
+                            Incoming Command Center
+                        </Badge>
+                        <div className="space-y-1">
+                            <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
                                 Queue pressure, geography, and referral drivers in one compact view.
                             </h1>
-                            <p className="max-w-3xl text-sm leading-6 text-teal-50/80">
+                            <p className="max-w-3xl text-xs leading-5 text-teal-50/80">
                                 A balanced operations snapshot for incoming referrals, tuned for quick triage and area-based monitoring.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2.5">
+                    <div className="flex flex-wrap gap-2">
                         {canCreate && (
-                            <Button asChild className="h-10 rounded-full bg-white text-teal-950 hover:bg-teal-50">
+                            <Button asChild size="sm" className="h-8 rounded-full bg-white text-teal-950 hover:bg-teal-50">
                                 <Link href="/referrals/create">
                                     <Plus className="size-4" />
                                     Add referral
                                 </Link>
                             </Button>
                         )}
-                        <div className="rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-sm text-teal-50/85 backdrop-blur-sm">
+                        <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs text-teal-50/85 backdrop-blur-sm">
                             Updated {formatGeneratedAt(summary.generatedAt)}
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section className="grid gap-3 md:grid-cols-2 md:grid-cols-3">
-                <div className="grid gap-3 md:col-span-2 md:col-span-3 md:grid-cols-5">
+            <section className="grid gap-2">
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
                     {metrics.map((metric) => {
                         const Icon = metric.icon;
 
                         return (
-                            <Card key={metric.key} className={`border shadow-sm ${metric.tone}`}>
-                                <CardContent className="p-3.5">
+                            <Card key={metric.key} className={`border py-0 shadow-sm ${metric.tone}`}>
+                                <CardContent className="p-2.5">
                                     <div className="flex items-start justify-between gap-2">
                                         <div>
-                                            <p className="text-xs font-medium uppercase tracking-[0.18em]">{metric.label}</p>
-                                            <p className="mt-2 text-2xl font-semibold tracking-tight">{formatNumber(summary[metric.key])}</p>
+                                            <p className="text-[10px] font-medium tracking-[0.15em] uppercase">{metric.label}</p>
+                                            <p className="mt-1 text-xl font-semibold tracking-tight">{formatNumber(summary[metric.key])}</p>
                                         </div>
-                                        <div className="rounded-l bg-white/70 p-2">
-                                            <Icon className="size-4" />
+                                        <div className="rounded-md bg-white/70 p-1.5">
+                                            <Icon className="size-3.5" />
                                         </div>
                                     </div>
-                                    <p className="mt-3 text-xs leading-5 text-slate-600">{metric.detail}</p>
+                                    <p className="mt-1.5 text-[11px] leading-4 text-slate-600">{metric.detail}</p>
                                 </CardContent>
                             </Card>
                         );
                     })}
                 </div>
 
-                <Card className="border-slate-200/80 bg-white/90 shadow-sm md:col-span-2 xl:col-span-6">
-                    <CardContent className="p-4">
+                <Card className="border-slate-200/80 bg-white/90 py-0 shadow-sm">
+                    <CardContent className="p-3">
                         <div className="flex items-start justify-between gap-3">
                             <div>
                                 <p className="text-sm font-semibold text-slate-900">Top referral reasons</p>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">Most common incoming drivers in the active queue.</p>
+                                <p className="mt-0.5 text-xs leading-4 text-slate-500">Most common incoming drivers in the active queue.</p>
                             </div>
                             <ArrowUpRight className="size-4 text-slate-400" />
                         </div>
 
-                        <div className="mt-4 grid gap-2">
+                        <div className="mt-2 grid gap-1.5">
                             {summary.topReasons.length > 0 ? (
                                 summary.topReasons.map((reason) => (
-                                    <div key={`${reason.code}-${reason.label}`} className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3">
+                                    <div
+                                        key={`${reason.code}-${reason.label}`}
+                                        className="rounded-lg border border-slate-200/80 bg-slate-50/80 px-2.5 py-1.5"
+                                    >
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-medium text-slate-900">{reason.label}</p>
-                                               
                                             </div>
-                                            <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                                            <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
                                                 {formatNumber(reason.count)}
                                             </Badge>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-slate-500">
+                                <div className="rounded-lg border border-dashed border-slate-200 p-3 text-xs text-slate-500">
                                     Referral reasons will appear here once incoming cases are available.
                                 </div>
                             )}
@@ -192,25 +196,25 @@ export default function IncomingDashboard({ summary, canCreate }: IncomingDashbo
                 </Card>
             </section>
 
-            <section className="grid gap-3 xl:grid-cols-3">
+            <section className="grid gap-2 xl:grid-cols-3">
                 {locationPanels.map((panel) => (
-                    <Card key={panel.key} className="border-slate-200/80 bg-white/90 shadow-sm">
-                        <CardContent className="p-4">
+                    <Card key={panel.key} className="border-slate-200/80 bg-white/90 py-0 shadow-sm">
+                        <CardContent className="p-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <p className="text-sm font-semibold text-slate-900">{panel.title}</p>
-                                    <p className="mt-1 text-xs leading-5 text-slate-500">{panel.caption}</p>
+                                    <p className="mt-0.5 text-xs leading-4 text-slate-500">{panel.caption}</p>
                                 </div>
-                                <div className="rounded-xl bg-slate-100 p-2 text-slate-700">
-                                    <panel.icon className="size-4" />
+                                <div className="rounded-lg bg-slate-100 p-1.5 text-slate-700">
+                                    <panel.icon className="size-3.5" />
                                 </div>
                             </div>
 
-                            <div className="mt-4 space-y-2">
+                            <div className="mt-2 space-y-1.5">
                                 {summary[panel.key].length > 0 ? (
                                     summary[panel.key].map((item) => <LocationRow key={`${panel.key}-${item.code}-${item.label}`} item={item} />)
                                 ) : (
-                                    <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-xs text-slate-500">
+                                    <div className="rounded-lg border border-dashed border-slate-200 p-3 text-xs text-slate-500">
                                         Geographic activity will appear here once incoming cases are available.
                                     </div>
                                 )}
@@ -225,12 +229,11 @@ export default function IncomingDashboard({ summary, canCreate }: IncomingDashbo
 
 function LocationRow({ item }: { item: IncomingGeoItem }) {
     return (
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/80 bg-slate-50/80 px-2.5 py-1.5">
             <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-slate-900">{item.label}</p>
-
             </div>
-            <Badge variant="outline" className="rounded-full px-2.5 py-1">
+            <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
                 {formatNumber(item.count)}
             </Badge>
         </div>

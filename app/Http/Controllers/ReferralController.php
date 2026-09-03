@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ReferralHelper;
 use App\Models\ReferralInformationModel;
-use App\Services\ReferralService;
 use App\Services\ReferralAttachmentService;
+use App\Services\ReferralService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -30,15 +31,63 @@ class ReferralController extends Controller
     {
         $user = auth()->user();
 
+        $filters = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'origin' => ['nullable', 'string', 'max:50'],
+            'destination' => ['nullable', 'string', 'max:50'],
+            'type' => ['nullable', Rule::in(collect(ReferralHelper::getReferralType())->pluck('code')->all())],
+            'category' => ['nullable', Rule::in(['ER', 'OPD'])],
+            'reason' => ['nullable', Rule::in(collect(ReferralHelper::getReferralReasons())->pluck('code')->all())],
+        ]);
+
+        if (filled($filters['date_from'] ?? null) && filled($filters['date_to'] ?? null) && $filters['date_from'] > $filters['date_to']) {
+            throw ValidationException::withMessages([
+                'date_to' => 'Date to must be on or after date from.',
+            ]);
+        }
+
         $perPage = max(1, (int) $request->input('per_page', 5));
         $page = max(1, (int) $request->input('page', 1));
 
-        $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to', 'destination', 'track'])
+        $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to'])
             ->whereDoesntHave('track'); // This ensures you get referrals without a track
 
         $this->applyIncomingScope($query, $user);
 
         $summaryQuery = clone $query;
+        $filterOptionsQuery = clone $query;
+
+        $filterOptions = [
+            'origins' => (clone $filterOptionsQuery)
+                ->setEagerLoads([])
+                ->whereNotNull('fhudFrom')
+                ->select('fhudFrom')
+                ->distinct()
+                ->with('facility_from:hfhudcode,facility_name')
+                ->get()
+                ->map(fn ($referral) => [
+                    'code' => (string) $referral->fhudFrom,
+                    'name' => (string) ($referral->facility_from?->facility_name ?? $referral->fhudFrom),
+                ])
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values(),
+            'destinations' => (clone $filterOptionsQuery)
+                ->setEagerLoads([])
+                ->whereNotNull('fhudTo')
+                ->select('fhudTo')
+                ->distinct()
+                ->with('facility_to:hfhudcode,facility_name')
+                ->get()
+                ->map(fn ($referral) => [
+                    'code' => (string) $referral->fhudTo,
+                    'name' => (string) ($referral->facility_to?->facility_name ?? $referral->fhudTo),
+                ])
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values(),
+            'types' => ReferralHelper::getReferralType(),
+            'reasons' => ReferralHelper::getReferralReasons(),
+        ];
 
         $summary = [
             'totalIncoming' => (clone $summaryQuery)->count(),
@@ -85,6 +134,34 @@ class ReferralController extends Controller
             ),
             'generatedAt' => now()->toIso8601String(),
         ];
+
+        if (filled($filters['date_from'] ?? null)) {
+            $query->whereDate('refferalDate', '>=', $filters['date_from']);
+        }
+
+        if (filled($filters['date_to'] ?? null)) {
+            $query->whereDate('refferalDate', '<=', $filters['date_to']);
+        }
+
+        if (filled($filters['origin'] ?? null)) {
+            $query->where('fhudFrom', $filters['origin']);
+        }
+
+        if (filled($filters['destination'] ?? null)) {
+            $query->where('fhudTo', $filters['destination']);
+        }
+
+        if (filled($filters['type'] ?? null)) {
+            $query->where('typeOfReferral', $filters['type']);
+        }
+
+        if (filled($filters['category'] ?? null)) {
+            $query->where('referralCategory', $filters['category']);
+        }
+
+        if (filled($filters['reason'] ?? null)) {
+            $query->where('referralReason', $filters['reason']);
+        }
 
         // Handle search functionality
         if ($search = $request->input('search')) {
@@ -145,6 +222,7 @@ class ReferralController extends Controller
             'current_page' => $paginated->currentPage(),
             'last_page' => $paginated->lastPage(),
             'summary' => $summary,
+            'filter_options' => $filterOptions,
         ]);
     }
 
@@ -353,12 +431,29 @@ class ReferralController extends Controller
     }
 
     // Remove the specified resource from storage
-    public function destroy($LogID)
+    public function destroy(Request $request, string $LogID)
     {
-        $patient = ReferralInformationModel::findOrFail($LogID);
-        $patient->delete();
+        $decodedID = $this->decodeLogId($LogID);
+        $query = ReferralInformationModel::query()->where('LogID', $decodedID);
+        $this->applyIncomingScope($query, $request->user());
 
-        return response()->json(['message' => 'Patient record deleted successfully.']);
+        if (! $query->exists()) {
+            return response()->json([
+                'message' => 'Referral not found or inaccessible.',
+            ], 404);
+        }
+
+        $this->referralService->deleteReferralTransaction($decodedID);
+
+        Log::notice('Incoming referral transaction deleted.', [
+            'log_id' => $decodedID,
+            'deleted_by' => $request->user()?->id,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'message' => "Referral transaction {$decodedID} was deleted successfully.",
+        ]);
     }
 
     public function generate_hfhudcode(Request $request, ?string $hfhudcode = null)

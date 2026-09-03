@@ -126,11 +126,11 @@ class ReferralPatientInfoController extends Controller
                     'avatar' => null, 
                 ],
                 'demographics' =>[
-                    'street'=>$patient->patientStreetAddress ?? '',
-                    'region'=>$demographics->region->regname ?? '',
-                    'province'=>$demographics->province->provname,
-                    'city'=>$demographics->city->cityname ?? '',
-                    'barangay'=>$demographics->barangay->bgyname  ?? ''
+                    'street' => $demographics->patientStreetAddress ?? '',
+                    'region' => $demographics->region?->regname ?? '',
+                    'province' => $demographics->province?->provname ?? '',
+                    'city' => $demographics->city?->cityname ?? '',
+                    'barangay' => $demographics->barangay?->bgyname ?? '',
                 ]
             ]);
         /* } catch (\Exception $e) {
@@ -140,7 +140,7 @@ class ReferralPatientInfoController extends Controller
     // Optional helper method for age calculation
     protected function calculateAge($dob)
     {
-        return \Carbon\Carbon::parse($dob)->age;
+        return filled($dob) ? \Carbon\Carbon::parse($dob)->age : null;
     }
 
     // Show the form for editing the specified resource

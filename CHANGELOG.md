@@ -1,6 +1,16 @@
 # Changelog
 
+## AEI - 2026-09-03
+- Added filter-aware referral metrics, daily sent-versus-received trends, and top receiving-facility graphs to the facility report.
+- Made incoming patient profiles tolerate missing demographic reference rows and corrected the profile street-address source.
+- Widened the referral report patient drill-down and stabilized its table width so the Action column remains accessible.
+- Added permission-controlled patient transaction deletion by LogID to the Referrals by Facility patient drill-down, with typed confirmation and refreshed report totals.
+
 ## AEI - 2026-09-02
+- Added permission- and facility-scoped deletion for a specific Incoming Referral LogID, including typed confirmation and transactional cleanup of related referral records and attachments.
+- Added access-scoped advanced Incoming Referral filters for date range, origin, destination, referral type, category, and reason with server-side pagination support and leaner list eager loading.
+- Minimized all Incoming Referral dashboard cards with compact local padding, spacing, typography, badges, and responsive gaps.
+- Linked patients in the referral report drill-down directly to their Incoming Referral profiles.
 - Added provider filtering to the referral report, including summary totals, facility and RHU breakdowns, patient drill-downs, and CSV exports.
 - Added access-controlled View Patients actions to the referral report, with filtered referred/received patient details loaded on demand for receiving-facility and RHU rows.
 - Added a dedicated Reports classification to the application sidebar and moved Referral Report out of Transactions into that section.

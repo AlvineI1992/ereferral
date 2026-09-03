@@ -396,6 +396,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/referrals/update/{LogID}', [ReferralController::class, 'update'])
         ->middleware('can:incoming edit')
         ->name('incoming.referral.update');
+    Route::delete('/referrals/{LogID}', [ReferralController::class, 'destroy'])
+        ->middleware('can:incoming delete')
+        ->name('incoming.referral.destroy');
 
     Route::get('incoming/profile/{id}', function (Request $request, $id) {
         $permissions = [

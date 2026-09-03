@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class ReferralService
 {
@@ -25,6 +26,43 @@ class ReferralService
     public function maxID()
     {
         return (int) ReferralInformationModel::query()->count();
+    }
+
+    public function deleteReferralTransaction(string $logId): void
+    {
+        $attachmentFiles = Schema::hasTable('referral_attachments')
+            ? DB::table('referral_attachments')->where('LogID', $logId)->get(['disk', 'path'])
+            : collect();
+
+        DB::transaction(function () use ($logId): void {
+            foreach ([
+                'referral_attachments',
+                'referral_followup',
+                'referral_medicine',
+                'referral_status',
+                'referral_track',
+                'referral_provider',
+                'referral_clinical',
+                'referral_patientdemo',
+                'referral_patientinfo',
+            ] as $table) {
+                if (Schema::hasTable($table)) {
+                    DB::table($table)->where('LogID', $logId)->delete();
+                }
+            }
+
+            $deleted = DB::table('referral_information')->where('LogID', $logId)->delete();
+
+            if ($deleted !== 1) {
+                throw new Exception('Referral transaction could not be deleted.');
+            }
+        });
+
+        $attachmentFiles
+            ->groupBy('disk')
+            ->each(function ($files, string $disk): void {
+                Storage::disk($disk)->delete($files->pluck('path')->all());
+            });
     }
 
     public function type($id)

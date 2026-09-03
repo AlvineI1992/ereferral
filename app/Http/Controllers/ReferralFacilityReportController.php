@@ -6,6 +6,7 @@ use App\Http\Requests\ReferralFacilityReportRequest;
 use App\Http\Requests\ReferralFacilityPatientListRequest;
 use App\Services\ReferralFacilityReportService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -14,9 +15,11 @@ class ReferralFacilityReportController extends Controller
 {
     public function __construct(private readonly ReferralFacilityReportService $reportService) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('Reports/ReferralFacility');
+        return Inertia::render('Reports/ReferralFacility', [
+            'canDelete' => $request->user()?->can('incoming delete') ?? false,
+        ]);
     }
 
     public function data(ReferralFacilityReportRequest $request): JsonResponse
