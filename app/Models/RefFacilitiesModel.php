@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Permission\Traits\HasRoles;
 
 class RefFacilitiesModel extends Model
@@ -64,6 +65,8 @@ class RefFacilitiesModel extends Model
         'remarks',
     ];
 
-
-   
+    public function hierarchy(): HasOne
+    {
+        return $this->hasOne(FacilityHierarchy::class, 'facility_hfhudcode', 'hfhudcode');
+    }
 }

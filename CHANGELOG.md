@@ -1,5 +1,19 @@
 # Changelog
 
+## AEI - 2026-09-04
+- Added dedicated create, list, edit, and delete permissions across the Facility Hierarchy module, including permission-aware navigation and database rollout compatibility.
+- Corrected province, city/municipality, and barangay cascading filters so they apply consistently to every hierarchy level, including Apex Hospital.
+- Restored facility-type labels for legacy numeric codes so Apex Hospital selection no longer filters every regional facility out of the table.
+- Fixed Regions I-IX showing no facilities by normalizing legacy numeric region codes to the canonical zero-padded region code returned by the selector.
+- Fixed the shared dialog overlay/content ref forwarding required by Radix UI, removing the `Primitive.div.SlotClone` React warning when opening the facility picker.
+- Fixed facilities intermittently appearing empty in larger regions by replacing the expensive multi-table join with a region-scoped facility query and batched reference-label lookups.
+- Added transactional multiple-facility hierarchy assignment with facility-type and selection-status filters in the facility picker.
+- Fixed the empty healthcare-facility picker by loading active facilities on demand for the selected region instead of fetching the entire national directory at once.
+- Corrected healthcare-facility selection by removing the unrelated mandatory apex step, making geographic filters progressively optional, and limiting parent choices to valid same-area hierarchy nodes.
+- Added Facility Hierarchy Management with apex-to-lower-level parent mapping, referral networks, region/province coverage, guarded hierarchy rules, filters, and permission-controlled maintenance.
+- Prevented unmapped facilities with a null hierarchy from crashing the hierarchy parent selector.
+
+
 ## AEI - 2026-09-03
 - Added filter-aware referral metrics, daily sent-versus-received trends, and top receiving-facility graphs to the facility report.
 - Made incoming patient profiles tolerate missing demographic reference rows and corrected the profile street-address source.

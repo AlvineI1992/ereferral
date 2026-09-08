@@ -34,12 +34,6 @@ const mainNavItems: NavItem[] = [
     { title: 'Bed Tracker', href: '/bed_tracker', icon: BedDouble }, // Changed to route
 ];
 
-const navReferences: NavItem[] = [
-    { title: 'Demographics', href: '/demographics', icon: MapPinned }, // Changed to route
-    { title: 'Facilities', href: '/facilities', icon: Hospital }, // Changed to route
-    { title: 'Religions', href: '/religions', icon: FileBadge },
-];
-
 const navReports: NavItem[] = [{ title: 'Referral Report', href: '/reports/referrals-by-facility', icon: ChartNoAxesColumnIncreasing }];
 
 const footerNavItems: NavItem[] = [];
@@ -47,6 +41,14 @@ const footerNavItems: NavItem[] = [];
 export function AppSidebar() {
     const { props } = usePage();
     const user = props.auth?.user;
+    const navReferences: NavItem[] = [
+        { title: 'Demographics', href: '/demographics', icon: MapPinned },
+        { title: 'Facilities', href: '/facilities', icon: Hospital },
+        ...(user?.can_view_facility_hierarchy
+            ? [{ title: 'Facility Hierarchy', href: '/facility-hierarchy', icon: CircleChevronRight }]
+            : []),
+        { title: 'Religions', href: '/religions', icon: FileBadge },
+    ];
 
     const getRouteOrFallback = (routeName: string, fallback: string) => {
         try {

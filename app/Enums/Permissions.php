@@ -168,6 +168,16 @@ class Permissions
         ];
     }
 
+    public static function facility_hierarchy(): array
+    {
+        return [
+            ['facility hierarchy create'],
+            ['facility hierarchy list'],
+            ['facility hierarchy edit'],
+            ['facility hierarchy delete'],
+        ];
+    }
+
     public static function provider(): array
     {
         return [

@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
                 'roles' => $request->user()->getRoleNames(), 
+                'can_view_facility_hierarchy' => $request->user()->can('facility hierarchy list'),
              ] : null,
             ],
 

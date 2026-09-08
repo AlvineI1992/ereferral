@@ -13,6 +13,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ReferralFacilityReportController;
 use App\Http\Controllers\ReferralPatientInfoController;
 use App\Http\Controllers\RefFacilitiesController;
+use App\Http\Controllers\FacilityHierarchyController;
 use App\Http\Controllers\RefFacilitytypeController;
 use App\Http\Controllers\RefReligionController;
 use App\Http\Controllers\RoleController;
@@ -265,6 +266,18 @@ Route::middleware(['auth:sanctum', 'verified', 'can:incoming list'])
     });
 /* Route::get('/api/facilities', [RefFacilitiesController::class, 'index']); */
 Route::middleware(['auth:sanctum', 'can:facility list'])->get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
+
+Route::middleware(['auth:sanctum', 'verified', 'can:facility hierarchy list'])
+    ->prefix('facility-hierarchy')
+    ->group(function () {
+        Route::get('/', [FacilityHierarchyController::class, 'index'])->name('facility-hierarchy.index');
+        Route::get('/data', [FacilityHierarchyController::class, 'data'])->name('facility-hierarchy.data');
+        Route::get('/options', [FacilityHierarchyController::class, 'options'])->name('facility-hierarchy.options');
+        Route::post('/bulk', [FacilityHierarchyController::class, 'bulkStore'])->middleware('can:facility hierarchy create')->name('facility-hierarchy.bulk-store');
+        Route::post('/', [FacilityHierarchyController::class, 'store'])->middleware('can:facility hierarchy create')->name('facility-hierarchy.store');
+        Route::put('/{facilityHierarchy}', [FacilityHierarchyController::class, 'update'])->middleware('can:facility hierarchy edit')->name('facility-hierarchy.update');
+        Route::delete('/{facilityHierarchy}', [FacilityHierarchyController::class, 'destroy'])->middleware('can:facility hierarchy delete')->name('facility-hierarchy.destroy');
+    });
 // API Routes (Sanctum-protected)
 
 /* Route::get('/facility_type', function () {
