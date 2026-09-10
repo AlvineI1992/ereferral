@@ -10,7 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "darkaonline/l5-swagger": "^9.0",
+        "darkaonline/l5-swagger": "^11.1",
         "dedoc/scramble": "^0.12.22",
         "elibyy/tcpdf-laravel": "^11.4",
         "inertiajs/inertia-laravel": "^2.0",
@@ -39,7 +39,13 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }  ,
+        },
+        "exclude-from-classmap": [
+            "/vendor/league/flysystem/src/Local/",
+            "/vendor/laravel/pint/app/Providers/AppServiceProvider.php",
+            "/vendor/**/tests/",
+            "/vendor/**/Tests/"
+        ],
         "files": [
             "app/Helpers/ReferralHelper.php"
         ]

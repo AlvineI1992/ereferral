@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,7 @@ class UserAccountController extends Controller
     public function index()
     {
         $users = User::latest()->paginate(10);
+
         return response()->json(['roles' => $users]);
     }
 
@@ -69,7 +71,7 @@ class UserAccountController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
@@ -88,8 +90,7 @@ class UserAccountController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
-
-   
 }

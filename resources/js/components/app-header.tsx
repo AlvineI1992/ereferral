@@ -11,7 +11,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search,Users } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, MapPin, Menu, Search, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -159,13 +159,19 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="size-10 rounded-full p-1">
+                                <Button variant="ghost" className="h-10 max-w-64 gap-2 rounded-full px-2">
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>
                                     </Avatar>
+                                    {auth.user.access_label && (
+                                        <span className="hidden max-w-44 truncate text-xs font-medium text-slate-600 sm:flex sm:items-center sm:gap-1">
+                                            <MapPin className="size-3.5 shrink-0 text-teal-700" />
+                                            {auth.user.access_label}
+                                        </span>
+                                    )}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end">

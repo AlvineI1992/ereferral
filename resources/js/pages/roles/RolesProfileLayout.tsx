@@ -7,7 +7,7 @@ import RolesInfo from './RolesInfo';
 import RolesListAssign from './RolesListAssign';
 import Menu from './Menu';
 import type { BreadcrumbItem } from '@/types';
-import { LoaderCircle, Save, User, X } from "lucide-react";
+import { User } from 'lucide-react';
 
 import { Separator } from "@/components/ui/separator";
 
@@ -26,10 +26,10 @@ type ProfileData = {
   name: string;
   guard_name: string;
   permissions: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
-export default function ProfileLayout({ id ,is_include}: ProfileLayoutProps) {
+export default function ProfileLayout({ id }: ProfileLayoutProps) {
   const { url } = usePage(); // 🔥 Get the full current route URL
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -94,7 +94,7 @@ export default function ProfileLayout({ id ,is_include}: ProfileLayoutProps) {
             {isIncludePage && (
               <RolesListAssign
                 key={url}
-                refreshKey={url}
+                refreshKey={refreshKey}
                 id={parseInt(id)}
                 is_include={true}
                 onSave={handleSaveSuccess}
@@ -104,7 +104,7 @@ export default function ProfileLayout({ id ,is_include}: ProfileLayoutProps) {
             {isExcludePage && (
               <RolesListAssign
                 key={url}
-                refreshKey={url}
+                refreshKey={refreshKey}
                 id={parseInt(id)}
                 is_include={false}
                 onSave={handleSaveSuccess}

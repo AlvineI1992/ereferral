@@ -40,6 +40,27 @@ export interface User {
     created_at: string;
     updated_at: string;
     emr_id: string; // Add this
+    roles?: string[];
+    access_type?: string | null;
+    access_label?: string | null;
+    navigation?: {
+        dashboard: boolean;
+        incoming: boolean;
+        patients: boolean;
+        appointments: boolean;
+        beds: boolean;
+        demographics: boolean;
+        facilities: boolean;
+        facilityHierarchy: boolean;
+        religions: boolean;
+        reports: boolean;
+        providers: boolean;
+        users: boolean;
+        roles: boolean;
+        permissions: boolean;
+        dataEncryption: boolean;
+        auditTrail: boolean;
+    };
    
     [key: string]: unknown; // This allows for additional properties...
 }

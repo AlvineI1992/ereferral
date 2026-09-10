@@ -30,6 +30,7 @@ export type UserRecord = {
     roles?: string[];
     roles_count?: number;
     primary_role?: string | null;
+    created_at?: string;
 };
 
 export type ProviderOption = {

@@ -16,13 +16,18 @@ use App\Models\RefFacilityModel;
 use App\Models\RefProvinceModel;
 use App\Models\RefRegionModel;
 use App\Services\FhirReferralService;
+use App\Services\ReferralAccessService;
 use App\Services\ReferralAttachmentService;
 use App\Services\ReferralService;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 /**
  * @OA\Info(title="Referral Api Documentation", version="1.0")
@@ -45,14 +50,18 @@ class Referral extends Controller
 
     protected $referralAttachmentService;
 
+    protected ReferralAccessService $referralAccessService;
+
     public function __construct(
         ReferralService $referralService,
         FhirReferralService $fhirReferralService,
-        ReferralAttachmentService $referralAttachmentService
+        ReferralAttachmentService $referralAttachmentService,
+        ReferralAccessService $referralAccessService
     ) {
         $this->referralService = $referralService;
         $this->fhirReferralService = $fhirReferralService;
         $this->referralAttachmentService = $referralAttachmentService;
+        $this->referralAccessService = $referralAccessService;
     }
 
     /**
@@ -96,18 +105,37 @@ class Referral extends Controller
             'password' => 'required|string',
         ]);
 
-        // Authenticate user and create Sanctum token
-        if (Auth::attempt($credentials)) {
+        $throttleKey = Str::lower($credentials['email']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            return response()->json([
+                'error' => 'Too many login attempts',
+                'retry_after' => RateLimiter::availableIn($throttleKey),
+            ], 429);
+        }
+
+        // API authentication follows the same active-account rule as web login.
+        if (Auth::attempt([...$credentials, 'status' => 'A'])) {
             $user = Auth::user();
 
-            // Create Sanctum token
-            $token = $user->createToken('SanctumApp')->plainTextToken;
+            RateLimiter::clear($throttleKey);
+            $user->tokens()->where('name', 'SanctumApp')->delete();
+
+            $token = $user->createToken('SanctumApp', [
+                'reference:read',
+                'referrals:read',
+                'referrals:write',
+                'beds:read',
+                'beds:write',
+            ])->plainTextToken;
 
             // Return token as response
             return response()->json([
                 'token' => $token,
             ]);
         }
+
+        RateLimiter::hit($throttleKey, 60);
 
         return response()->json(['error' => 'Unauthorized'], 401);
     }
@@ -273,6 +301,11 @@ class Referral extends Controller
             ], 422);
         }
 
+        $this->referralAccessService->authorizeFacility(
+            $request->user(),
+            (string) ($mergedData['referral']['facility_from'] ?? '')
+        );
+
         $attachments = $request->file('attachments', []);
         $attachments = is_array($attachments) ? $attachments : [$attachments];
         unset($mergedData['attachments']);
@@ -358,12 +391,13 @@ class Referral extends Controller
         return response()->json($output, $this->referralResponseStatus($currentOutput, $fhirResult));
     }
 
-    public function download_attachment(ReferralAttachment $attachment)
+    public function download_attachment(Request $request, ReferralAttachment $attachment)
     {
+        $this->referralAccessService->authorizeReferral($request->user(), (string) $attachment->LogID);
         abort_unless(ReferralModel::where('LogID', $attachment->LogID)->exists(), 404);
-        abort_unless(\Illuminate\Support\Facades\Storage::disk($attachment->disk)->exists($attachment->path), 404);
+        abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
 
-        return \Illuminate\Support\Facades\Storage::disk($attachment->disk)->download(
+        return Storage::disk($attachment->disk)->download(
             $attachment->path,
             $attachment->original_name,
             ['Content-Type' => $attachment->mime_type]
@@ -400,6 +434,11 @@ class Referral extends Controller
             ], 422);
         }
 
+        $this->referralAccessService->authorizeFacility(
+            $request->user(),
+            (string) ($normalized['referral']['facility_from'] ?? '')
+        );
+
         $result = $this->referralService->refer_patient($normalized);
         $logId = $this->fhirReferralService->extractLogId($result, $normalized);
         $status = $this->referralResponseStatus($result, null);
@@ -417,8 +456,10 @@ class Referral extends Controller
         ], $status);
     }
 
-    public function fetch_incoming_fhir_referral(string $LogID)
+    public function fetch_incoming_fhir_referral(Request $request, string $LogID)
     {
+        $this->referralAccessService->authorizeReferral($request->user(), $LogID);
+
         $referral = ReferralModel::with([
             'patientinformation',
             'facility_to',
@@ -744,7 +785,7 @@ class Referral extends Controller
 
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         // Retrieve the regions, provinces, cities, and barangays data
@@ -833,7 +874,7 @@ class Referral extends Controller
     {
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         $region = RefRegionModel::select('regcode', 'regname')->where('regcode', $id)->first();
@@ -897,7 +938,7 @@ class Referral extends Controller
 
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         $province = RefProvinceModel::select('regcode', 'provcode', 'provname')->where('provcode', $id)->first();
@@ -961,7 +1002,7 @@ class Referral extends Controller
 
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         $province = RefCityModel::select('provcode', 'citycode', 'cityname')->where('citycode', $id)->first();
@@ -1025,7 +1066,7 @@ class Referral extends Controller
     {
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         $barangay = RefBarangayModel::select('citycode', 'bgycode', 'bgyname')
@@ -1088,7 +1129,7 @@ class Referral extends Controller
     {
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         $facility = RefFacilitiesModel::select([
@@ -1174,11 +1215,13 @@ class Referral extends Controller
      *     )
      * )
      */
-    public function getReferralData($id)
+    public function getReferralData(Request $request, $id)
     {
         if (! Auth::check()) {
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
+
+        $this->referralAccessService->authorizeReferral($request->user(), (string) $id);
 
         $referral = ReferralModel::with([
             'patientinformation',
@@ -1434,20 +1477,24 @@ class Referral extends Controller
     public function get_referral_list(Request $request, $hfhudcode, $emr_id)
     {
         if (! Auth::check()) {
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         if (empty($emr_id)) {
             return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
         }
 
+        $this->referralAccessService->authorizeFacility($request->user(), (string) $hfhudcode);
+
         $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
             ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
                 $query->where('emr_id', $emr_id)
                     ->where('fhudTo', $hfhudcode);
             })
-            ->whereDoesntHave('track') // This excludes referrals with any related track
-            ->get();
+            ->whereDoesntHave('track'); // This excludes referrals with any related track
+
+        $this->referralAccessService->scopeReferrals($referrals, $request->user());
+        $referrals = $referrals->get();
 
         if ($referrals->isEmpty()) {
             return response()->json(['error' => 'No referrals found/ facility not assigned to any emr'], 404);
@@ -1541,6 +1588,8 @@ class Referral extends Controller
             'received_date' => 'required|date_format:m/d/Y H:i:s',
             'received_by' => 'required',
         ]);
+
+        $this->referralAccessService->authorizeReferral($request->user(), (string) $validated['LogID']);
 
         // Prevent duplicate insert
         $existing = ReferralTrackModel::find($validated['LogID']);
@@ -1637,7 +1686,7 @@ class Referral extends Controller
     {
         if (! Auth::check()) {
             // If not authenticated, this will trigger the unauthenticated handler
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
         if (empty($request->all())) {
             return response()->json(['error' => 'Invalid data'], 400);
@@ -1648,6 +1697,8 @@ class Referral extends Controller
             'LogID' => 'required',
             'admission_date' => 'required|date_format:m/d/Y H:i:s',
         ]);
+
+        $this->referralAccessService->authorizeReferral($request->user(), (string) $validated['LogID']);
 
         // Find the referral record
         $referral = ReferralTrackModel::find($request->LogID);
@@ -1758,7 +1809,7 @@ class Referral extends Controller
     public function discharge(Request $request)
     {
         if (! Auth::check()) {
-            return $this->unauthenticated($request, new \Illuminate\Auth\AuthenticationException);
+            return $this->unauthenticated($request, new AuthenticationException);
         }
 
         $validated = $request->validate([
@@ -1849,6 +1900,8 @@ class Referral extends Controller
         if (empty($logID)) {
             return response()->json(['error' => 'Invalid data'], 400);
         }
+
+        $this->referralAccessService->authorizeReferral($request->user(), (string) $logID);
 
         $output = $this->referralService->getDischargeInformation($logID);
 
@@ -2200,6 +2253,8 @@ class Referral extends Controller
             ], 422);
         }
 
+        $this->referralAccessService->authorizeReferral($request->user(), (string) $requestData['LogID']);
+
         $data = $this->referralService->saveReferralStatus($requestData);
 
         return response()->json([
@@ -2278,9 +2333,21 @@ class Referral extends Controller
         if (! Auth::check()) {
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
-        $requestData = $request->only(['LogID']);
+        $requestData = $request->validate([
+            'LogID' => ['nullable', 'string', 'max:100'],
+        ]);
 
-        $data = $this->referralService->getAllPatientStatus();
+        $referrals = ReferralModel::query()->select('LogID');
+        $this->referralAccessService->scopeReferrals($referrals, $request->user());
+
+        if (filled($requestData['LogID'] ?? null)) {
+            $referrals->where('LogID', $requestData['LogID']);
+        }
+
+        $data = DB::table('referral_status')
+            ->whereIn('LogID', $referrals)
+            ->orderByDesc('created_at')
+            ->get();
 
         return response()->json([
             'success' => true,

@@ -3,11 +3,13 @@
 use App\Models\User;
 use App\Services\ReferralService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Schema::create('ref_facilities', function (Blueprint $table) {
@@ -20,7 +22,10 @@ beforeEach(function () {
         ['hfhudcode' => 'DOH000000000000002', 'facility_name' => 'Receiving Hospital'],
     ]);
 
-    Sanctum::actingAs(User::factory()->create());
+    $user = User::factory()->create();
+    $permission = Permission::findOrCreate('incoming create', 'web');
+    $user->givePermissionTo($permission);
+    Sanctum::actingAs($user);
 });
 
 test('referrals can be created from the web referral form', function () {

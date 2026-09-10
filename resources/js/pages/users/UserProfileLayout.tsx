@@ -26,14 +26,15 @@ type ProfileData = {
     primary_role?: string | null;
     role?: string | null;
     status?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 };
 
-export default function ProfileLayout({ id, is_include }: ProfileLayoutProps) {
+export default function ProfileLayout({ id }: ProfileLayoutProps) {
     const { url } = usePage();
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Fetch profile data
     useEffect(() => {
@@ -53,11 +54,11 @@ export default function ProfileLayout({ id, is_include }: ProfileLayoutProps) {
         };
 
         fetchProfile();
-    }, [id]);
+    }, [id, refreshKey]);
 
     // Handle save success
     const handleSaveSuccess = () => {
-        // Triggering component refresh by using `url` as the key.
+        setRefreshKey((current) => current + 1);
     };
 
     const isIncludePage = url.includes(`/users/assign-roles/${id}`);
@@ -84,10 +85,10 @@ export default function ProfileLayout({ id, is_include }: ProfileLayoutProps) {
 
                     <div className="w-full md:w-[87%]">
                         {isIncludePage && (
-                            <UsersListAssign key={url} refreshKey={url} id={parseInt(id)} is_include={true} onSave={handleSaveSuccess} />
+                            <UsersListAssign key={url} refreshKey={refreshKey} id={parseInt(id)} is_include={true} onSave={handleSaveSuccess} />
                         )}
                         {isExcludePage && (
-                            <UsersListAssign key={url} refreshKey={url} id={parseInt(id)} is_include={false} onSave={handleSaveSuccess} />
+                            <UsersListAssign key={url} refreshKey={refreshKey} id={parseInt(id)} is_include={false} onSave={handleSaveSuccess} />
                         )}
                     </div>
                 </div>

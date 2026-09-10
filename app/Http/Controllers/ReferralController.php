@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ReferralHelper;
 use App\Models\ReferralInformationModel;
+use App\Services\IncomingDashboardService;
 use App\Services\ReferralAttachmentService;
 use App\Services\ReferralService;
 use Carbon\Carbon;
@@ -21,10 +22,16 @@ class ReferralController extends Controller
 
     protected $referralAttachmentService;
 
-    public function __construct(ReferralService $referralService, ReferralAttachmentService $referralAttachmentService)
-    {
+    protected $incomingDashboardService;
+
+    public function __construct(
+        ReferralService $referralService,
+        ReferralAttachmentService $referralAttachmentService,
+        IncomingDashboardService $incomingDashboardService
+    ) {
         $this->referralService = $referralService;
         $this->referralAttachmentService = $referralAttachmentService;
+        $this->incomingDashboardService = $incomingDashboardService;
     }
 
     public function index(Request $request)
@@ -55,85 +62,41 @@ class ReferralController extends Controller
 
         $this->applyIncomingScope($query, $user);
 
-        $summaryQuery = clone $query;
-        $filterOptionsQuery = clone $query;
+        $filterOptions = null;
 
-        $filterOptions = [
-            'origins' => (clone $filterOptionsQuery)
-                ->setEagerLoads([])
-                ->whereNotNull('fhudFrom')
-                ->select('fhudFrom')
-                ->distinct()
-                ->with('facility_from:hfhudcode,facility_name')
-                ->get()
-                ->map(fn ($referral) => [
-                    'code' => (string) $referral->fhudFrom,
-                    'name' => (string) ($referral->facility_from?->facility_name ?? $referral->fhudFrom),
-                ])
-                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
-                ->values(),
-            'destinations' => (clone $filterOptionsQuery)
-                ->setEagerLoads([])
-                ->whereNotNull('fhudTo')
-                ->select('fhudTo')
-                ->distinct()
-                ->with('facility_to:hfhudcode,facility_name')
-                ->get()
-                ->map(fn ($referral) => [
-                    'code' => (string) $referral->fhudTo,
-                    'name' => (string) ($referral->facility_to?->facility_name ?? $referral->fhudTo),
-                ])
-                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
-                ->values(),
-            'types' => ReferralHelper::getReferralType(),
-            'reasons' => ReferralHelper::getReferralReasons(),
-        ];
-
-        $summary = [
-            'totalIncoming' => (clone $summaryQuery)->count(),
-            'todayIncoming' => (clone $summaryQuery)->whereDate('refferalDate', now()->toDateString())->count(),
-            'emergencyCount' => (clone $summaryQuery)->where('referralCategory', 'ER')->count(),
-            'outpatientCount' => (clone $summaryQuery)->where('referralCategory', 'OPD')->count(),
-            'receivingFacilities' => (clone $summaryQuery)->distinct('fhudTo')->count('fhudTo'),
-            'topReasons' => (clone $summaryQuery)
-                ->selectRaw('referralReason, COUNT(*) as aggregate')
-                ->groupBy('referralReason')
-                ->orderByDesc('aggregate')
-                ->limit(4)
-                ->get()
-                ->map(function ($item) {
-                    $reason = ReferralHelper::getReferralReasonbyCode($item->referralReason);
-
-                    return [
-                        'code' => $item->referralReason,
-                        'label' => $reason['description'] ?? ($item->referralReason === 'OTHER' ? 'Other reason' : $item->referralReason),
-                        'count' => (int) $item->aggregate,
-                    ];
-                })
-                ->values(),
-            'topProvinces' => $this->buildLocationSummary(
-                (clone $summaryQuery)
-                    ->leftJoin('referral_patientdemo as demo', 'referral_information.LogID', '=', 'demo.LogID')
-                    ->leftJoin('ref_province as province', 'demo.patientProvCode', '=', 'province.provcode'),
-                'demo.patientProvCode',
-                'province.provname'
-            ),
-            'topCities' => $this->buildLocationSummary(
-                (clone $summaryQuery)
-                    ->leftJoin('referral_patientdemo as demo', 'referral_information.LogID', '=', 'demo.LogID')
-                    ->leftJoin('ref_city as city', 'demo.patientMundCode', '=', 'city.citycode'),
-                'demo.patientMundCode',
-                'city.cityname'
-            ),
-            'topBarangays' => $this->buildLocationSummary(
-                (clone $summaryQuery)
-                    ->leftJoin('referral_patientdemo as demo', 'referral_information.LogID', '=', 'demo.LogID')
-                    ->leftJoin('ref_barangay as barangay', 'demo.patientBrgyCode', '=', 'barangay.bgycode'),
-                'demo.patientBrgyCode',
-                'barangay.bgyname'
-            ),
-            'generatedAt' => now()->toIso8601String(),
-        ];
+        if ($request->boolean('include_filter_options', true)) {
+            $filterOptionsQuery = clone $query;
+            $filterOptions = [
+                'origins' => (clone $filterOptionsQuery)
+                    ->setEagerLoads([])
+                    ->whereNotNull('fhudFrom')
+                    ->select('fhudFrom')
+                    ->distinct()
+                    ->with('facility_from:hfhudcode,facility_name')
+                    ->get()
+                    ->map(fn ($referral) => [
+                        'code' => (string) $referral->fhudFrom,
+                        'name' => (string) ($referral->facility_from?->facility_name ?? $referral->fhudFrom),
+                    ])
+                    ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                    ->values(),
+                'destinations' => (clone $filterOptionsQuery)
+                    ->setEagerLoads([])
+                    ->whereNotNull('fhudTo')
+                    ->select('fhudTo')
+                    ->distinct()
+                    ->with('facility_to:hfhudcode,facility_name')
+                    ->get()
+                    ->map(fn ($referral) => [
+                        'code' => (string) $referral->fhudTo,
+                        'name' => (string) ($referral->facility_to?->facility_name ?? $referral->fhudTo),
+                    ])
+                    ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                    ->values(),
+                'types' => ReferralHelper::getReferralType(),
+                'reasons' => ReferralHelper::getReferralReasons(),
+            ];
+        }
 
         if (filled($filters['date_from'] ?? null)) {
             $query->whereDate('refferalDate', '>=', $filters['date_from']);
@@ -221,9 +184,16 @@ class ReferralController extends Controller
             'total' => $paginated->total(),
             'current_page' => $paginated->currentPage(),
             'last_page' => $paginated->lastPage(),
-            'summary' => $summary,
             'filter_options' => $filterOptions,
         ]);
+    }
+
+    public function dashboard(Request $request)
+    {
+        $query = ReferralInformationModel::query()->whereDoesntHave('track');
+        $this->applyIncomingScope($query, $request->user());
+
+        return response()->json($this->incomingDashboardService->summarize($query));
     }
 
     // Show the form for creating a new resource
@@ -719,24 +689,6 @@ class ReferralController extends Controller
     private function emptyZeroValue(mixed $value): string
     {
         return trim((string) $value) === '0' ? '' : (string) ($value ?? '');
-    }
-
-    private function buildLocationSummary($query, string $codeColumn, string $nameColumn): array
-    {
-        return $query
-            ->selectRaw("{$codeColumn} as code, COALESCE(NULLIF({$nameColumn}, ''), 'Unspecified') as label, COUNT(DISTINCT referral_information.LogID) as aggregate")
-            ->whereNotNull($codeColumn)
-            ->groupBy($codeColumn, $nameColumn)
-            ->orderByDesc('aggregate')
-            ->limit(4)
-            ->get()
-            ->map(fn ($item) => [
-                'code' => $item->code,
-                'label' => $item->label,
-                'count' => (int) $item->aggregate,
-            ])
-            ->values()
-            ->all();
     }
 
     private function applyIncomingScope($query, ?Authenticatable $user): void

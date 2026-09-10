@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Link, router } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowRightIcon, ChevronDown, Hospital, List, Mars, Plus, Printer, SlidersHorizontal, Trash2, Venus, X } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { ArrowRightIcon, BarChart3, ChevronDown, Hospital, List, Mars, Plus, Printer, SlidersHorizontal, Trash2, Venus, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import IncomingDashboard from './IncomingDashboard';
 import type { IncomingAdvancedFilters, IncomingFilterOptions, IncomingReferralRow, IncomingSummary, PermissionProps } from './types';
 
@@ -42,12 +42,17 @@ const emptyAdvancedFilters: IncomingAdvancedFilters = {
 const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) => {
     const [data, setData] = useState<IncomingReferralRow[]>([]);
     const [summary, setSummary] = useState<IncomingSummary>(emptySummary);
+    const [dashboardOpen, setDashboardOpen] = useState(false);
+    const [dashboardLoading, setDashboardLoading] = useState(false);
+    const [dashboardLoaded, setDashboardLoaded] = useState(false);
+    const [dashboardError, setDashboardError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalRows, setTotalRows] = useState(0);
     const [perPage, setPerPage] = useState(5);
     const [filterOptions, setFilterOptions] = useState<IncomingFilterOptions>(emptyFilterOptions);
+    const filterOptionsLoaded = useRef(false);
     const [advancedFilters, setAdvancedFilters] = useState<IncomingAdvancedFilters>(emptyAdvancedFilters);
     const [appliedFilters, setAppliedFilters] = useState<IncomingAdvancedFilters>(emptyAdvancedFilters);
     const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -65,6 +70,7 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
     };
 
     useEffect(() => {
+        const controller = new AbortController();
         const delayDebounce = setTimeout(() => {
             const fetchData = async () => {
                 setLoading(true);
@@ -74,14 +80,19 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
                             page,
                             per_page: perPage,
                             search: searchTerm || undefined,
+                            include_filter_options: !filterOptionsLoaded.current,
                             ...Object.fromEntries(Object.entries(appliedFilters).filter(([, value]) => value !== '')),
                         },
+                        signal: controller.signal,
                     });
                     setData(response.data.data ?? []);
                     setTotalRows(response.data.total ?? 0);
-                    setSummary(response.data.summary ?? emptySummary);
-                    setFilterOptions(response.data.filter_options ?? emptyFilterOptions);
+                    if (response.data.filter_options) {
+                        setFilterOptions(response.data.filter_options);
+                        filterOptionsLoaded.current = true;
+                    }
                 } catch (error) {
+                    if (axios.isCancel(error)) return;
                     console.error('Error fetching referrals:', error);
                 } finally {
                     setLoading(false);
@@ -89,9 +100,12 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
             };
 
             void fetchData();
-        }, 500);
+        }, searchTerm ? 300 : 0);
 
-        return () => clearTimeout(delayDebounce);
+        return () => {
+            clearTimeout(delayDebounce);
+            controller.abort();
+        };
     }, [refreshKey, refreshTick, page, searchTerm, perPage, appliedFilters]);
 
     const closeDeleteDialog = () => {
@@ -128,6 +142,25 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
         onEdit?.(row);
     };
 
+    const toggleDashboard = async () => {
+        const nextOpen = !dashboardOpen;
+        setDashboardOpen(nextOpen);
+
+        if (!nextOpen || dashboardLoaded || dashboardLoading) return;
+
+        setDashboardLoading(true);
+        setDashboardError('');
+        try {
+            const response = await axios.get<IncomingSummary>('/incoming/dashboard');
+            setSummary(response.data);
+            setDashboardLoaded(true);
+        } catch {
+            setDashboardError('Unable to load the dashboard. Please try again.');
+        } finally {
+            setDashboardLoading(false);
+        }
+    };
+
     const totalPages = Math.ceil(totalRows / perPage);
     const activeFilterCount = Object.values(appliedFilters).filter(Boolean).length;
     const draftFilterCount = Object.values(advancedFilters).filter(Boolean).length;
@@ -157,7 +190,35 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
 
     return (
         <div className="flex w-full flex-col gap-3">
-            <IncomingDashboard summary={summary} canCreate={!!canCreate} />
+            <div className="rounded-xl border border-slate-200/80 bg-white/90 shadow-sm">
+                <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
+                    aria-expanded={dashboardOpen}
+                    aria-controls="incoming-dashboard"
+                    onClick={() => void toggleDashboard()}
+                >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                        <BarChart3 className="size-4 text-teal-700" />
+                        Incoming dashboard
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-slate-500">
+                        {dashboardLoading ? 'Loading...' : dashboardOpen ? 'Collapse' : 'Expand'}
+                        <ChevronDown className={`size-4 transition-transform ${dashboardOpen ? 'rotate-180' : ''}`} />
+                    </span>
+                </button>
+                {dashboardOpen && (
+                    <div id="incoming-dashboard" className="border-t border-slate-200/80 p-2">
+                        {dashboardError ? (
+                            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{dashboardError}</div>
+                        ) : dashboardLoaded ? (
+                            <IncomingDashboard summary={summary} canCreate={!!canCreate} />
+                        ) : (
+                            <div className="p-4 text-center text-sm text-slate-500">Loading dashboard...</div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <div className="w-full overflow-x-auto rounded-xl border border-slate-200/80 bg-white/90 p-3 shadow-sm">
                 <div className="mb-2 flex items-center justify-between">

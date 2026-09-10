@@ -34,11 +34,10 @@ toastr.options = {
     "progressBar": true,
     "positionClass": "toast-top-right", // Change the position to top right
     "preventDuplicates": true,
-    "showDuration": "300", // Show toast for 300ms
-    "hideDuration": "1000", // Hide toast for 1000ms
+    "showDuration": 300, // Show toast for 300ms
+    "hideDuration": 1000, // Hide toast for 1000ms
     "hideEasing": "linear",
-    "timeOut": "5000", // Toast will disappear after 5 seconds
-    "extendedTimeOut": "1000"
+    "timeOut": 5000, // Toast will disappear after 5 seconds
+    "extendedTimeOut": 1000
 };
-
 

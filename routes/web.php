@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BedTrackerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataEncryptionController;
 use App\Http\Controllers\DemographicController;
+use App\Http\Controllers\FacilityHierarchyController;
 use App\Http\Controllers\PatientMasterController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RefEmrController;
@@ -13,10 +15,10 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ReferralFacilityReportController;
 use App\Http\Controllers\ReferralPatientInfoController;
 use App\Http\Controllers\RefFacilitiesController;
-use App\Http\Controllers\FacilityHierarchyController;
 use App\Http\Controllers\RefFacilitytypeController;
 use App\Http\Controllers\RefReligionController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\RolePermissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,7 +41,7 @@ Route::get('/users', function (Request $request) {
     ];
 
     return Inertia::render('Users/Index', $permissions);
-})->middleware(['auth', 'verified'])->name('user.index');
+})->middleware(['auth', 'verified', 'can:user list'])->name('user.index');
 
 Route::get('/users/create', function () {
     return Inertia::render('Users/usersForm');
@@ -78,7 +80,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('user.store');
     Route::get('/users/sample', [RegisteredUserController::class, 'sample'])->name('user.sample');
     Route::get('/users/info/{id}', [RegisteredUserController::class, 'show'])->name('user.info');
-    Route::get('/user-has-role', [RegisteredUserController::class, 'role_has_user'])->name('user.has.role');
+    Route::get('/user-has-role', [RegisteredUserController::class, 'role_has_user'])
+        ->middleware('can:user assign')
+        ->name('user.has.role');
 });
 
 Route::patch('/users/assign-roles/{id}', [RegisteredUserController::class, 'assignRolesToUser'])
@@ -99,7 +103,7 @@ Route::get('/roles', function (Request $request) {
     ];
 
     return Inertia::render('Roles/Index', $permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('roles.index');
+})->middleware(['auth:sanctum', 'verified', 'can:role list'])->name('roles.index');
 
 Route::get('roles/assign/{id}', function (Request $request, $id) {
     $permissions = [
@@ -109,26 +113,30 @@ Route::get('roles/assign/{id}', function (Request $request, $id) {
     ];
 
     return Inertia::render('Roles/RolesProfileLayout', $permissions);
-})->middleware(['auth:sanctum', 'verified']);
+})->middleware(['auth:sanctum', 'verified', 'can:role assign']);
 
 Route::get('roles/assigned/{id}', function ($id) {
     return Inertia::render('Roles/RolesProfileLayout', [
         'id' => $id,
         'is_include' => true,
     ]);
-})->middleware(['auth:sanctum', 'verified']);
+})->middleware(['auth:sanctum', 'verified', 'can:role assign']);
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/roles/list', [RoleController::class, 'index']);
-    Route::put('/roles/update/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
-    Route::post('/roles/store', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/roles/info/{id}', [RoleController::class, 'show'])->name('roles.info');
+    Route::get('/roles/list', [RoleController::class, 'index'])->middleware('can:role list');
+    Route::put('/roles/update/{role}', [RoleController::class, 'update'])->middleware('can:role edit')->name('roles.update');
+    Route::delete('/roles/delete/{role}', [RoleController::class, 'destroy'])->middleware('can:role delete')->name('roles.destroy');
+    Route::post('/roles/store', [RoleController::class, 'store'])->middleware('can:role create')->name('roles.store');
+    Route::get('/roles/info/{id}', [RoleController::class, 'show'])->middleware('can:role list')->name('roles.info');
 });
 
-Route::patch('/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])->name('roles.assign');
-Route::patch('/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])->name('roles.revoke');
+Route::patch('/assign-permissions/{id}', [RoleController::class, 'assignPermissions'])
+    ->middleware(['auth:sanctum', 'can:role assign'])
+    ->name('roles.assign');
+Route::patch('/revoke-permissions/{id}', [RoleController::class, 'revokePermissions'])
+    ->middleware(['auth:sanctum', 'can:role assign'])
+    ->name('roles.revoke');
 
 // Inertia Page Route (Web, uses session-based auth)
 Route::get('/permission', function (Request $request) {
@@ -141,17 +149,19 @@ Route::get('/permission', function (Request $request) {
     ];
 
     return Inertia::render('Permission/Index', $permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('permission.index');
+})->middleware(['auth:sanctum', 'verified', 'can:permission list'])->name('permission.index');
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/permission/list', [PermissionController::class, 'index']);
-    Route::put('/permission/update/{perm}', [PermissionController::class, 'update'])->name('permission.update');
+    Route::get('/permission/list', [PermissionController::class, 'index'])->middleware('can:permission list');
+    Route::put('/permission/update/{perm}', [PermissionController::class, 'update'])->middleware('can:permission edit')->name('permission.update');
     // Route::delete('/permission/delete/{permission}', [PermissionController::class, 'destroy'])->name('permission.destroy');
-    Route::delete('/permission/delete/{perm}', [PermissionController::class, 'destroy'])->name('permission.destroy');
-    Route::post('/permission/store', [PermissionController::class, 'store'])->name('permission.store');
-    Route::get('/permission-has-role', [PermissionController::class, 'permission_has_role'])->name('permission.has.role');
-    Route::get('/permission/info/{id}', [PermissionController::class, 'show'])->name('permission.info');
+    Route::delete('/permission/delete/{perm}', [PermissionController::class, 'destroy'])->middleware('can:permission delete')->name('permission.destroy');
+    Route::post('/permission/store', [PermissionController::class, 'store'])->middleware('can:permission create')->name('permission.store');
+    Route::get('/permission-has-role', [RolePermissionController::class, 'index'])
+        ->middleware('can:role assign')
+        ->name('permission.has.role');
+    Route::get('/permission/info/{id}', [PermissionController::class, 'show'])->middleware('can:permission list')->name('permission.info');
 });
 
 Route::get('emr', function (Request $request) {
@@ -225,7 +235,7 @@ Route::get('/facilities', function (Request $request) {
     // Return the Inertia view with the permissions data
     return Inertia::render('Ref_Facilities/Index', $permissions);
 })
-    ->middleware(['auth:sanctum', 'verified']) // Apply permission middleware here
+    ->middleware(['auth:sanctum', 'verified', 'can:facility list'])
     ->name('facilities');
 
 // Authenticated and permission-guarded API routes
@@ -286,15 +296,15 @@ Route::middleware(['auth:sanctum', 'verified', 'can:facility hierarchy list'])
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/facility_type/update/{id}', [RefFacilitytypeController::class, 'update'])
-
+        ->middleware('can:facility edit')
         ->name('facility_type.update');
 
     Route::delete('/facility_type/delete/{id}', [RefFacilitytypeController::class, 'destroy'])
-
+        ->middleware('can:facility delete')
         ->name('facility_type.destroy');
 
     Route::post('/facility_type/store', [RefFacilitytypeController::class, 'store'])
-
+        ->middleware('can:facility create')
         ->name('facility_type.store');
 
     Route::get('/facility_type/info/{id}', [RefFacilitytypeController::class, 'show'])
@@ -310,37 +320,48 @@ Route::get('/facility_type/list', [RefFacilitytypeController::class, 'list'])
 
 Route::get('/religions', function () {
     return Inertia::render('Religion/Index');
-})->middleware(['auth:sanctum', 'verified'])->name('religion.index');
+})->middleware(['auth:sanctum', 'verified', 'can:demographic list'])->name('religion.index');
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/religions/list', [RefReligionController::class, 'index'])
+        ->middleware('can:demographic list')
         ->name('religion.list');
     Route::get('/religions/info/{id}', [RefReligionController::class, 'show'])
+        ->middleware('can:demographic list')
         ->name('religion.info');
     Route::post('/religions/store', [RefReligionController::class, 'store'])
+        ->middleware('can:demographic create')
         ->name('religion.store');
     Route::put('/religions/update/{id}', [RefReligionController::class, 'update'])
+        ->middleware('can:demographic edit')
         ->name('religion.update');
     Route::delete('/religions/delete/{id}', [RefReligionController::class, 'destroy'])
+        ->middleware('can:demographic delete')
         ->name('religion.destroy');
 });
 
 Route::get('/demographics', function () {
     return Inertia::render('Demographics/Index');
-})->middleware(['auth:sanctum', 'verified'])->name('demographics.index');
+})->middleware(['auth:sanctum', 'verified', 'can:demographic list'])->name('demographics.index');
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/demographics/list', [DemographicController::class, 'index'])
+        ->middleware('can:demographic list')
         ->name('demographics.list');
     Route::get('/demographics/options/{level}', [DemographicController::class, 'options'])
+        ->middleware('can:demographic list')
         ->name('demographics.options');
     Route::get('/demographics/info/{level}/{id}', [DemographicController::class, 'show'])
+        ->middleware('can:demographic list')
         ->name('demographics.info');
     Route::post('/demographics/store/{level}', [DemographicController::class, 'store'])
+        ->middleware('can:demographic create')
         ->name('demographics.store');
     Route::put('/demographics/update/{level}/{id}', [DemographicController::class, 'update'])
+        ->middleware('can:demographic edit')
         ->name('demographics.update');
     Route::delete('/demographics/delete/{level}/{id}', [DemographicController::class, 'destroy'])
+        ->middleware('can:demographic delete')
         ->name('demographics.destroy');
 });
 
@@ -357,7 +378,7 @@ Route::get('/incoming', function (Request $request) {
     ];
 
     return Inertia::render('Incoming/Index', $permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('incoming.index');
+})->middleware(['auth:sanctum', 'verified', 'can:incoming list'])->name('incoming.index');
 
 Route::get('/bed_tracker', function (Request $request) {
     $permissions = [
@@ -368,7 +389,7 @@ Route::get('/bed_tracker', function (Request $request) {
     ];
 
     return Inertia::render('BedTracker/Index', $permissions);
-})->middleware(['auth:sanctum', 'verified'])->name('bed_tracker.index');
+})->middleware(['auth:sanctum', 'verified', 'can:beds list'])->name('bed_tracker.index');
 
 Route::get('/referrals/create', function (Request $request) {
 
@@ -400,6 +421,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/incoming/list', [ReferralController::class, 'index'])
         ->middleware('can:incoming list')
         ->name('incoming.list');
+    Route::get('/incoming/dashboard', [ReferralController::class, 'dashboard'])
+        ->middleware('can:incoming list')
+        ->name('incoming.dashboard');
     Route::post('/referrals/store', [ReferralController::class, 'store'])
         ->middleware('can:incoming create')
         ->name('referral.store');
@@ -469,10 +493,6 @@ Route::get('/patient', function (Request $request) {
     return Inertia::render('Incoming/Index', $permissions);
 })->middleware(['auth:sanctum', 'verified'])->name('patient');
 
-Route::middleware([])->group(function () {
-    Route::get('/test', [ReferralController::class, 'test'])->name('referral.test');
-});
-
 // Clinical
 Route::middleware(['auth:sanctum', 'verified'])
     ->get('/referral-clinical/{LogID}', [ReferralClinicalController::class, 'show']);
@@ -518,6 +538,10 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('admin/data-encryption')
     Route::get('/status', [DataEncryptionController::class, 'status'])->name('admin.data-encryption.status');
     Route::put('/', [DataEncryptionController::class, 'update'])->name('admin.data-encryption.update');
 });
+
+Route::get('/admin/audit-trail', [AuditTrailController::class, 'index'])
+    ->middleware(['auth:sanctum', 'verified'])
+    ->name('admin.audit-trail.index');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

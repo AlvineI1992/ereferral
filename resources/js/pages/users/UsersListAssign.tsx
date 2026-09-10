@@ -1,265 +1,119 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import axios from 'axios';
-import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, FilterX, KeyRound, Save, Search, ShieldCheck, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 
-type Role = {
-    id: number;
-    name: string;
-    guard_name: string;
-};
+type Role = { id: number; name: string; guard_name: string };
+type ListProps = { refreshKey: number; id: number | null; is_include: boolean | null; onSave: () => void };
+type Filters = { guard: string; sort: string };
+const emptyFilters: Filters = { guard: '', sort: 'name' };
 
-type ListProps = {
-    refreshKey: any;
-    id: number | null;
-    is_include: boolean | null;
-    onSave: () => void;
-};
-
-const UsersListAssign = ({ onSave, refreshKey, id: selectedRoleId, is_include }: ListProps) => {
+export default function UsersListAssign({ onSave, refreshKey, id: userId, is_include: isAssign }: ListProps) {
     const [data, setData] = useState<Role[]>([]);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    const [selectAll, setSelectAll] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [search, setSearch] = useState('');
+    const [filters, setFilters] = useState<Filters>(emptyFilters);
+    const [guardOptions, setGuardOptions] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const [totalRows, setTotalRows] = useState(0);
-    const perPage = 10;
-
-    const fetchData = async (pageNumber = 1, search = '') => {
-        console.log('asd');
-        if (!selectedRoleId) {
-            setData([]);
-            setTotalRows(0);
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const response = await axios.get(`/user-has-role?page=${pageNumber}&search=${search}&user_id=${selectedRoleId}&is_include=${is_include}`);
-            setData(response.data.data);
-            setTotalRows(response.data.total);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            Swal.fire('Error', 'Failed to load permissions.', 'error');
-        }
-        setLoading(false);
-    };
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
-        const delayDebounce = setTimeout(() => {
-            fetchData(page, searchTerm);
-            setSelectedIds([]);
-            setSelectAll(false);
-        }, 500);
+        if (!userId) return;
+        const controller = new AbortController();
+        const timer = window.setTimeout(async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get('/user-has-role', {
+                    params: { page, per_page: perPage, search: search || undefined, user_id: userId, is_include: !!isAssign, ...filters },
+                    signal: controller.signal,
+                });
+                setData(response.data.data ?? []);
+                setTotalRows(response.data.total ?? 0);
+                setTotalPages(Math.max(response.data.last_page ?? 1, 1));
+                setGuardOptions(response.data.filter_options?.guards ?? []);
+                setSelectedIds([]);
+            } catch (error) {
+                if (!axios.isCancel(error)) await Swal.fire('Error', 'Failed to load roles.', 'error');
+            } finally {
+                if (!controller.signal.aborted) setLoading(false);
+            }
+        }, search ? 300 : 0);
 
-        return () => clearTimeout(delayDebounce);
-    }, [refreshKey, page, searchTerm]);
+        return () => { window.clearTimeout(timer); controller.abort(); };
+    }, [refreshKey, page, perPage, search, filters, userId, isAssign]);
 
-    const handleSelectOne = (id: number, checked: boolean) => {
-        if (checked) {
-            setSelectedIds((prev) => [...prev, id]);
-        } else {
-            setSelectedIds((prev) => prev.filter((item) => item !== id));
-        }
-    };
+    const pageIds = useMemo(() => data.map((role) => role.id), [data]);
+    const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
 
-    const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            const allIds = data.map((role) => role.id);
-            setSelectedIds(allIds);
-        } else {
-            setSelectedIds([]);
-        }
-        setSelectAll(checked);
-    };
-    const handleSubmit = async () => {
-        if (!selectedRoleId) {
-            Swal.fire('No Role Selected', 'Please select a role first.', 'warning');
-            return;
-        }
-
-        if (selectedIds.length === 0) {
-            Swal.fire('No Selection', 'Please select at least one permission.', 'warning');
+    const submit = async () => {
+        if (!userId || selectedIds.length === 0) {
+            await Swal.fire('No selection', 'Select at least one role.', 'warning');
             return;
         }
 
         setProcessing(true);
         try {
-            if (is_include) {
-                await axios.patch(
-                    `/users/assign-roles/${selectedRoleId}`,
-                    { roleids: selectedIds },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`,
-                        },
-                    },
-                );
-                Swal.fire('Success', 'Roles assigned successfully.', 'success');
-            } else {
-                await axios.patch(
-                    `/users/revoke-roles/${selectedRoleId}`,
-                    { roleids: selectedIds },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`,
-                        },
-                    },
-                );
-                Swal.fire('Success', 'Roles revoked successfully.', 'success');
-            }
-
-            // Reset selection
+            const url = isAssign ? `/users/assign-roles/${userId}` : `/users/revoke-roles/${userId}`;
+            const response = await axios.patch(url, { roleids: selectedIds });
+            await Swal.fire('Success', response.data.message, 'success');
             setSelectedIds([]);
-            setSelectAll(false);
             onSave();
         } catch (error) {
-            console.error(error);
-            Swal.fire('Error', 'Something went wrong while processing permissions.', 'error');
+            const message = axios.isAxiosError(error) ? error.response?.data?.message : null;
+            await Swal.fire('Error', message ?? 'Unable to update user roles.', 'error');
         } finally {
             setProcessing(false);
         }
     };
 
-    const totalPages = Math.ceil(totalRows / perPage);
-    const startEntry = (page - 1) * perPage + 1;
-    const endEntry = Math.min(startEntry + perPage - 1, totalRows);
+    const updateFilter = (key: keyof Filters, value: string) => { setPage(1); setFilters((current) => ({ ...current, [key]: value })); };
+    const startEntry = totalRows ? (page - 1) * perPage + 1 : 0;
+    const endEntry = Math.min(page * perPage, totalRows);
 
     return (
-        <div className="mt-3 mr-3 ml-3 p-3">
-            {/* Header */}
-            <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <h2 className={`text-lg font-semibold ${is_include ? 'text-blue-600' : 'text-green-600'}`}>
-                        {is_include ? 'Available' : 'Assigned'}
+        <div className="m-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 className={`flex items-center gap-2 text-lg font-semibold ${isAssign ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {isAssign ? <ShieldCheck className="size-5" /> : <KeyRound className="size-5" />}
+                        {isAssign ? 'Available roles' : 'Assigned roles'}
                     </h2>
+                    <p className="mt-0.5 text-xs text-slate-500">{selectedIds.length} selected · {totalRows} matching roles</p>
                 </div>
-
-                {/* Save Button */}
-                <div className="mb-3 flex justify-end">
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={processing}
-                        className="flex gap-1 rounded-sm border border-green-700 px-3 py-2 font-semibold text-green-700 transition-all hover:bg-green-600 hover:text-white"
-                    >
-                        {processing ? (
-                            <span className="animate-pulse">Processing...</span>
-                        ) : (
-                            <>
-                                <Save size={16} />
-                                Save
-                            </>
-                        )}
-                    </Button>
-                </div>
+                <Button variant={isAssign ? 'default' : 'destructive'} disabled={processing || selectedIds.length === 0} onClick={() => void submit()}>
+                    {processing ? 'Processing...' : isAssign ? <><Save className="size-4" /> Assign selected</> : <><XCircle className="size-4" /> Revoke selected</>}
+                </Button>
             </div>
 
-            {/* Search */}
-            <div className="mb-2 flex justify-end gap-2">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-56 rounded-md border px-2 py-1 text-sm"
-                />
+            <div className="grid gap-2 border-b bg-slate-50/70 p-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="relative"><Search className="absolute top-2.5 left-2.5 size-4 text-slate-400" /><Input value={search} onChange={(event) => { setPage(1); setSearch(event.target.value); }} placeholder="Search role" className="pl-8" /></div>
+                <select value={filters.guard} onChange={(event) => updateFilter('guard', event.target.value)} className="border-input bg-background h-9 rounded-md border px-3 text-sm"><option value="">All guards</option>{guardOptions.map((guard) => <option key={guard}>{guard}</option>)}</select>
+                <select value={filters.sort} onChange={(event) => updateFilter('sort', event.target.value)} className="border-input bg-background h-9 rounded-md border px-3 text-sm"><option value="name">Name A–Z</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
+                <Button variant="outline" disabled={!search && !filters.guard && filters.sort === 'name'} onClick={() => { setSearch(''); setFilters(emptyFilters); setPage(1); }}><FilterX className="size-4" /> Clear filters</Button>
             </div>
 
-            {/* Table */}
-            {loading ? (
-                <div className="flex items-center justify-center py-4">
-                    <div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-                    <span className="text-sm text-blue-600">&nbsp;Please wait...</span>
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse text-left text-sm">
-                        <thead>
-                            <tr>
-                                <th className="border-b px-1 py-1">
-                                    <Checkbox checked={selectAll} onCheckedChange={handleSelectAll} />
-                                </th>
-                                <th className="border-b px-1 py-1">Name</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.length > 0 ? (
-                                data.map((row) => (
-                                    <tr key={row.id}>
-                                        <td className="border-b px-1 py-1">
-                                            <Checkbox
-                                                checked={selectedIds.includes(row.id)}
-                                                onCheckedChange={(checked) => handleSelectOne(row.id, checked === true)}
-                                            />
-                                        </td>
-                                        <td className="border-b px-1 py-1">{row.name}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={2} className="py-2 text-center text-gray-500">
-                                        No permission found.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[36rem] text-left text-sm">
+                    <thead className="border-b text-xs uppercase text-slate-500"><tr><th className="w-12 px-3 py-2"><Checkbox checked={allPageSelected} onCheckedChange={(checked) => setSelectedIds(checked ? pageIds : [])} aria-label="Select page" /></th><th className="px-3 py-2">Role</th><th className="px-3 py-2">Guard</th></tr></thead>
+                    <tbody className="divide-y">
+                        {loading ? <tr><td colSpan={3} className="py-10 text-center text-slate-500">Loading roles...</td></tr> : data.length ? data.map((role) => (
+                            <tr key={role.id} className="hover:bg-slate-50"><td className="px-3 py-2"><Checkbox checked={selectedIds.includes(role.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, role.id])] : current.filter((id) => id !== role.id))} aria-label={`Select ${role.name}`} /></td><td className="px-3 py-2 font-medium">{role.name}</td><td className="px-3 py-2"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs">{role.guard_name}</span></td></tr>
+                        )) : <tr><td colSpan={3} className="py-10 text-center text-slate-500">No roles match the selected filters.</td></tr>}
+                    </tbody>
+                </table>
+            </div>
 
-                    {/* Info and Pagination */}
-                    <div className="mt-4 flex flex-col items-center justify-between gap-2 px-2 md:flex-row">
-                        <div className="text-sm text-gray-600">
-                            {totalRows > 0 ? (
-                                <>
-                                    Showing {startEntry} to {endEntry} of {totalRows} entries
-                                </>
-                            ) : (
-                                <>No entries to show</>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            {/* Previous button */}
-                            <button
-                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                                disabled={page === 1}
-                                className={`flex items-center gap-1 rounded-md border px-3 py-1 text-sm ${page === 1 ? 'border-gray-300 text-gray-400' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}
-                            >
-                                <ChevronLeft size={16} />
-                                Previous
-                            </button>
-
-                            {/* Page Numbers */}
-                            <div className="flex gap-1">
-                                {Array.from({ length: totalPages }, (_, index) => index + 1).map((num) => (
-                                    <button
-                                        key={num}
-                                        onClick={() => setPage(num)}
-                                        className={`rounded-md border px-3 py-1 text-sm ${num === page ? 'bg-blue-600 text-white' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Next button */}
-                            <button
-                                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                                disabled={page === totalPages}
-                                className={`flex items-center gap-1 rounded-md border px-3 py-1 text-sm ${page === totalPages ? 'border-gray-300 text-gray-400' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}
-                            >
-                                Next
-                                <ChevronRight size={16} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="flex flex-col gap-2 border-t p-3 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2"><span>Showing {startEntry}–{endEntry} of {totalRows}</span><select value={perPage} onChange={(event) => { setPage(1); setPerPage(Number(event.target.value)); }} className="rounded border px-2 py-1"><option>5</option><option>10</option><option>25</option></select></div>
+                <div className="flex items-center gap-2"><Button size="sm" variant="outline" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}><ChevronLeft className="size-4" /></Button><span>Page {page} of {totalPages}</span><Button size="sm" variant="outline" disabled={page >= totalPages || loading} onClick={() => setPage((value) => value + 1)}><ChevronRight className="size-4" /></Button></div>
+            </div>
         </div>
     );
-};
-
-export default UsersListAssign;
+}

@@ -68,9 +68,7 @@
             * Use to fetch the credential policy for the Try It feature. Options are: omit, include (default), and same-origin
             */
             'try_it_credentials_policy' => 'same-origin',
-            'try_it_default_headers' => [
-                'Authorization' => 'Bearer ' . env('SCRAMBLE_BEARER_TOKEN'),
-            ],
+            'try_it_default_headers' => [],
 
             /*
             * There are three layouts for Elements:

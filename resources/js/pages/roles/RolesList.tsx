@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Pencil, Trash2, List, CircleArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Inertia } from "@inertiajs/inertia";
+import { router } from "@inertiajs/react";
 type RolesListProps = {
   refreshKey: any; 
   onEdit: (id: number) => void;
@@ -46,7 +46,7 @@ const RolesList = ({ canEdit,canDelete,canAssign,refreshKey, onEdit }: RolesList
       console.error("ID parameter is required");
       return;
     }
-    Inertia.visit(`/roles/assign/${id}`);
+    router.visit(`/roles/assign/${id}`);
   };
 
   const handleDelete = async (id) => {

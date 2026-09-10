@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title description">
+  <title id="title">eReferral network recommendation API workflow</title>
+  <desc id="description">Authenticate, submit a source facility, and follow the configured referral hierarchy from RHU through district and provincial facilities to the apex hospital.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0fdfa"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #475569; }
+      .label { font: 700 15px Arial, sans-serif; fill: #0f172a; }
+      .detail { font: 400 12px Arial, sans-serif; fill: #475569; }
+      .step { fill: #ffffff; stroke: #99f6e4; stroke-width: 2; }
+      .facility { fill: #ecfdf5; stroke: #10b981; stroke-width: 2; }
+      .apex { fill: #0f766e; stroke: #115e59; stroke-width: 2; }
+      .apexText { font: 700 15px Arial, sans-serif; fill: #ffffff; }
+      .apexDetail { font: 400 12px Arial, sans-serif; fill: #ccfbf1; }
+      .arrow { stroke: #0f766e; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="520" rx="20" fill="url(#background)"/>
+  <text x="50" y="50" class="title">Referral Network Recommendation Workflow</text>
+  <text x="50" y="78" class="subtitle">The API follows active, configured parent links. It does not replace clinical assessment or live capacity checks.</text>
+
+  <rect x="50" y="115" width="210" height="82" rx="12" class="step"/>
+  <text x="70" y="145" class="label">1. Authenticate</text>
+  <text x="70" y="168" class="detail">POST /login</text>
+  <text x="70" y="186" class="detail">Authorize with Sanctum token</text>
+
+  <path d="M260 156 H330" class="arrow"/>
+  <rect x="330" y="115" width="300" height="82" rx="12" class="step"/>
+  <text x="350" y="145" class="label">2. Request recommendation</text>
+  <text x="350" y="168" class="detail">GET /referral-network/recommendations/{hfhudcode}</text>
+  <text x="350" y="186" class="detail">Optional: ?target_level=apex</text>
+
+  <path d="M630 156 H700" class="arrow"/>
+  <rect x="700" y="115" width="450" height="82" rx="12" class="step"/>
+  <text x="720" y="145" class="label">3. Validate configured path</text>
+  <text x="720" y="168" class="detail">Active mapping + active facility + correct level + same network</text>
+  <text x="720" y="186" class="detail">Returns 404 if unmapped; 422 if incomplete or invalid</text>
+
+  <path d="M925 197 V255" class="arrow"/>
+  <rect x="50" y="270" width="220" height="100" rx="14" class="facility"/>
+  <text x="70" y="305" class="label">RHU / Lower level</text>
+  <text x="70" y="330" class="detail">Source facility</text>
+  <text x="70" y="350" class="detail">level: lower</text>
+
+  <path d="M270 320 H345" class="arrow"/>
+  <rect x="345" y="270" width="220" height="100" rx="14" class="facility"/>
+  <text x="365" y="305" class="label">District facility</text>
+  <text x="365" y="330" class="detail">Immediate recommendation</text>
+  <text x="365" y="350" class="detail">level: district</text>
+
+  <path d="M565 320 H640" class="arrow"/>
+  <rect x="640" y="270" width="220" height="100" rx="14" class="facility"/>
+  <text x="660" y="305" class="label">Provincial facility</text>
+  <text x="660" y="330" class="detail">Next escalation</text>
+  <text x="660" y="350" class="detail">level: provincial</text>
+
+  <path d="M860 320 H935" class="arrow"/>
+  <rect x="935" y="270" width="215" height="100" rx="14" class="apex"/>
+  <text x="955" y="305" class="apexText">Apex hospital</text>
+  <text x="955" y="330" class="apexDetail">Highest configured level</text>
+  <text x="955" y="350" class="apexDetail">level: apex</text>
+
+  <rect x="250" y="420" width="700" height="60" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="275" y="447" class="label">Response</text>
+  <text x="275" y="468" class="detail">recommended_facility + complete escalation_path + referral_network + recommendation_basis</text>
+</svg>

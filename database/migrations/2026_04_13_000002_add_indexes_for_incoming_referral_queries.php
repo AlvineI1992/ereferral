@@ -13,22 +13,24 @@ return new class extends Migration
     public function up(): void
     {
         if (Schema::hasTable('referral_information')) {
-            Schema::table('referral_information', function (Blueprint $table) {
-                if (! $this->hasIndex('referral_information', 'idx_ref_info_fhud_to_refferal_date')) {
-                    $table->index(['fhudTo', 'refferalDate'], 'idx_ref_info_fhud_to_refferal_date');
-                }
+            $this->withoutZeroDateRestrictions(function (): void {
+                Schema::table('referral_information', function (Blueprint $table) {
+                    if (! $this->hasIndex('referral_information', 'idx_ref_info_fhud_to_refferal_date')) {
+                        $table->index(['fhudTo', 'refferalDate'], 'idx_ref_info_fhud_to_refferal_date');
+                    }
 
-                if (! $this->hasIndex('referral_information', 'idx_ref_info_refferal_date')) {
-                    $table->index('refferalDate', 'idx_ref_info_refferal_date');
-                }
+                    if (! $this->hasIndex('referral_information', 'idx_ref_info_refferal_date')) {
+                        $table->index('refferalDate', 'idx_ref_info_refferal_date');
+                    }
 
-                if (! $this->hasIndex('referral_information', 'idx_ref_info_referral_category')) {
-                    $table->index('referralCategory', 'idx_ref_info_referral_category');
-                }
+                    if (! $this->hasIndex('referral_information', 'idx_ref_info_referral_category')) {
+                        $table->index('referralCategory', 'idx_ref_info_referral_category');
+                    }
 
-                if (! $this->hasIndex('referral_information', 'idx_ref_info_referral_reason')) {
-                    $table->index('referralReason', 'idx_ref_info_referral_reason');
-                }
+                    if (! $this->hasIndex('referral_information', 'idx_ref_info_referral_reason')) {
+                        $table->index('referralReason', 'idx_ref_info_referral_reason');
+                    }
+                });
             });
         }
 
@@ -92,6 +94,29 @@ return new class extends Migration
     {
         if ($this->hasIndex($tableName, $indexName)) {
             $table->dropIndex($indexName);
+        }
+    }
+
+    private function withoutZeroDateRestrictions(callable $callback): void
+    {
+        if (DB::getDriverName() !== 'mysql') {
+            $callback();
+
+            return;
+        }
+
+        $originalMode = (string) DB::scalar('select @@session.sql_mode');
+        $compatibleMode = implode(',', array_filter(
+            explode(',', $originalMode),
+            static fn (string $mode): bool => ! in_array($mode, ['NO_ZERO_DATE', 'NO_ZERO_IN_DATE'], true)
+        ));
+
+        DB::unprepared('set session sql_mode = '.DB::getPdo()->quote($compatibleMode));
+
+        try {
+            $callback();
+        } finally {
+            DB::unprepared('set session sql_mode = '.DB::getPdo()->quote($originalMode));
         }
     }
 };

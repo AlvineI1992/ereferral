@@ -19,36 +19,38 @@ import {
     LayoutGrid,
     MapPinned,
     ShieldCheck,
+    ScrollText,
     User,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
 import { useMemo } from 'react';
 
-const mainNavItems: NavItem[] = [
-    { title: 'Dashboard', href: '/dashboard', icon: LayoutGrid }, // Changed to route
-    { title: 'Referral/s', href: '/incoming', icon: Inbox }, // Changed to route
-    { title: 'Patient registry', href: '/patient_registry', icon: BriefcaseMedical }, // Changed to route
-
-    { title: 'Appointments', href: '/appointments', icon: Calendar1 }, // Changed to route
-    { title: 'Bed Tracker', href: '/bed_tracker', icon: BedDouble }, // Changed to route
-];
-
-const navReports: NavItem[] = [{ title: 'Referral Report', href: '/reports/referrals-by-facility', icon: ChartNoAxesColumnIncreasing }];
-
 const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     const { props } = usePage();
     const user = props.auth?.user;
+    const access = user?.navigation;
+    const mainNavItems: NavItem[] = [
+        ...(access?.dashboard ? [{ title: 'Dashboard', href: '/dashboard', icon: LayoutGrid }] : []),
+        ...(access?.incoming ? [{ title: 'Referral/s', href: '/incoming', icon: Inbox }] : []),
+        ...(access?.patients ? [{ title: 'Patient registry', href: '/patient_registry', icon: BriefcaseMedical }] : []),
+        ...(access?.appointments ? [{ title: 'Appointments', href: '/appointments', icon: Calendar1 }] : []),
+        ...(access?.beds ? [{ title: 'Bed Tracker', href: '/bed_tracker', icon: BedDouble }] : []),
+    ];
     const navReferences: NavItem[] = [
-        { title: 'Demographics', href: '/demographics', icon: MapPinned },
-        { title: 'Facilities', href: '/facilities', icon: Hospital },
-        ...(user?.can_view_facility_hierarchy
+        ...(access?.demographics ? [{ title: 'Demographics', href: '/demographics', icon: MapPinned }] : []),
+        ...(access?.facilities ? [{ title: 'Facilities', href: '/facilities', icon: Hospital }] : []),
+        ...(access?.facilityHierarchy
             ? [{ title: 'Facility Hierarchy', href: '/facility-hierarchy', icon: CircleChevronRight }]
             : []),
-        { title: 'Religions', href: '/religions', icon: FileBadge },
+        ...(access?.religions ? [{ title: 'Religions', href: '/religions', icon: FileBadge }] : []),
     ];
+    const navReports: NavItem[] = access?.reports
+        ? [{ title: 'Referral Report', href: '/reports/referrals-by-facility', icon: ChartNoAxesColumnIncreasing }]
+        : [];
+    const sidebarHome = mainNavItems[0]?.href ?? navReferences[0]?.href ?? navReports[0]?.href ?? (access?.auditTrail ? '/admin/audit-trail' : '#');
 
     const getRouteOrFallback = (routeName: string, fallback: string) => {
         try {
@@ -71,11 +73,12 @@ export function AppSidebar() {
             href: '#',
             icon: User,
             submenu: [
-                { title: 'Provider', href: 'emr.index', icon: CircleChevronRight },
-                { title: 'Users', href: 'user.index', icon: CircleChevronRight },
-                { title: 'Roles', href: 'roles.index', icon: CircleChevronRight },
-                { title: 'Permissions', href: 'permission.index', icon: CircleChevronRight },
-                { title: 'Data Encryption', href: 'admin.data-encryption.index', icon: ShieldCheck },
+                ...(access?.providers ? [{ title: 'Provider', href: 'emr.index', icon: CircleChevronRight }] : []),
+                ...(access?.users ? [{ title: 'Users', href: 'user.index', icon: CircleChevronRight }] : []),
+                ...(access?.roles ? [{ title: 'Roles', href: 'roles.index', icon: CircleChevronRight }] : []),
+                ...(access?.permissions ? [{ title: 'Permissions', href: 'permission.index', icon: CircleChevronRight }] : []),
+                ...(access?.dataEncryption ? [{ title: 'Data Encryption', href: 'admin.data-encryption.index', icon: ShieldCheck }] : []),
+                ...(access?.auditTrail ? [{ title: 'Audit Trail', href: 'admin.audit-trail.index', icon: ScrollText }] : []),
             ],
         },
     ];
@@ -86,7 +89,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={getRouteOrFallback('dashboard', '/dashboard')} prefetch>
+                            <Link href={access?.dashboard ? getRouteOrFallback('dashboard', '/dashboard') : sidebarHome} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -95,10 +98,10 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
-                <NavReference items={navReferences} />
-                <NavReports items={navReports} />
-                {hasAdminRole && <NavAdministrator items={adminNavItems} />} {/* Conditionally render the admin menu */}
+                {mainNavItems.length > 0 && <NavMain items={mainNavItems} />}
+                {navReferences.length > 0 && <NavReference items={navReferences} />}
+                {navReports.length > 0 && <NavReports items={navReports} />}
+                {hasAdminRole && adminNavItems[0].submenu!.length > 0 && <NavAdministrator items={adminNavItems} />}
             </SidebarContent>
 
             <SidebarFooter>

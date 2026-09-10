@@ -11,7 +11,6 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +18,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -30,12 +30,23 @@ class RegisteredUserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['A', 'I'])],
+            'role' => ['nullable', 'integer', 'exists:roles,id'],
+            'access_type' => ['nullable', Rule::in(['EMR', 'CHD', 'HOSP'])],
+            'access_scope' => ['nullable', Rule::in(['scoped', 'unscoped'])],
+            'created_from' => ['nullable', 'date'],
+            'created_to' => ['nullable', 'date', 'after_or_equal:created_from'],
+            'sort' => ['nullable', Rule::in(['name', 'newest', 'oldest'])],
+            'per_page' => ['nullable', 'integer', Rule::in([10, 25, 50])],
+        ]);
+
         $query = User::query()
             ->select(['id', 'name', 'email', 'status', 'access_id', 'access_type', 'created_at'])
-            ->with('roles:id,name')
-            ->orderBy('name');
+            ->with('roles:id,name');
 
-        $search = trim((string) $request->input('search', ''));
+        $search = trim((string) ($validated['search'] ?? ''));
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
@@ -47,40 +58,73 @@ class RegisteredUserController extends Controller
             });
         }
 
-        $users = $query->paginate(10);
+        $query
+            ->when($validated['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($validated['role'] ?? null, fn ($query, $roleId) => $query->whereHas('roles', fn ($roleQuery) => $roleQuery->where('roles.id', $roleId)))
+            ->when($validated['access_type'] ?? null, fn ($query, $type) => $query->where('access_type', $type))
+            ->when(($validated['access_scope'] ?? null) === 'scoped', fn ($query) => $query->whereNotNull('access_id')->where('access_id', '<>', ''))
+            ->when(($validated['access_scope'] ?? null) === 'unscoped', fn ($query) => $query->where(fn ($scopeQuery) => $scopeQuery->whereNull('access_id')->orWhere('access_id', '')))
+            ->when($validated['created_from'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '>=', $date))
+            ->when($validated['created_to'] ?? null, fn ($query, $date) => $query->whereDate('created_at', '<=', $date));
+
+        match ($validated['sort'] ?? 'name') {
+            'newest' => $query->orderByDesc('created_at'),
+            'oldest' => $query->orderBy('created_at'),
+            default => $query->orderBy('name'),
+        };
+
+        $users = $query->paginate($validated['per_page'] ?? 10);
 
         return response()->json([
             'data' => $this->decorateUsers(collect($users->items()))->values(),
             'total' => $users->total(),
+            'last_page' => $users->lastPage(),
+            'filter_options' => [
+                'roles' => Role::query()->orderBy('name')->get(['id', 'name']),
+            ],
         ]);
     }
 
     public function role_has_user(Request $request): JsonResponse
     {
-        $userId = $request->input('user_id');
-        $isInclude = filter_var($request->input('is_include'), FILTER_VALIDATE_BOOLEAN);
-
-        if (! $userId) {
-            return response()->json(['error' => 'user_id is required'], 400);
-        }
-
-        $allRoles = RoleModel::all();
+        $request->merge(['is_include' => $request->boolean('is_include')]);
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'is_include' => ['required', 'boolean'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'guard' => ['nullable', 'string', 'max:50'],
+            'sort' => ['nullable', Rule::in(['name', 'newest', 'oldest'])],
+            'per_page' => ['nullable', 'integer', Rule::in([5, 10, 25])],
+        ]);
 
         $assignedRoleIds = \DB::table('model_has_roles')
             ->where('model_type', User::class)
-            ->where('model_id', $userId)
-            ->pluck('role_id')
-            ->toArray();
+            ->where('model_id', $validated['user_id'])
+            ->pluck('role_id');
 
-        $roles = $allRoles->filter(function ($role) use ($assignedRoleIds, $isInclude) {
-            return $isInclude
-                ? ! in_array($role->id, $assignedRoleIds)
-                : in_array($role->id, $assignedRoleIds);
-        })->values();
+        $query = RoleModel::query()
+            ->when($validated['search'] ?? null, fn ($query, $search) => $query->where('name', 'LIKE', "%{$search}%"))
+            ->when($validated['guard'] ?? null, fn ($query, $guard) => $query->where('guard_name', $guard));
+
+        $validated['is_include']
+            ? $query->whereNotIn('id', $assignedRoleIds)
+            : $query->whereIn('id', $assignedRoleIds);
+
+        match ($validated['sort'] ?? 'name') {
+            'newest' => $query->orderByDesc('id'),
+            'oldest' => $query->orderBy('id'),
+            default => $query->orderBy('name'),
+        };
+
+        $roles = $query->paginate($validated['per_page'] ?? 10);
 
         return response()->json([
-            'data' => $roles,
-            'total' => $roles->count(),
+            'data' => $roles->items(),
+            'total' => $roles->total(),
+            'last_page' => $roles->lastPage(),
+            'filter_options' => [
+                'guards' => RoleModel::query()->whereNotNull('guard_name')->distinct()->orderBy('guard_name')->pluck('guard_name'),
+            ],
         ]);
     }
 
@@ -95,7 +139,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request)
     {
@@ -107,7 +151,7 @@ class RegisteredUserController extends Controller
             event(new Registered($user));
             Auth::login($user);
 
-            return redirect()->route('dashboard', absolute: false);
+            return redirect()->to(route('dashboard', absolute: false));
         }
 
         return response()->json([
@@ -332,6 +376,7 @@ class RegisteredUserController extends Controller
                 'roles' => $roleNames->all(),
                 'roles_count' => $roleNames->count(),
                 'primary_role' => $roleNames->first(),
+                'created_at' => $user->created_at?->toIso8601String(),
             ];
         });
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\UserAccessLabelService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -42,28 +43,52 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        $user = $request->user();
+        $roles = $user?->getRoleNames()->map(fn ($role) => strtolower($role)) ?? collect();
+        $isAdministrator = $roles->contains('admin') || $roles->contains('super-admin');
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
 
-
             'auth' => [
-            'user' => $request->user() ? [
-                'id' => $request->user()->id,
-                'name' => $request->user()->name,
-                'email' => $request->user()->email,
-                'roles' => $request->user()->getRoleNames(), 
-                'can_view_facility_hierarchy' => $request->user()->can('facility hierarchy list'),
-             ] : null,
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->getRoleNames(),
+                    'access_type' => $user->access_type,
+                    'access_label' => app(UserAccessLabelService::class)->resolve($user),
+                    'navigation' => [
+                        'dashboard' => $user->canAny([
+                            'dashboard_referral monthly',
+                            'dashboard_referral typeofservice',
+                            'dashboard_referral reasonofreferral',
+                        ]),
+                        'incoming' => $user->can('incoming list'),
+                        'patients' => $user->can('patient list'),
+                        'appointments' => $user->can('appointment list'),
+                        'beds' => $user->can('beds list'),
+                        'demographics' => $user->can('demographic list'),
+                        'facilities' => $user->can('facility list'),
+                        'facilityHierarchy' => $user->can('facility hierarchy list'),
+                        'religions' => $user->can('demographic list'),
+                        'reports' => $user->can('incoming list'),
+                        'providers' => $user->can('provider list'),
+                        'users' => $user->can('user list'),
+                        'roles' => $user->can('role list'),
+                        'permissions' => $user->can('permission list'),
+                        'dataEncryption' => $isAdministrator,
+                        'auditTrail' => $isAdministrator,
+                    ],
+                ] : null,
             ],
-
 
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
-            ]
+            ],
         ];
     }
 }

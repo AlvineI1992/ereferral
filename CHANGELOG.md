@@ -1,5 +1,31 @@
 # Changelog
 
+## AEI - 2026-09-09
+- Changed the development session default to file storage and cleared stale configuration so web requests no longer query an obsolete local SQLite sessions table.
+- Added a centralized legacy MySQL/MariaDB schema grammar so runtime `Schema::hasColumn()` and column discovery no longer query the unavailable `generation_expression` metadata field.
+- Fixed pending migrations across legacy MySQL/MariaDB and SQLite tests when servers lack modern schema metadata, contain historical zero-date timestamps, enforce the 767-byte index limit, or already contain deployed hierarchy tables; affected migrations now use driver-aware metadata queries, scoped SQL-mode compatibility, compatible attachment path indexes, and safe recovery from partially-created or pre-existing tables.
+- Limited restrictive CSP, HSTS, and browser security policies to production responses; active Vite development mode now bypasses them even when a local environment is mislabeled as production.
+- Fixed the production Content Security Policy to permit the configured Bunny Fonts stylesheet and font files.
+- Completed application security hardening with production debug disabled, strict HTTP security headers, restricted CORS, and removal of the public diagnostic route.
+- Updated Composer and NPM dependency locks to patched releases; both security audits now report zero known vulnerabilities.
+- Protected role, permission, facility-type, religion, demographic, user, referral, and bed-management routes with explicit permissions or scoped Sanctum token abilities.
+- Added reusable facility-aware referral authorization for clinical data, referral lists, FHIR payloads, status history, and private attachment downloads.
+- Hardened API authentication with active-account enforcement, login throttling, duplicate-token revocation, limited token abilities, and eight-hour token expiration.
+- Removed stale duplicate classes, corrected PSR-4 and Composer classmap warnings, and repaired SQLite-compatible religion seeding so the full PHP test suite can run cleanly.
+- Added a referral-network recommendation workflow diagram to the interactive API documentation.
+- Added an authenticated referral-network recommendation API that returns the next facility and full RHU-to-district-to-provincial-to-apex escalation path.
+- Organized API documentation by workflow, documented actual role/permission behavior, and added usable Sanctum authorization for Try It without changing deployed endpoints.
+- Added the resolved user access label to both application header layouts.
+- Displayed the signed-in user's resolved region, hospital, provider, general-access, or administrator label in the sidebar profile.
+- Hid every sidebar module and administrator submenu item when the signed-in user lacks its corresponding access permission.
+- Enhanced user role assignment with server pagination, guard/search/sort filters, safer requests, and reliable post-assignment refresh.
+- Added advanced server-side user-table filters for role, status, access type/scope, creation dates, sorting, and page size.
+- Enhanced role permission assignment with module, action, guard, search, and page-size filters; corrected assignment endpoints and protected role-access routes.
+- Added an administrator-only Audit Trail menu and paginated activity page with event, date, and search filters.
+- Improved Incoming Referrals table loading by separating dashboard analytics from the paginated list request.
+- Collapsed the Incoming dashboard by default and loaded its analytics only when expanded.
+- Avoided repeated filter-option requests and cancelled stale table searches.
+
 ## AEI - 2026-09-04
 - Added dedicated create, list, edit, and delete permissions across the Facility Hierarchy module, including permission-aware navigation and database rollout compatibility.
 - Corrected province, city/municipality, and barangay cascading filters so they apply consistently to every hierarchy level, including Apex Hospital.

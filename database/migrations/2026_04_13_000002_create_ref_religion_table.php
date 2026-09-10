@@ -45,7 +45,6 @@ return new class extends Migration
                     'reldesc' => $row['reldesc'],
                     'relstat' => $row['relstat'],
                     'updated_at' => $now,
-                    'created_at' => DB::raw('COALESCE(created_at, NOW())'),
                     'deleted_at' => null,
                 ]
             );

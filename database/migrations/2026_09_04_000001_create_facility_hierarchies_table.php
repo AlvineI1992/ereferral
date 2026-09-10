@@ -8,6 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Some deployments received this table before the migration record was
+        // synchronized. Keep the migration safe to resume without destroying
+        // existing hierarchy data.
+        if (Schema::hasTable('facility_hierarchies')) {
+            return;
+        }
+
         Schema::create('facility_hierarchies', function (Blueprint $table) {
             $table->charset = 'utf8';
             $table->collation = 'utf8_general_ci';
