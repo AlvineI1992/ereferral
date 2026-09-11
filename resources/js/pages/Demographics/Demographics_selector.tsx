@@ -35,19 +35,20 @@ export default function DemographicSelector({
   value,
   onChange,
   errors,
+  canCreate,
 }: Props) {
   const [data, setData]       = useState<Region[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
 
-  const [selectedRegion,   setSelectedRegion]   = useState<string>('')
-  const [selectedProvince, setSelectedProvince] = useState<string>('')
-  const [selectedCity,     setSelectedCity]     = useState<string>('')
-  const [selectedBarangay, setSelectedBarangay] = useState<string>('')
-  const regionValue = value?.region || ''
-  const provinceValue = value?.province || ''
-  const cityValue = value?.city || ''
-  const barangayValue = value?.barangay || ''
+  const [localRegion, setSelectedRegion] = useState('')
+  const [localProvince, setSelectedProvince] = useState('')
+  const [localCity, setSelectedCity] = useState('')
+  const [localBarangay, setSelectedBarangay] = useState('')
+  const selectedRegion = value ? value.region || '' : localRegion
+  const selectedProvince = value ? value.province || '' : localProvince
+  const selectedCity = value ? value.city || '' : localCity
+  const selectedBarangay = value ? value.barangay || '' : localBarangay
 
   useEffect(() => {
     axios.get('/demographic/list')
@@ -58,14 +59,6 @@ export default function DemographicSelector({
       })
       .finally(() => setLoading(false))
   }, [])
-
-  // Sync external value into local state
-  useEffect(() => {
-    setSelectedRegion(regionValue)
-    setSelectedProvince(provinceValue)
-    setSelectedCity(cityValue)
-    setSelectedBarangay(barangayValue)
-  }, [regionValue, provinceValue, cityValue, barangayValue])
 
   const regionObj   = useMemo(() => data.find(r => r.code === selectedRegion),               [data, selectedRegion])
   const provinceObj = useMemo(() => regionObj?.provinces.find(p => p.code === selectedProvince), [regionObj, selectedProvince])
@@ -132,6 +125,7 @@ export default function DemographicSelector({
           onChange?.({ region: val, province: undefined, city: undefined, barangay: undefined })
         }}
         error={errors?.region}
+        disabled={!canCreate}
         options={data.map(r => ({ value: r.code, label: r.name }))}
       />
 
@@ -148,7 +142,7 @@ export default function DemographicSelector({
           setSelectedBarangay('')
           onChange?.({ region: selectedRegion, province: val, city: undefined, barangay: undefined })
         }}
-        disabled={!selectedRegion}
+        disabled={!canCreate || !regionObj}
         error={errors?.province}
         options={provinces.map(p => ({ value: p.code, label: p.name }))}
       />
@@ -165,7 +159,7 @@ export default function DemographicSelector({
           setSelectedBarangay('')
           onChange?.({ region: selectedRegion, province: selectedProvince, city: val, barangay: undefined })
         }}
-        disabled={!selectedProvince}
+        disabled={!canCreate || !provinceObj}
         error={errors?.city}
         options={cities.map(c => ({ value: c.code, label: c.name }))}
       />
@@ -181,7 +175,7 @@ export default function DemographicSelector({
           setSelectedBarangay(val)
           onChange?.({ region: selectedRegion, province: selectedProvince, city: selectedCity, barangay: val })
         }}
-        disabled={!selectedCity}
+        disabled={!canCreate || !cityObj}
         error={errors?.barangay}
         options={barangays.map(b => ({ value: b.code, label: b.name }))}
       />

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Services\UserAccessLabelService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
 
@@ -68,13 +69,15 @@ class HandleInertiaRequests extends Middleware
                         ]),
                         'incoming' => $user->can('incoming list'),
                         'patients' => $user->can('patient list'),
-                        'appointments' => $user->can('appointment list'),
+                        'appointments' => Route::has('appointments.index') && $user->can('appointment list'),
                         'beds' => $user->can('beds list'),
                         'demographics' => $user->can('demographic list'),
                         'facilities' => $user->can('facility list'),
                         'facilityHierarchy' => $user->can('facility hierarchy list'),
                         'religions' => $user->can('demographic list'),
-                        'reports' => $user->can('incoming list'),
+                        'reports' => $user->can('referral report list') || $user->can('diagnosis heatmap list'),
+                        'referralReport' => $user->can('referral report list'),
+                        'diagnosisHeatmap' => $user->can('diagnosis heatmap list'),
                         'providers' => $user->can('provider list'),
                         'users' => $user->can('user list'),
                         'roles' => $user->can('role list'),

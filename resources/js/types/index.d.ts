@@ -54,6 +54,8 @@ export interface User {
         facilityHierarchy: boolean;
         religions: boolean;
         reports: boolean;
+        referralReport: boolean;
+        diagnosisHeatmap: boolean;
         providers: boolean;
         users: boolean;
         roles: boolean;

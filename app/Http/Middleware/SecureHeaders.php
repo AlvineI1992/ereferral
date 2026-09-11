@@ -28,20 +28,22 @@ class SecureHeaders
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
         $directives = [
             "default-src 'self'",
             "base-uri 'self'",
             "object-src 'none'",
             "frame-ancestors 'none'",
             "form-action 'self'",
-            "img-src 'self' data: blob:",
-            "font-src 'self' data: https://fonts.bunny.net",
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
-            "style-src-elem 'self' 'unsafe-inline' https://fonts.bunny.net",
-            "script-src 'self' 'unsafe-inline'",
-            "script-src-elem 'self' 'unsafe-inline'",
-            "connect-src 'self'",
+            "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://tile.openstreetmap.org",
+            "font-src 'self' data: https://fonts.bunny.net https://fonts.gstatic.com",
+            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
+            "style-src-elem 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
+            "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com",
+            "script-src-elem 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com",
+            "connect-src 'self' https://*.googleapis.com https://*.gstatic.com",
+            "worker-src 'self' blob:",
+            "frame-src https://*.google.com",
         ];
 
         $response->headers->set('Content-Security-Policy', implode('; ', $directives));

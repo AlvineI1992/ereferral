@@ -9,7 +9,7 @@ class ReferralFacilityPatientListRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->can('incoming list');
+        return (bool) $this->user()?->can('referral report list');
     }
 
     public function rules(): array

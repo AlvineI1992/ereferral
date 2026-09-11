@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuditApiAccess;
 use App\Http\Middleware\CustomSanctumAuth;
 use App\Http\Middleware\EnsureActiveApiUser;
 use App\Http\Middleware\EnsureJsonHeaders;
@@ -11,6 +12,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -32,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'json.headers' => EnsureJsonHeaders::class, // ✅ Add this line
             'auth.sanctum.custom' => CustomSanctumAuth::class,
             'active.api.user' => EnsureActiveApiUser::class,
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
         ]);
 
         $middleware->web(append: [
@@ -43,9 +48,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             EnsureJsonHeaders::class,
             SecureHeaders::class,
+            AuditApiAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->shouldRenderJsonWhen(fn ($request, $exception) => $request->is('api', 'api/*') || $request->expectsJson());
+        $exceptions->respond(fn ($response, $exception, $request) => app(\App\Services\ApiExceptionResponse::class)->render($response, $exception, $request));
         $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([

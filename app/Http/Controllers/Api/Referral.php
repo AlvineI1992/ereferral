@@ -16,6 +16,7 @@ use App\Models\RefFacilityModel;
 use App\Models\RefProvinceModel;
 use App\Models\RefRegionModel;
 use App\Services\FhirReferralService;
+use App\Services\LoginEligibilityService;
 use App\Services\ReferralAccessService;
 use App\Services\ReferralAttachmentService;
 use App\Services\ReferralService;
@@ -52,16 +53,20 @@ class Referral extends Controller
 
     protected ReferralAccessService $referralAccessService;
 
+    protected LoginEligibilityService $loginEligibilityService;
+
     public function __construct(
         ReferralService $referralService,
         FhirReferralService $fhirReferralService,
         ReferralAttachmentService $referralAttachmentService,
-        ReferralAccessService $referralAccessService
+        ReferralAccessService $referralAccessService,
+        LoginEligibilityService $loginEligibilityService
     ) {
         $this->referralService = $referralService;
         $this->fhirReferralService = $fhirReferralService;
         $this->referralAttachmentService = $referralAttachmentService;
         $this->referralAccessService = $referralAccessService;
+        $this->loginEligibilityService = $loginEligibilityService;
     }
 
     /**
@@ -114,9 +119,16 @@ class Referral extends Controller
             ], 429);
         }
 
-        // API authentication follows the same active-account rule as web login.
-        if (Auth::attempt([...$credentials, 'status' => 'A'])) {
+        // API authentication follows the same account eligibility rules as web login.
+        if (Auth::attempt($credentials)) {
             $user = Auth::user();
+
+            if ($this->loginEligibilityService->failureMessage($user) !== null) {
+                Auth::logout();
+                RateLimiter::hit($throttleKey, 60);
+
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
 
             RateLimiter::clear($throttleKey);
             $user->tokens()->where('name', 'SanctumApp')->delete();
@@ -277,118 +289,16 @@ class Referral extends Controller
      *     )
      * )
      */
-    public function patient_referral(Request $request)
+    public function patient_referral(PatientReferralRequest $request)
     {
-        $serviceMode = $this->fhirReferralService->normalizeOption(
-            (string) $request->input('service_mode', $request->query('service_mode', $request->input('transmission_mode', 'current'))),
-            ['current', 'fhir', 'both'],
-            'current'
-        );
-        $responseFormat = $this->fhirReferralService->normalizeOption(
-            (string) $request->input('response_format', $request->query('response_format', 'current')),
-            ['current', 'fhir', 'both'],
-            'current'
-        );
-        $mergedData = $this->fhirReferralService->normalizeForCurrentService($request->all());
-        $patientReferralRequest = new PatientReferralRequest;
-        $validator = Validator::make($mergedData, $patientReferralRequest->rules(), $patientReferralRequest->messages());
+        $mergedData = array_merge($request->all(), $request->validated());
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
+        $facilityError = $this->validateFacilityEmrRegistration($mergedData);
+        if ($facilityError !== null) {
+            return response()->json($facilityError, 400);
         }
 
-        $this->referralAccessService->authorizeFacility(
-            $request->user(),
-            (string) ($mergedData['referral']['facility_from'] ?? '')
-        );
-
-        $attachments = $request->file('attachments', []);
-        $attachments = is_array($attachments) ? $attachments : [$attachments];
-        unset($mergedData['attachments']);
-
-        if ($attachments !== [] && $serviceMode === 'fhir') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Attachments require service_mode=current or service_mode=both so they can be linked to a local referral record.',
-                'errors' => [
-                    'attachments' => ['Attachments are not supported for FHIR-only transmission.'],
-                ],
-            ], 422);
-        }
-
-        if (in_array($serviceMode, ['current', 'both'], true)) {
-            $facilityError = $this->validateFacilityEmrRegistration($mergedData);
-
-            if ($facilityError !== null) {
-                return response()->json($facilityError, 400);
-            }
-        }
-
-        $currentOutput = [
-            'code' => '200',
-            'message' => 'Referral prepared for FHIR transmission.',
-        ];
-
-        if (in_array($serviceMode, ['current', 'both'], true)) {
-            $currentOutput = $this->referralService->refer_patient($mergedData);
-
-            $logId = $this->fhirReferralService->extractLogId($currentOutput, $mergedData);
-            if ($attachments !== [] && $logId && ReferralModel::where('LogID', $logId)->exists()) {
-                try {
-                    $currentOutput['attachments'] = $this->referralAttachmentService->store(
-                        $logId,
-                        $attachments,
-                        $request->user()?->id
-                    );
-                } catch (\Throwable $exception) {
-                    Log::error('Referral attachment storage failed.', [
-                        'log_id' => $logId,
-                        'exception' => $exception,
-                    ]);
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'The referral was saved, but its attachments could not be stored.',
-                        'log_id' => $logId,
-                    ], 500);
-                }
-            }
-        }
-
-        $fhirResult = null;
-        if (in_array($serviceMode, ['fhir', 'both'], true)) {
-            $fhirResult = $this->fhirReferralService->submitReferral(
-                $mergedData,
-                $this->fhirReferralService->extractLogId($currentOutput, $mergedData)
-            );
-
-            if ($serviceMode === 'fhir') {
-                $currentOutput = [
-                    'code' => $fhirResult['success'] ? '200' : (string) ($fhirResult['status'] ?? 500),
-                    'message' => $fhirResult['success']
-                        ? 'Referral successfully transmitted to FHIR server'
-                        : 'Referral failed to transmit to FHIR server',
-                ];
-            }
-        }
-
-        $output = $this->fhirReferralService->formatReferralResponse(
-            $currentOutput,
-            $fhirResult,
-            $responseFormat,
-            $serviceMode,
-            $mergedData
-        );
-
-        if ($serviceMode === 'current' && $responseFormat === 'current') {
-            return $output;
-        }
-
-        return response()->json($output, $this->referralResponseStatus($currentOutput, $fhirResult));
+        return $this->referralService->refer_patient($mergedData);
     }
 
     public function download_attachment(Request $request, ReferralAttachment $attachment)
@@ -1408,8 +1318,8 @@ class Referral extends Controller
      *  Get referral line list/s.
      *
      * @OA\Get(
-     *     path="/api/get-referral-list/{hfhudcode}/{emr_id}",
-     *     summary="Get referral list by HFHUDCODE and EMR ID",
+     *     path="/api/get-referral-list/{fhudcode}",
+     *     summary="Get referral list using an EMR credential",
      *     tags={"Transactions"},
      *     security={{ "sanctum": {} }},
      *
@@ -1423,9 +1333,9 @@ class Referral extends Controller
      *     ),
      *
      *     @OA\Parameter(
-     *         name="emr_id",
-     *         in="path",
-     *         description="EMR ID of the referral",
+     *         name="X-EMR-Token",
+     *         in="header",
+     *         description="EMR credential generated on Users for the authenticated account",
      *         required=true,
      *
      *         @OA\Schema(type="string")
@@ -1474,22 +1384,21 @@ class Referral extends Controller
      *     )
      * )
      */
-    public function get_referral_list(Request $request, $hfhudcode, $emr_id)
+    public function get_referral_list(Request $request, $fhudcode)
     {
         if (! Auth::check()) {
             return $this->unauthenticated($request, new AuthenticationException);
         }
 
-        if (empty($emr_id)) {
-            return response()->json(['error' => 'Missing or invalid EMR ID'], 400);
-        }
+        $emr_id = app(\App\Services\EmrCredentialService::class)->resolve($request->user(), $request->header('X-EMR-Token'));
 
-        $this->referralAccessService->authorizeFacility($request->user(), (string) $hfhudcode);
+        $this->referralAccessService->authorizeFacility($request->user(), (string) $fhudcode);
+        app(\App\Services\EmrCredentialService::class)->authorizeFacility($emr_id, (string) $fhudcode);
 
         $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
-            ->whereHas('facility_to', function ($query) use ($emr_id, $hfhudcode) {
+            ->whereHas('facility_to', function ($query) use ($emr_id, $fhudcode) {
                 $query->where('emr_id', $emr_id)
-                    ->where('fhudTo', $hfhudcode);
+                    ->where('hfhudcode', $fhudcode);
             })
             ->whereDoesntHave('track'); // This excludes referrals with any related track
 

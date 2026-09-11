@@ -1,5 +1,39 @@
 # Changelog
 
+## AEI - 2026-09-11
+- Added independent `referral report list` and `diagnosis heatmap list` permissions to report pages, data/drill-down/export routes, validation requests, and sidebar links; migration preserves existing Incoming-based role and direct-user report grants while enabling separate assignment/revocation.
+- Restricted regional (CHD) accounts to facilities inside their assigned region across directory pagination/search, facility options, direct details, and create/update/delete; accepts legacy padded/unpadded region codes and denies access when regional assignment is missing.
+- Added Reports > Diagnosis Heat Map: an interactive Philippines map using final discharge diagnoses, date and exact-diagnosis filters, scoped receiving-facility counts, map intensity legend, and explicit unmapped-coordinate totals; uses OpenStreetMap without a Google API key.
+- Added Google Maps location selection to facility registration/editing, optional saved latitude/longitude with paired range validation, current-location capture, and Google Maps search links; embedded map picking is enabled by GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_MAP_ID.
+- Fixed intermittent facility city/barangay selection by applying edit locations atomically, cancelling stale facility requests, and reading controlled demographic values directly instead of delayed state synchronization; blank codes remain blank.
+- Standardized API exception responses as clean JSON even in debug mode: removed stack traces and internal paths, preserved HTTP status/headers and validation errors, and hid internal server-error details.
+- Added saved EMR credential status on Users and an explicit `emr_id_token` generation response; enforced saved-provider facility ownership regardless of administrator roles and accepted surrounding copy/paste whitespace.
+- Replaced EMR credential exception traces with clean 403 JSON responses, distinguishing missing headers and malformed tokens while retaining account, provider, and hash validation.
+- Fixed the referral-list API documentation response from a placeholder string to the actual JSON array contract, including all returned fields, string referral IDs, nullable values, and credential/access and empty-list error examples.
+- Made EMR token management discoverable in a dedicated Users table column, with explicit permission and provider-access requirements and generation guidance for inactive or unassigned accounts.
+- Added one-time EMR credential generation, rotation, and revocation on Users for EMR-provider accounts; hashes are stored separately and validated against the authenticated account and current provider assignment.
+- Changed the referral-list API to `/api/get-referral-list/{fhudcode}` with required `X-EMR-Token` and existing bearer authorization; removed numeric EMR IDs from the URL and documented the new contract.
+- Completed compact dashboard KPI spacing by overriding shared card padding and gaps, stacking cards on narrow screens, and keeping metric descriptions readable without hover.
+- Compacted the `/dashboard` header, operational focus, KPI cards, spacing, typography, and responsive layout while retaining the full scoped referral, capacity, activity, network, and action detail set.
+- Limited the OpenAPI Schemas section to request models; response examples remain attached directly to their endpoint status responses.
+- Published structured API request bodies as reusable named OpenAPI component schemas so applicable input contracts appear in the documentation's Schemas section.
+- Registered Sanctum's `abilities` and `ability` middleware aliases and added coverage ensuring every API route middleware reference resolves correctly.
+- Added schema-derived JSON response examples to every documented API endpoint and response status while preserving endpoint-specific referral examples.
+- Added successful referral and facility-error response examples to the generated `/api/refer_patient` documentation.
+- Added centralized API access auditing with user, endpoint, method, response status, duration, IP address, and user agent metadata while excluding request bodies, credentials, and bearer tokens.
+- Made the `/api/refer_patient` ICD array optional while retaining format validation for ICD codes when supplied.
+- Added complete and minimum operational JSON samples for `/api/refer_patient`, aligned its validation with fields required by the legacy service, and restored JSON request documentation.
+- Restored the legacy `/api/refer_patient` request and response workflow while retaining Sanctum authentication and the existing facility EMR registration checks.
+- Unlocked administrator-controlled CipherSweet activation with a verified encrypted backup, queued resumable user-email conversion, progress and failure reporting, and guarded deactivation.
+- Added exact blind-index email lookup across login, user validation, user management, password recovery, and audit-trail display while preserving mixed plaintext/encrypted access during conversion.
+- Normalized CipherSweet key/provider configuration and expanded the user email column for encrypted payload storage.
+
+## AEI - 2026-09-10
+- Prevented web and API login when either the user access type or access ID is missing, except for `admin@referral.doh.gov.ph`.
+- Fixed case-sensitive Inertia page resolution for user and role administration pages in production builds.
+- Hid appointment navigation when the application has no registered appointment page, preventing Inertia prefetch 404 responses.
+- Corrected role create and update redirects to use the registered `roles.index` route name.
+
 ## AEI - 2026-09-09
 - Changed the development session default to file storage and cleared stale configuration so web requests no longer query an obsolete local SQLite sessions table.
 - Added a centralized legacy MySQL/MariaDB schema grammar so runtime `Schema::hasColumn()` and column discovery no longer query the unavailable `generation_expression` metadata field.

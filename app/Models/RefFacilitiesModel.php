@@ -63,6 +63,8 @@ class RefFacilitiesModel extends Model
         'city_code',
         'bgycode',
         'remarks',
+        'latitude',
+        'longitude',
     ];
 
     public function hierarchy(): HasOne

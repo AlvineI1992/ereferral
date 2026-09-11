@@ -22,6 +22,8 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
+use App\Services\DataEncryptionManager;
+use App\Rules\UniqueEncryptedEmail;
 
 class RegisteredUserController extends Controller
 {
@@ -50,9 +52,18 @@ class RegisteredUserController extends Controller
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
+                $builder->where('name', 'LIKE', "%{$search}%");
+
+                if (app(DataEncryptionManager::class)->isEnabled()) {
+                    $builder->orWhereBlind('email', 'email_index', strtolower($search));
+                    if (app(DataEncryptionManager::class)->isConverting()) {
+                        $builder->orWhere('email', strtolower($search));
+                    }
+                } else {
+                    $builder->orWhere('email', 'LIKE', "%{$search}%");
+                }
+
                 $builder
-                    ->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
                     ->orWhere('access_type', 'LIKE', "%{$search}%")
                     ->orWhere('status', 'LIKE', "%{$search}%");
             });
@@ -284,7 +295,9 @@ class RegisteredUserController extends Controller
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($user?->id),
+                app(DataEncryptionManager::class)->isEnabled()
+                    ? new UniqueEncryptedEmail($user?->id)
+                    : Rule::unique('users', 'email')->ignore($user?->id),
             ],
             'password' => $passwordRules,
             'access_type' => ['nullable', 'string', Rule::in(['EMR', 'CHD', 'HOSP'])],

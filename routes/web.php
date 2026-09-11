@@ -40,11 +40,11 @@ Route::get('/users', function (Request $request) {
         'canAssign' => $request->user()->can('user assign'),
     ];
 
-    return Inertia::render('Users/Index', $permissions);
+    return Inertia::render('users/Index', $permissions);
 })->middleware(['auth', 'verified', 'can:user list'])->name('user.index');
 
 Route::get('/users/create', function () {
-    return Inertia::render('Users/usersForm');
+    return Inertia::render('users/usersForm');
 })->middleware(['auth', 'verified'])->name('users.create');
 
 Route::get('/users/assign-roles/{id}', function (Request $request, $id) {
@@ -54,11 +54,11 @@ Route::get('/users/assign-roles/{id}', function (Request $request, $id) {
         'is_include' => true,
     ];
 
-    return Inertia::render('Users/UserProfileLayout', $permissions);
+    return Inertia::render('users/UserProfileLayout', $permissions);
 })->middleware(['auth:sanctum', 'verified', 'can:user assign']);
 
 Route::get('/users/assigned-roles/{id}', function ($id) {
-    return Inertia::render('Users/UserProfileLayout', [
+    return Inertia::render('users/UserProfileLayout', [
         'id' => $id,
         'is_include' => false,
     ]);
@@ -66,6 +66,12 @@ Route::get('/users/assigned-roles/{id}', function ($id) {
 
 // API Routes (Sanctum-protected)
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/users/{user}/emr-credential', [\App\Http\Controllers\EmrCredentialController::class, 'store'])
+        ->middleware(['can:user edit', 'throttle:10,1'])->name('users.emr-credential.store');
+    Route::get('/users/{user}/emr-credential', [\App\Http\Controllers\EmrCredentialController::class, 'show'])
+        ->middleware('can:user edit')->name('users.emr-credential.show');
+    Route::delete('/users/{user}/emr-credential', [\App\Http\Controllers\EmrCredentialController::class, 'destroy'])
+        ->middleware('can:user edit')->name('users.emr-credential.destroy');
     Route::get('/users/list', [RegisteredUserController::class, 'index'])
         ->middleware('can:user list')
         ->name('user.list');
@@ -102,7 +108,7 @@ Route::get('/roles', function (Request $request) {
         'canAssignRole' => $request->user()->can('role assign'),
     ];
 
-    return Inertia::render('Roles/Index', $permissions);
+    return Inertia::render('roles/Index', $permissions);
 })->middleware(['auth:sanctum', 'verified', 'can:role list'])->name('roles.index');
 
 Route::get('roles/assign/{id}', function (Request $request, $id) {
@@ -112,11 +118,11 @@ Route::get('roles/assign/{id}', function (Request $request, $id) {
         'is_include' => true,
     ];
 
-    return Inertia::render('Roles/RolesProfileLayout', $permissions);
+    return Inertia::render('roles/RolesProfileLayout', $permissions);
 })->middleware(['auth:sanctum', 'verified', 'can:role assign']);
 
 Route::get('roles/assigned/{id}', function ($id) {
-    return Inertia::render('Roles/RolesProfileLayout', [
+    return Inertia::render('roles/RolesProfileLayout', [
         'id' => $id,
         'is_include' => true,
     ]);
@@ -233,7 +239,7 @@ Route::get('/facilities', function (Request $request) {
     ];
 
     // Return the Inertia view with the permissions data
-    return Inertia::render('Ref_Facilities/Index', $permissions);
+    return Inertia::render('Ref_Facilities/Index', [...$permissions, 'googleMaps' => config('services.google_maps')]);
 })
     ->middleware(['auth:sanctum', 'verified', 'can:facility list'])
     ->name('facilities');
@@ -266,7 +272,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 });
 
-Route::middleware(['auth:sanctum', 'verified', 'can:incoming list'])
+Route::middleware(['auth:sanctum', 'verified', 'can:referral report list'])
     ->prefix('reports/referrals-by-facility')
     ->group(function () {
         Route::get('/', [ReferralFacilityReportController::class, 'index'])->name('reports.referrals-by-facility.index');
@@ -274,6 +280,10 @@ Route::middleware(['auth:sanctum', 'verified', 'can:incoming list'])
         Route::get('/patients', [ReferralFacilityReportController::class, 'patients'])->name('reports.referrals-by-facility.patients');
         Route::get('/csv', [ReferralFacilityReportController::class, 'csv'])->name('reports.referrals-by-facility.csv');
     });
+Route::middleware(['auth:sanctum', 'verified', 'can:diagnosis heatmap list'])->prefix('reports/diagnosis-heatmap')->group(function () {
+    Route::get('/', [\App\Http\Controllers\DiagnosisHeatmapController::class, 'index'])->name('reports.diagnosis-heatmap.index');
+    Route::get('/data', [\App\Http\Controllers\DiagnosisHeatmapController::class, 'data'])->name('reports.diagnosis-heatmap.data');
+});
 /* Route::get('/api/facilities', [RefFacilitiesController::class, 'index']); */
 Route::middleware(['auth:sanctum', 'can:facility list'])->get('/facility/list', [RefFacilitiesController::class, 'index'])->name('facility.list');
 

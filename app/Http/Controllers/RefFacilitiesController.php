@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\RefFacilitiesModel;
+use App\Services\FacilityRegionScope;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class RefFacilitiesController extends Controller
 {
+    public function __construct(private readonly FacilityRegionScope $regionScope) {}
     /**
      * Display a listing of the resource.
      *
@@ -30,6 +32,7 @@ class RefFacilitiesController extends Controller
              ->leftJoin('ref_facilitytype', 'ref_facilitytype.factype_code', '=', 'ref_facilities.facility_type')
              ->orderBy('ref_facilities.fhud_seq','desc');
 
+            $this->regionScope->apply($query, $request->user());
             $search = trim((string) $request->input('search', ''));
             if ($search !== '') {
                 $query->where(function ($q) use ($search) {
@@ -75,12 +78,13 @@ class RefFacilitiesController extends Controller
         ]);
     }
 
-    public function facility_list()
+    public function facility_list(Request $request)
     {
         $query = RefFacilitiesModel::select([
             'ref_facilities.hfhudcode',
             'ref_facilities.facility_name'
-        ])->get();
+        ]);
+        $query = $this->regionScope->apply($query, $request->user())->get();
         return response()->json([
             'data' => $query
         ]);
@@ -108,6 +112,8 @@ class RefFacilitiesController extends Controller
      */
     public function store(Request $request)
     {
+        $this->regionScope->authorizeRegion($request->user(), $request->input('region'));
+        $coordinates = app(\App\Services\FacilityLocationService::class)->validatedCoordinates($request);
         $request->validate([
             'hfhudcode' => 'required|unique:ref_facilities,hfhudcode',
             'facility_name' => 'required|string|unique:ref_facilities,facility_name',
@@ -129,7 +135,7 @@ class RefFacilitiesController extends Controller
             'status' => $request->status ? 'A':'I', 
         ];
 
-        $region = RefFacilitiesModel::create($data);
+        $region = RefFacilitiesModel::create(array_merge($data, $coordinates));
 
         return redirect()->route('facilities')->with('message','Created successfully.');
     }
@@ -140,9 +146,9 @@ class RefFacilitiesController extends Controller
      * @param  \App\Models\RefFacilitiesModel  $RefFacilitiesModel
      * @return \Illuminate\Http\Response
      */
-    public function show($hfhudcode)
+    public function show(Request $request, $hfhudcode)
     {
-        $facility = RefFacilitiesModel::where('hfhudcode', $hfhudcode)->first();
+        $facility = $this->regionScope->apply(RefFacilitiesModel::query(), $request->user())->where('hfhudcode', $hfhudcode)->first();
 
         if (!$facility) {
             return response()->json(['message' => 'Not found'], 404);
@@ -171,11 +177,13 @@ class RefFacilitiesController extends Controller
      * @return \Illuminate\Http\Response
      */
    public function update(Request $request, $id = null)
-{
+  {
+      $coordinates = app(\App\Services\FacilityLocationService::class)->validatedCoordinates($request);
 
       $facility = $id
-            ? RefFacilitiesModel::findOrFail($id)
+            ? $this->regionScope->apply(RefFacilitiesModel::query(), $request->user())->findOrFail($id)
             : new RefFacilitiesModel();
+      $this->regionScope->authorizeRegion($request->user(), $request->input('region'));
     // Validate input
     $validated = $request->validate([
         'hfhudcode'     => ['required', 'string', 'max:50', Rule::unique('ref_facilities', 'hfhudcode')->ignore($facility->hfhudcode,'hfhudcode')],
@@ -190,7 +198,8 @@ class RefFacilitiesController extends Controller
     ]);
 
     // Map fields
-    $facility->update([
+      $facility->update([
+          ...$coordinates,
         'hfhudcode'     => $validated['hfhudcode'],
         'facility_name' => strtoupper($validated['facility_name']),
         'facility_type' => $validated['factype_code'],
@@ -211,9 +220,9 @@ class RefFacilitiesController extends Controller
      * @param  \App\Models\RefFacilitiesModel  $RefFacilitiesModel
      * @return \Illuminate\Http\Response
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $facility = RefFacilitiesModel::findOrFail($id);
+        $facility = $this->regionScope->apply(RefFacilitiesModel::query(), $request->user())->findOrFail($id);
         $facility->delete();
 
         return response()->json([

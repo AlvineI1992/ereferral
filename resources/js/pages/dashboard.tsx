@@ -209,16 +209,16 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <section className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-gradient-to-br from-teal-950 via-teal-900 to-emerald-800 text-white shadow-xl shadow-teal-950/10">
+            <div className="flex flex-1 flex-col gap-3 p-3 md:p-4">
+                <section className="relative overflow-hidden rounded-xl border border-slate-200/70 bg-gradient-to-br from-teal-950 via-teal-900 to-emerald-800 text-white shadow-md shadow-teal-950/10">
                     <div className="absolute top-0 -left-20 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
                     <div className="absolute right-0 bottom-0 h-56 w-56 rounded-full bg-emerald-200/10 blur-3xl" />
-                    <div className="relative grid gap-6 p-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)] lg:p-8">
-                        <div className="space-y-5">
+                    <div className="relative grid gap-4 p-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.95fr)]">
+                        <div className="space-y-3">
                             <Badge className="border-white/15 bg-white/12 px-3 py-1 text-white backdrop-blur-sm">{scope.label}</Badge>
                             <div className="space-y-3">
                                 <p className="text-sm text-teal-100/80">Hello, {firstName}. Here's the latest referral pulse.</p>
-                                <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
+                                <h1 className="max-w-3xl text-2xl font-semibold tracking-tight sm:text-3xl">
                                     A clearer view of demand, queue pressure, and follow-through across the eReferral network.
                                 </h1>
                                 <p className="max-w-2xl text-sm leading-6 text-teal-50/80 sm:text-base">{scope.description}</p>
@@ -232,7 +232,7 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                         <Button
                                             key={action.key}
                                             asChild
-                                            className="h-11 rounded-full border border-white/15 bg-white text-teal-950 shadow-sm hover:bg-teal-50"
+                                            className="h-9 rounded-lg border border-white/15 bg-white text-teal-950 shadow-sm hover:bg-teal-50"
                                         >
                                             <Link href={action.href}>
                                                 <ActionIcon className="size-4" />
@@ -244,7 +244,7 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="h-11 rounded-full border-white/20 bg-white/8 text-white hover:bg-white/12 hover:text-white"
+                                    className="h-9 rounded-lg border-white/20 bg-white/8 text-white hover:bg-white/12 hover:text-white"
                                 >
                                     <Link href="/facilities">
                                         <Building2 className="size-4" />
@@ -254,19 +254,19 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                             </div>
 
                             <div className="flex flex-wrap gap-3 text-sm text-teal-50/85">
-                                <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+                                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
                                     {formatNumber(scope.totalReferrals)} referrals in this view
                                 </div>
-                                <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+                                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
                                     {trackedRate}% already have tracking activity
                                 </div>
-                                <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+                                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
                                     Updated {formatGeneratedAt(generatedAt)}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="rounded-[1.75rem] border border-white/12 bg-white/10 p-5 backdrop-blur-md">
+                        <div className="rounded-xl border border-white/12 bg-white/10 p-3 backdrop-blur-md">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-xs font-medium tracking-[0.28em] text-teal-100/70 uppercase">Operational Focus</p>
@@ -278,14 +278,14 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                 </div>
                             </div>
 
-                            <div className="mt-5 space-y-3">
+                            <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
                                 {focusMetrics.map((metric) => {
                                     const Icon = metricIcons[metric.key] ?? Activity;
 
                                     return (
                                         <div
                                             key={metric.key}
-                                            className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/10 px-4 py-3"
+                                            className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/10 px-3 py-2"
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="rounded-2xl bg-white/10 p-2">
@@ -305,34 +305,34 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                     </div>
                 </section>
 
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                     {summary.map((metric) => {
                         const Icon = metricIcons[metric.key] ?? Activity;
 
                         return (
-                            <Card key={metric.key} className={cn('overflow-hidden border shadow-sm', metricStyles[metric.key])}>
-                                <CardHeader className="pb-3">
+                            <Card key={metric.key} className={cn('min-w-0 gap-0 overflow-hidden border py-0 shadow-sm', metricStyles[metric.key])}>
+                                <CardHeader className="p-3 pb-1">
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <CardDescription className="text-sm text-slate-600 dark:text-slate-300">{metric.label}</CardDescription>
-                                            <CardTitle className="mt-3 text-3xl font-semibold tracking-tight">{formatNumber(metric.value)}</CardTitle>
+                                            <CardTitle className="mt-1 text-2xl font-semibold tracking-tight">{formatNumber(metric.value)}</CardTitle>
                                         </div>
                                         <div className={cn('rounded-2xl p-2.5', iconShellStyles[metric.key])}>
                                             <Icon className="size-5" />
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{metric.detail}</p>
+                                <CardContent className="p-3 pt-1">
+                                    <p className="text-xs text-slate-600 dark:text-slate-300">{metric.detail}</p>
                                 </CardContent>
                             </Card>
                         );
                     })}
                 </section>
 
-                <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.9fr)]">
+                <section className="grid gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
                     <Card className="overflow-hidden border-slate-200/80 bg-white/95 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/85">
-                        <CardHeader className="flex flex-col gap-4 border-b border-slate-200/70 pb-5 dark:border-slate-800">
+                        <CardHeader className="flex flex-col gap-3 border-b border-slate-200/70 p-4 dark:border-slate-800">
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <CardTitle>Bed Capacity Snapshot</CardTitle>
@@ -348,22 +348,22 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                 </Button>
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                                 {capacityHighlights.map((item) => (
-                                    <div key={item.key} className={cn('rounded-[1.25rem] border p-4', item.tone)}>
+                                    <div key={item.key} className={cn('rounded-lg border p-3', item.tone)}>
                                         <p className="text-xs font-medium tracking-[0.2em] text-slate-600 uppercase dark:text-slate-300">
                                             {item.label}
                                         </p>
-                                        <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                                        <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                                             {formatNumber(item.value)}
                                         </p>
-                                        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.detail}</p>
+                                        <p className="mt-1 truncate text-xs text-slate-600 dark:text-slate-300" title={item.detail}>{item.detail}</p>
                                     </div>
                                 ))}
                             </div>
                         </CardHeader>
-                        <CardContent className="grid gap-4 pt-6 lg:grid-cols-2">
-                            <div className="rounded-[1.5rem] border border-slate-200/80 bg-emerald-50/50 p-5 dark:border-slate-800 dark:bg-emerald-950/10">
+                        <CardContent className="grid gap-3 p-4 lg:grid-cols-2">
+                            <div className="rounded-xl border border-slate-200/80 bg-emerald-50/50 p-3 dark:border-slate-800 dark:bg-emerald-950/10">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
                                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Availability Mix</p>
@@ -377,7 +377,7 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                     </div>
                                 </div>
 
-                                <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                                     <div className="flex h-full w-full">
                                         <div
                                             className="bg-emerald-500"
@@ -394,29 +394,29 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                     </div>
                                 </div>
 
-                                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                                    <div className="rounded-2xl border border-emerald-200/80 bg-white/80 p-4 dark:border-emerald-900/70 dark:bg-slate-900/80">
+                                <div className="mt-3 grid grid-cols-3 gap-2">
+                                    <div className="rounded-lg border border-emerald-200/80 bg-white/80 p-2 dark:border-emerald-900/70 dark:bg-slate-900/80">
                                         <p className="text-xs tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400">Available</p>
-                                        <p className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">
+                                        <p className="mt-1 text-xl font-semibold text-emerald-700 dark:text-emerald-300">
                                             {formatNumber(bedTotals.availableBeds)}
                                         </p>
                                     </div>
-                                    <div className="rounded-2xl border border-cyan-200/80 bg-white/80 p-4 dark:border-cyan-900/70 dark:bg-slate-900/80">
+                                    <div className="rounded-lg border border-cyan-200/80 bg-white/80 p-2 dark:border-cyan-900/70 dark:bg-slate-900/80">
                                         <p className="text-xs tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400">Occupied</p>
-                                        <p className="mt-2 text-2xl font-semibold text-cyan-700 dark:text-cyan-300">
+                                        <p className="mt-1 text-xl font-semibold text-cyan-700 dark:text-cyan-300">
                                             {formatNumber(bedTotals.occupiedBeds)}
                                         </p>
                                     </div>
-                                    <div className="rounded-2xl border border-amber-200/80 bg-white/80 p-4 dark:border-amber-900/70 dark:bg-slate-900/80">
+                                    <div className="rounded-lg border border-amber-200/80 bg-white/80 p-2 dark:border-amber-900/70 dark:bg-slate-900/80">
                                         <p className="text-xs tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400">Reserved</p>
-                                        <p className="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300">
+                                        <p className="mt-1 text-xl font-semibold text-amber-700 dark:text-amber-300">
                                             {formatNumber(bedTotals.reservedBeds)}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-900/60">
+                            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
                                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Regional Capacity</p>
@@ -429,10 +429,10 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                     </Badge>
                                 </div>
 
-                                <div className="mt-5 space-y-3">
+                                <div className="mt-3 space-y-2">
                                     {bedSummary.byRegion.length > 0 ? (
                                         bedSummary.byRegion.map((region) => (
-                                            <div key={region.key} className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950/70">
+                                            <div key={region.key} className="rounded-lg border border-slate-200/80 bg-white/90 p-2.5 dark:border-slate-800 dark:bg-slate-950/70">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="min-w-0">
                                                         <p className="truncate font-medium text-slate-900 dark:text-slate-100">{region.label}</p>
@@ -457,14 +457,14 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                     </Card>
 
                     <Card className="border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
-                        <CardHeader>
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle>Available Beds by Facility</CardTitle>
                             <CardDescription>Facilities with the highest immediate bed availability from active tracker records.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-2 p-4 pt-1">
                             {bedSummary.byFacility.length > 0 ? (
                                 bedSummary.byFacility.map((facility) => (
-                                    <div key={facility.key} className="rounded-[1.5rem] border border-slate-200/80 p-4 dark:border-slate-800">
+                                    <div key={facility.key} className="rounded-lg border border-slate-200/80 p-3 dark:border-slate-800">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <p className="truncate font-medium text-slate-900 dark:text-slate-100">{facility.label}</p>
@@ -479,15 +479,15 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                                 <p className="text-xs text-slate-500 dark:text-slate-400">{facility.occupancyRate}% occupied</p>
                                             </div>
                                         </div>
-                                        <div className="mt-4 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                                        <div className="mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800">
                                             <div
-                                                className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
+                                                className="h-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
                                                 style={{
                                                     width: `${facility.totalBeds > 0 && facility.availableBeds > 0 ? Math.max((facility.availableBeds / facility.totalBeds) * 100, 4) : 0}%`,
                                                 }}
                                             />
                                         </div>
-                                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                                        <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                                             <span>Occupied {formatNumber(facility.occupiedBeds)}</span>
                                             <span>Reserved {formatNumber(facility.reservedBeds)}</span>
                                         </div>
@@ -502,9 +502,9 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                     </Card>
                 </section>
 
-                <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+                <section className="grid gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
                     <Card className="border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
                             <div>
                                 <CardTitle>7-Day Activity</CardTitle>
                                 <CardDescription>Referral submissions captured over the last seven days.</CardDescription>
@@ -513,17 +513,17 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                 Rolling window
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <div className="flex min-h-[260px] items-end gap-3 rounded-[1.5rem] border border-dashed border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                        <CardContent className="p-4 pt-1">
+                            <div className="flex min-h-40 items-end gap-2 rounded-xl border border-dashed border-slate-200/80 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
                                 {activity.map((point) => {
                                     const height = point.count === 0 ? 10 : Math.max(Math.round((point.count / peakActivity) * 100), 16);
 
                                     return (
-                                        <div key={point.date} className="flex flex-1 flex-col items-center gap-3">
+                                        <div key={point.date} className="flex flex-1 flex-col items-center gap-1.5">
                                             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                                                 {formatNumber(point.count)}
                                             </span>
-                                            <div className="relative flex h-40 w-full items-end rounded-full bg-slate-200/90 p-1 dark:bg-slate-800">
+                                            <div className="relative flex h-24 w-full items-end rounded-full bg-slate-200/90 p-1 dark:bg-slate-800">
                                                 <div
                                                     className="w-full rounded-full bg-gradient-to-t from-teal-600 via-cyan-500 to-emerald-400 shadow-sm"
                                                     style={{ height: `${height}%` }}
@@ -541,14 +541,14 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                     </Card>
 
                     <Card className="border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
-                        <CardHeader>
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle>Referral Drivers</CardTitle>
                             <CardDescription>The most common reasons showing up in your current dashboard scope.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-2 p-4 pt-1">
                             {topReasons.length > 0 ? (
                                 topReasons.map((reason) => (
-                                    <div key={reason.code} className="space-y-2 rounded-2xl border border-slate-200/70 p-4 dark:border-slate-800">
+                                    <div key={reason.code} className="space-y-1 rounded-lg border border-slate-200/70 p-2.5 dark:border-slate-800">
                                         <div className="flex items-start justify-between gap-3">
                                             <div>
                                                 <p className="font-medium text-slate-900 dark:text-slate-100">{reason.label}</p>
@@ -578,9 +578,9 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                     </Card>
                 </section>
 
-                <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+                <section className="grid gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
                     <Card className="border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
-                        <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                        <CardHeader className="flex flex-row items-start justify-between space-y-0 p-4 pb-2">
                             <div>
                                 <CardTitle>Recent Referrals</CardTitle>
                                 <CardDescription>The newest cases currently visible from your assigned access scope.</CardDescription>
@@ -592,14 +592,14 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                 </Link>
                             </Button>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-2 p-4 pt-1">
                             {recentReferrals.length > 0 ? (
                                 recentReferrals.map((referral) => (
                                     <div
                                         key={referral.id}
-                                        className="grid gap-4 rounded-[1.5rem] border border-slate-200/80 p-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(220px,0.95fr)_auto] dark:border-slate-800"
+                                        className="grid gap-2 rounded-lg border border-slate-200/80 p-2.5 lg:grid-cols-[minmax(0,1.15fr)_minmax(220px,0.95fr)_auto] dark:border-slate-800"
                                     >
-                                        <div className="space-y-2">
+                                        <div className="space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{referral.patientName}</p>
                                                 <Badge variant="outline" className="rounded-full text-[11px]">
@@ -610,7 +610,7 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                             <p className="text-xs tracking-[0.2em] text-slate-500 uppercase dark:text-slate-400">{referral.id}</p>
                                         </div>
 
-                                        <div className="space-y-2">
+                                        <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                                                 <span className="truncate">{referral.originName}</span>
                                                 <ArrowRight className="size-4 shrink-0 text-slate-400" />
@@ -643,23 +643,23 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-4">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                         <Card className="border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
-                            <CardHeader>
+                            <CardHeader className="p-4 pb-2">
                                 <CardTitle>Network Snapshot</CardTitle>
                                 <CardDescription>A quick read on the teams and facilities supporting the workflow.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-3">
+                            <CardContent className="grid grid-cols-3 gap-2 p-4 pt-1">
                                 {network.map((item) => {
                                     const Icon = networkIcons[item.key] ?? Building2;
 
                                     return (
                                         <div
                                             key={item.key}
-                                            className="flex items-start gap-3 rounded-2xl border border-slate-200/70 p-4 dark:border-slate-800"
+                                            className="flex min-w-0 flex-col items-center gap-1 rounded-lg border border-slate-200/70 p-2 text-center dark:border-slate-800"
                                         >
-                                            <div className="rounded-2xl bg-slate-100 p-2.5 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                                <Icon className="size-5" />
+                                            <div className="rounded-lg bg-slate-100 p-1.5 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                <Icon className="size-4" />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-baseline justify-between gap-3">
@@ -675,11 +675,11 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                         </Card>
 
                         <Card className="border-slate-200/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
-                            <CardHeader>
+                            <CardHeader className="p-4 pb-2">
                                 <CardTitle>Quick Actions</CardTitle>
                                 <CardDescription>Jump straight into the workflows teams usually need next.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-3">
+                            <CardContent className="grid grid-cols-2 gap-2 p-4 pt-1">
                                 {quickActions.map((action) => {
                                     const ActionIcon = actionIcons[action.key] ?? ArrowUpRight;
 
@@ -687,7 +687,7 @@ export default function Dashboard({ summary, activity, recentReferrals, topReaso
                                         <Link
                                             key={action.key}
                                             href={action.href}
-                                            className="group flex items-center justify-between rounded-2xl border border-slate-200/70 p-4 transition hover:border-teal-300 hover:bg-teal-50/60 dark:border-slate-800 dark:hover:border-teal-900 dark:hover:bg-teal-950/20"
+                                            className="group flex items-center justify-between rounded-lg border border-slate-200/70 p-2.5 transition hover:border-teal-300 hover:bg-teal-50/60 dark:border-slate-800 dark:hover:border-teal-900 dark:hover:bg-teal-950/20"
                                         >
                                             <div className="flex items-start gap-3">
                                                 <div className="rounded-2xl bg-teal-500/10 p-2.5 text-teal-700 dark:bg-teal-400/10 dark:text-teal-300">

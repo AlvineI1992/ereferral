@@ -8,7 +8,7 @@ return [
         explode(',', env('CORS_ALLOWED_ORIGINS', env('APP_URL', '')))
     ))),
     'allowed_origins_patterns' => [],
-    'allowed_headers' => ['Accept', 'Authorization', 'Content-Type', 'Origin', 'X-Requested-With', 'X-XSRF-TOKEN'],
+    'allowed_headers' => ['Accept', 'Authorization', 'Content-Type', 'Origin', 'X-Requested-With', 'X-XSRF-TOKEN', 'X-EMR-Token'],
     'exposed_headers' => [],
     'max_age' => 600,
     'supports_credentials' => true,

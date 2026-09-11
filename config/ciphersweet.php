@@ -38,8 +38,9 @@ return [
             'path' => env('CIPHERSWEET_FILE_PATH'),
         ],
         'string' => [
-           /*  'key' => env('CIPHERSWEET_KEY'), */
-           'key' => hex2bin(env('CIPHERSWEET_KEY')),
+           'key' => ($key = env('CIPHERSWEET_KEY'))
+               ? (str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : hex2bin($key))
+               : null,
 
         ],
         // 'custom' => CustomKeyProviderFactory::class,
@@ -52,5 +53,5 @@ return [
      * the field to have a value and alerts the user if it is empty or undefined.
      * Supported: "true", "false"
      */
-    'permit_empty' => env('CIPHERSWEET_PERMIT_EMPTY', FALSE)
+    'permit_empty' => env('CIPHERSWEET_PERMIT_EMPTY', false),
 ];

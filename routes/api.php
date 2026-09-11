@@ -44,7 +44,7 @@ Route::middleware(['auth:sanctum', 'active.api.user', 'auth.sanctum.custom'])->g
     Route::get('/referral-network/recommendations/{hfhudcode}', ReferralNetworkRecommendationController::class)
         ->middleware('abilities:reference:read')
         ->name('referral.network.recommendations');
-    Route::post('/refer_patient', [Referral::class, 'patient_referral'])->middleware('abilities:referrals:write')->name('referral.patient_referral');
+    Route::post('/refer_patient', [Referral::class, 'patient_referral'])->name('referral.patient_referral');
     Route::get('/referral-attachments/{attachment}/download', [Referral::class, 'download_attachment'])
         ->middleware('abilities:referrals:read')
         ->name('referral.attachments.download');
@@ -57,7 +57,7 @@ Route::middleware(['auth:sanctum', 'active.api.user', 'auth.sanctum.custom'])->g
 });
 
 Route::middleware(['auth:sanctum', 'active.api.user', 'auth.sanctum.custom'])->group(function () {
-    Route::get('/get-referral-list/{fhudcode}/{emr_id}', [Referral::class, 'get_referral_list'])->middleware('abilities:referrals:read')->name('referral.get_referral_list');
+    Route::get('/get-referral-list/{fhudcode}', [Referral::class, 'get_referral_list'])->middleware('abilities:referrals:read')->name('referral.get_referral_list');
 });
 
 Route::middleware(['auth:sanctum', 'active.api.user', 'auth.sanctum.custom'])->group(function () {

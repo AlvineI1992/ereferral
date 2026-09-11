@@ -11,6 +11,7 @@ import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 import { type UserRecord } from './types';
+import EmrCredentialDialog from './EmrCredentialDialog';
 
 type Props = {
     refreshKey: number;
@@ -200,6 +201,7 @@ const UserList = ({ canAssign, canDelete, canEdit, refreshKey, onEdit }: Props) 
                                     <TableHead>Role</TableHead>
                                     <TableHead>Access</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead className="whitespace-nowrap">EMR ID / Token</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -234,6 +236,15 @@ const UserList = ({ canAssign, canDelete, canEdit, refreshKey, onEdit }: Props) 
                                                     <Badge variant={row.status === 'A' ? 'default' : 'outline'}>
                                                         {row.status === 'A' ? 'Active' : 'Inactive'}
                                                     </Badge>
+                                                </TableCell>
+                                                <TableCell className="whitespace-nowrap">
+                                                    {canEdit ? (
+                                                        row.access_type === 'EMR' ? <EmrCredentialDialog user={row} /> : (
+                                                            <span className="text-muted-foreground text-xs">Requires EMR provider access</span>
+                                                        )
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-xs">Requires user edit permission</span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex justify-end gap-2">
@@ -284,7 +295,7 @@ const UserList = ({ canAssign, canDelete, canEdit, refreshKey, onEdit }: Props) 
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="py-12 text-center">
+                                        <TableCell colSpan={6} className="py-12 text-center">
                                             <div className="space-y-1">
                                                 <p className="font-medium">No users found</p>
                                                 <p className="text-muted-foreground text-sm">Try a different search term or create a new account.</p>

@@ -9,6 +9,7 @@ class DataEncryptionSetting extends Model
     protected $fillable = [
         'enabled', 'status', 'processed_rows', 'total_rows', 'last_error',
         'activated_by', 'activated_at', 'completed_at',
+        'backup_path', 'backup_checksum',
     ];
 
     protected function casts(): array

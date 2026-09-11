@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\LoginEligibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,10 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
+    public function __construct(private readonly LoginEligibilityService $loginEligibilityService)
+    {
+    }
+
     /**
      * Show the login page.
      */
@@ -34,12 +39,17 @@ class AuthenticatedSessionController extends Controller
         // ✅ Check status after authentication
         $user = Auth::user();
 
-        if ($user->status !== 'A') {
+        if ($message = $this->loginEligibilityService->failureMessage($user)) {
             Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
             return redirect()->back()->withErrors([
-                'email' => 'Your account is not active.',
+                'email' => $message,
             ]);
-        }   
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard', absolute: false));

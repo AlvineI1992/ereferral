@@ -62,10 +62,11 @@ class PatientReferralRequest extends FormRequest
             'clinical.diagnosis.*' => 'required|string|max:255',
 
             'clinical.chief_complaint' => 'required|string|max:255',
-            'clinical.history' => 'nullable',
-            'clinical.findings' => 'nullable',
+            'clinical.history' => 'present|nullable',
+            'clinical.findings' => 'present|nullable',
             // 'clinical.physical_examination' => 'nullable|string|max:255',
             // 'vital_signs'=>'nullable|string|max:255',
+            'vital_signs' => 'required|array',
             'vital_signs.BP' => 'nullable',
             'vital_signs.temp' => 'nullable|',
             'vital_signs.HR' => 'nullable',
@@ -74,25 +75,20 @@ class PatientReferralRequest extends FormRequest
             'vital_signs.weight' => 'nullable',
             'vital_signs.height' => 'nullable',
 
-            // ICD codes
-            // Validate ICD is an array with at least one item
-            'ICD' => 'required|array|min:1',
-            'ICD.*' => ['required', 'string', 'regex:/^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$/'],
-
-            // Optional supporting documents and clinical images.
-            'attachments' => ['nullable', 'array', 'max:5'],
-            'attachments.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+            // Optional ICD codes.
+            'ICD' => 'nullable|array',
+            'ICD.*' => ['string', 'regex:/^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$/'],
 
             // Vital signs rules
 
             // Patient providers rules
-            /*   'patient_providers' => 'required|array|min:1',
-        'patient_providers.*.provider_last' => 'required|string|max:255',
-        'patient_providers.*.provider_first' => 'required|string|max:255',
-        'patient_providers.*.provider_middle' => 'nullable',
-        'patient_providers.*.provider_suffix' => 'nullable',
-        'patient_providers.*.ProviderContactNo' => 'nullable',
-        'patient_providers.*.provider_type' => 'required|string|in:REFER,CONSU', */
+            'patient_providers' => 'required|array|min:1',
+            'patient_providers.*.provider_last' => 'required|string|max:255',
+            'patient_providers.*.provider_first' => 'required|string|max:255',
+            'patient_providers.*.provider_middle' => 'nullable',
+            'patient_providers.*.provider_suffix' => 'nullable',
+            'patient_providers.*.ProviderContactNo' => 'nullable',
+            'patient_providers.*.provider_type' => 'required|string|in:REFER,CONSU',
         ];
 
     }
@@ -141,11 +137,6 @@ class PatientReferralRequest extends FormRequest
             // ICD codes
             'ICD' => 'ICD 10 code is required!',
             'ICD.*' => 'string|max:10',
-            'attachments.max' => 'A maximum of 5 attachments is allowed.',
-            'attachments.*.file' => 'Each attachment must be a valid uploaded file.',
-            'attachments.*.max' => 'Each attachment must not exceed 10 MB.',
-            'attachments.*.mimes' => 'Attachments must be JPEG, PNG, WebP, or PDF files.',
-
             // Patient providers rules
             'patient_providers' => 'required|array',
             'patient_providers.*.provider_last' => 'Provider last name is required!',

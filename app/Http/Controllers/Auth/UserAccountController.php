@@ -7,6 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
+use App\Services\DataEncryptionManager;
+use App\Rules\UniqueEncryptedEmail;
 
 class UserAccountController extends Controller
 {
@@ -35,7 +38,9 @@ class UserAccountController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => ['required', 'string', 'email', 'max:255', app(DataEncryptionManager::class)->isEnabled()
+                ? new UniqueEncryptedEmail()
+                : Rule::unique('users', 'email')],
             'password' => 'required|string|min:6|confirmed',
         ]);
 
@@ -71,7 +76,9 @@ class UserAccountController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'email' => ['required', 'string', 'email', 'max:255', app(DataEncryptionManager::class)->isEnabled()
+                ? new UniqueEncryptedEmail($user->id)
+                : Rule::unique('users', 'email')->ignore($user->id)],
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 

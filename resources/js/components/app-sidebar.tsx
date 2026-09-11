@@ -47,9 +47,10 @@ export function AppSidebar() {
             : []),
         ...(access?.religions ? [{ title: 'Religions', href: '/religions', icon: FileBadge }] : []),
     ];
-    const navReports: NavItem[] = access?.reports
-        ? [{ title: 'Referral Report', href: '/reports/referrals-by-facility', icon: ChartNoAxesColumnIncreasing }]
-        : [];
+    const navReports: NavItem[] = [
+        ...(access?.referralReport ? [{ title: 'Referral Report', href: '/reports/referrals-by-facility', icon: ChartNoAxesColumnIncreasing }] : []),
+        ...(access?.diagnosisHeatmap ? [{ title: 'Diagnosis Heat Map', href: '/reports/diagnosis-heatmap', icon: MapPinned }] : []),
+    ];
     const sidebarHome = mainNavItems[0]?.href ?? navReferences[0]?.href ?? navReports[0]?.href ?? (access?.auditTrail ? '/admin/audit-trail' : '#');
 
     const getRouteOrFallback = (routeName: string, fallback: string) => {

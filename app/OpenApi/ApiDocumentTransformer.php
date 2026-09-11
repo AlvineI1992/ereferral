@@ -2,9 +2,14 @@
 
 namespace App\OpenApi;
 
+use Dedoc\Scramble\Support\Generator\Reference;
+use Dedoc\Scramble\Support\Generator\Schema;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Dedoc\Scramble\Support\Generator\Tag;
+use Dedoc\Scramble\Support\Generator\Types\ArrayType;
+use Dedoc\Scramble\Support\Generator\Types\ObjectType;
+use Illuminate\Support\Str;
 
 class ApiDocumentTransformer
 {
@@ -50,5 +55,50 @@ MARKDOWN);
             new Tag('Referral Workflow', 'Receive, admit, discharge, and update referral workflow state.'),
             new Tag('Bed Tracking', 'Read and maintain facility bed availability.'),
         ];
+
+        $this->promoteBodySchemas($openApi);
+    }
+
+    private function promoteBodySchemas(OpenApi $openApi): void
+    {
+        foreach ($openApi->paths as $path) {
+            foreach ($path->operations as $operation) {
+                $operationName = $this->componentName(
+                    $operation->operationId ?: $operation->method.' '.$path->path
+                );
+
+                if ($operation->requestBodyObject !== null) {
+                    foreach ($operation->requestBodyObject->content as $mediaType => $schema) {
+                        if ($schema instanceof Schema && $this->isStructured($schema)) {
+                            $operation->requestBodyObject->content[$mediaType] = $this->schemaReference(
+                                $openApi,
+                                $operationName.'Request',
+                                $schema,
+                            );
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    private function isStructured(Schema $schema): bool
+    {
+        return $schema->type instanceof ObjectType || $schema->type instanceof ArrayType;
+    }
+
+    private function schemaReference(OpenApi $openApi, string $name, Schema $schema): Reference
+    {
+        if ($openApi->components->hasSchema($name)) {
+            return $openApi->components->getSchemaReference($name);
+        }
+
+        return $openApi->components->addSchema($name, $schema);
+    }
+
+    private function componentName(string $value): string
+    {
+        return Str::studly((string) preg_replace('/[^A-Za-z0-9]+/', ' ', $value));
     }
 }

@@ -14,6 +14,11 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
 use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
 use ParagonIE\CipherSweet\EncryptedRow;
+use ParagonIE\CipherSweet\BlindIndex;
+use App\Services\DataEncryptionManager;
+use ParagonIE\CipherSweet\Exception\InvalidCiphertextException;
+use Spatie\LaravelCipherSweet\CipherSweetDecryption;
+use Spatie\LaravelCipherSweet\Observers\ModelObserver;
 
 class User extends Authenticatable implements 
     Auditable,
@@ -31,16 +36,60 @@ class User extends Authenticatable implements
 
     protected $dates = ['deleted_at'];
 
+    public static function bootUsesCipherSweet(): void
+    {
+        static::$cipherSweetEncryptedRow = null;
+
+        static::retrieved(function (self $model) {
+            if (! app(DataEncryptionManager::class)->isEnabled()) {
+                return;
+            }
+
+            if (CipherSweetDecryption::isSuspended()) {
+                $model->cipherSweetRowIsEncrypted = true;
+                return;
+            }
+
+            try {
+                app(ModelObserver::class)->retrieved($model);
+            } catch (InvalidCiphertextException) {
+                $model->cipherSweetRowIsEncrypted = false;
+            }
+        });
+        static::saving(function (self $model) {
+            if (app(DataEncryptionManager::class)->isEnabled()) {
+                app(ModelObserver::class)->saving($model);
+            }
+        });
+        static::saved(function (self $model) {
+            if (app(DataEncryptionManager::class)->isEnabled()) {
+                app(ModelObserver::class)->saved($model);
+            }
+        });
+        static::deleting(function (self $model) {
+            if (app(DataEncryptionManager::class)->isEnabled()) {
+                app(ModelObserver::class)->deleting($model);
+            }
+        });
+    }
+
     /**
      * Configure encrypted fields
      */
     public static function configureCipherSweet(EncryptedRow $encryptedRow): void
     {
-       /*  $encryptedRow
-            ->addField('name'); // encrypted
- */
-        // Example if you also want:
-        // $encryptedRow->addField('access_type');
+        if (! app(DataEncryptionManager::class)->isEnabled()) {
+            return;
+        }
+
+        self::configureEncryptionSchema($encryptedRow);
+    }
+
+    public static function configureEncryptionSchema(EncryptedRow $encryptedRow): void
+    {
+        $encryptedRow
+            ->addTextField('email')
+            ->addBlindIndex('email', new BlindIndex('email_index'));
     }
 
     protected $fillable = [

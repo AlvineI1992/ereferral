@@ -14,6 +14,7 @@ import { Check, ChevronsUpDown, Edit, Hospital, LoaderCircle, Save, X } from 'lu
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import DemographicSelector from '../Demographics/Demographics_selector';
+import FacilityLocationPicker from './FacilityLocationPicker';
 import { type FacilityRecord } from './types';
 
 type Props = {
@@ -33,6 +34,8 @@ type Formtype = {
     province: string;
     city: string;
     barangay: string;
+    latitude: string;
+    longitude: string;
     status: boolean;
 };
 
@@ -58,6 +61,8 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate, 
         province: '',
         city: '',
         barangay: '',
+        latitude: '',
+        longitude: '',
         status: formval ? formval.status === 'A' : true,
     });
 
@@ -83,13 +88,16 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate, 
             return;
         }
 
+        const controller = new AbortController();
+        const normalizeCode = (code: unknown, width: number) => code == null || String(code).trim() === '' ? '' : String(code).trim().padStart(width, '0');
         axios
-            .get(`/facilities/info/${formval.hfhudcode}`)
+            .get(`/facilities/info/${formval.hfhudcode}`, { signal: controller.signal })
             .then(({ data: facility }) => {
-                const region = String(facility.region_code || '').padStart(2, '0');
-                const province = String(facility.province_code || '').padStart(2, '0');
-                const city = String(facility.city_code || '').padStart(2, '0');
-                const barangay = String(facility.bgycode || '').padStart(3, '0');
+                if (controller.signal.aborted) return;
+                const region = normalizeCode(facility.region_code, 2);
+                const province = normalizeCode(facility.province_code, 2);
+                const city = normalizeCode(facility.city_code, 2);
+                const barangay = normalizeCode(facility.bgycode, 3);
 
                 setData((prev) => ({
                     ...prev,
@@ -98,19 +106,22 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate, 
                     fhudaddress: facility.fhudaddress ?? '',
                     factype_code: String(facility.facility_type).padStart(2, '0'),
                     status: facility.status ? facility.status === 'A' : true,
+                    region,
+                    province,
+                    city,
+                    barangay,
+                    latitude: facility.latitude == null ? '' : String(facility.latitude),
+                    longitude: facility.longitude == null ? '' : String(facility.longitude),
                 }));
-
-                setTimeout(() => setData('region', region), 0);
-                setTimeout(() => setData('province', province), 50);
-                setTimeout(() => setData('city', city), 100);
-                setTimeout(() => setData('barangay', barangay), 150);
 
                 setValue(String(facility.facility_type).padStart(2, '0'));
             })
             .catch((error) => {
+                if (axios.isCancel(error)) return;
                 console.error('Unable to load facility details:', error);
                 toast.error('Unable to load selected facility.');
             });
+        return () => controller.abort();
     }, [formval?.hfhudcode, reset, setData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -257,13 +268,12 @@ export default function FacilityForm({ onCreated, onCancel, formval, canCreate, 
                             barangay: data.barangay,
                         }}
                         onChange={(val) => {
-                            setData('region', val.region || '');
-                            setData('province', val.province || '');
-                            setData('city', val.city || '');
-                            setData('barangay', val.barangay || '');
+                            setData((previous) => ({ ...previous, region: val.region || '', province: val.province || '', city: val.city || '', barangay: val.barangay || '' }));
                         }}
                         canCreate={canSubmit}
                     />
+
+                    <FacilityLocationPicker latitude={data.latitude} longitude={data.longitude} search={`${data.facility_name} ${data.fhudaddress}`} disabled={!canSubmit || processing} errors={errors} onChange={(latitude, longitude) => setData((previous) => ({ ...previous, latitude, longitude }))} />
 
                     <div className="mt-4 flex justify-between gap-4">
                         <Button

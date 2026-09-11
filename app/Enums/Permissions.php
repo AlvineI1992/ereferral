@@ -6,6 +6,10 @@ namespace App\Enums;
 
 class Permissions
 {
+    public static function reports(): array
+    {
+        return [['referral report list'], ['diagnosis heatmap list']];
+    }
 
     public static function dashboard(): array
     {
