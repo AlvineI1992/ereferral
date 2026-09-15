@@ -5,6 +5,7 @@ use App\Services\ReferralPathwayService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -104,4 +105,51 @@ test('journey data is protected and requires an authorized referral participant'
     $this->getJson('/referrals/pathway?LogID=ORIGINAL')->assertForbidden();
     $user->update(['access_id' => 'B']);
     $this->getJson('/referrals/pathway?LogID=ORIGINAL')->assertOk()->assertJsonPath('can_forward', false);
+});
+
+test('API journey forwarding availability respects token abilities', function () {
+    $user = pathwayUser('B');
+    $user->givePermissionTo([
+        Permission::findOrCreate('referral journey read', 'api'),
+        Permission::findOrCreate('referral forward', 'api'),
+    ]);
+    Sanctum::actingAs($user, ['referrals:read']);
+
+    $this->getJson('/api/referrals/journey?LogID=ORIGINAL')
+        ->assertOk()->assertJsonPath('can_forward', false);
+    $this->postJson('/api/referrals/forward', pathwayPayload())->assertForbidden();
+    $this->assertDatabaseCount('referral_information', 1);
+
+    Sanctum::actingAs($user, ['referrals:read', 'referrals:write']);
+    $this->getJson('/api/referrals/journey?LogID=ORIGINAL')
+        ->assertOk()->assertJsonPath('can_forward', true);
+});
+
+test('API forwarding requires its own permission and supports safe retries for the receiving EMR', function () {
+    $user = User::factory()->create(['status' => 'A', 'access_type' => 'EMR', 'access_id' => 'B']);
+    $user->givePermissionTo(Permission::findOrCreate('referral journey read', 'api'));
+    Sanctum::actingAs($user, ['referrals:read', 'referrals:write']);
+    $payload = pathwayPayload();
+    $this->postJson('/api/referrals/forward', $payload)->assertForbidden();
+
+    $user->givePermissionTo(Permission::findOrCreate('referral forward', 'api'));
+    $first = $this->postJson('/api/referrals/forward', $payload)->assertCreated()->json('data');
+    $this->postJson('/api/referrals/forward', $payload)->assertCreated()->assertJsonPath('data', $first);
+    $this->getJson('/api/referrals/journey?LogID=ORIGINAL')->assertOk()
+        ->assertJsonPath('current_LogID', $first['LogID'])->assertJsonPath('can_forward', false);
+    $this->assertDatabaseCount('referral_information', 2);
+});
+
+test('forwarded snapshots remain unchanged when historical source records are edited', function () {
+    $service = app(ReferralPathwayService::class);
+    $receiver = pathwayUser('B');
+    $next = $service->forward($receiver, pathwayPayload());
+    $frozen = $service->journey($receiver, 'ORIGINAL')['transactions'][0];
+
+    DB::table('referral_information')->where('LogID', 'ORIGINAL')->update(['remarks' => 'Later edit']);
+    DB::table('referral_clinical')->where('LogID', 'ORIGINAL')->update(['findings' => 'Later findings']);
+    DB::table('ref_facilities')->where('hfhudcode', 'A')->update(['facility_name' => 'Renamed facility']);
+
+    expect($service->journey($receiver, 'ORIGINAL')['transactions'][0])->toBe($frozen);
+    $this->assertDatabaseHas('referral_clinical', ['LogID' => $next['LogID'], 'findings' => 'Current findings']);
 });

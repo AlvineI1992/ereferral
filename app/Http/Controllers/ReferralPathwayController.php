@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ReferralHelper;
+use App\Services\ApiPermissionService;
 use App\Services\ReferralPathwayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,8 @@ class ReferralPathwayController extends Controller
         $data = $request->validate(['LogID' => ['required', 'string', 'max:50']]);
         $journey = $pathways->journey($request->user(), $data['LogID']);
         $permission = $request->is('api/*')
-            ? app(\App\Services\ApiPermissionService::class)->allows($request->user(), 'referral forward')
+            ? app(ApiPermissionService::class)->allows($request->user(), 'referral forward')
+                && $request->user()->tokenCan('referrals:write')
             : $request->user()->can('incoming forward');
         $journey['can_forward'] = $journey['can_forward'] && $permission;
         return $journey;

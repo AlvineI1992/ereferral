@@ -1,6 +1,7 @@
 # Changelog
 
 ## AEI - 2026-09-15
+- Corrected API referral journey forwarding availability to require the token's write ability as well as endpoint permission and receiver ownership; added API retry, permission, EMR ownership, and immutable snapshot regression coverage.
 - Added linked referral forwarding and a chronological referral journey for web/API, with separate transaction IDs, immutable prior-leg snapshots, current-receiver ownership, endpoint permissions, and duplicate-forward protection.
 - Added web Incoming cancellation with a required reason, independent incoming cancel permission, source-ownership visibility, and refresh after cancellation; reuses the API cancellation service and preserves history.
 - Added POST /api/cancel-referral with independent API permission, source-facility ownership, required reason, idempotent cancellation history, pending-list exclusion, and receive/admit protection. Received referrals cannot be cancelled.
