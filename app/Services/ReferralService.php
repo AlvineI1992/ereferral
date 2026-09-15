@@ -35,6 +35,8 @@ class ReferralService
             : collect();
 
         DB::transaction(function () use ($logId): void {
+            DB::table('referral_information')->where('LogID', $logId)->lockForUpdate()->first();
+            abort_if(DB::table('referral_pathway_steps')->where('log_id', $logId)->exists(), 409, 'A referral in a pathway cannot be deleted.');
             foreach ([
                 'referral_attachments',
                 'referral_followup',
@@ -425,7 +427,11 @@ class ReferralService
         DB::beginTransaction();
 
         try {
-            $referral = ReferralInformationModel::where('LogID', $logID)->first();
+            $referral = ReferralInformationModel::where('LogID', $logID)->lockForUpdate()->first();
+            if (DB::table('referral_pathway_steps')->where('log_id', $logID)->exists()) {
+                DB::rollBack();
+                return ['code' => 409, 'message' => 'Referral pathway transactions are immutable. Forward with updated clinical details instead.'];
+            }
 
             if (! $referral) {
                 throw new Exception('Referral not found.');

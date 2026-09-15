@@ -78,6 +78,7 @@ export function AppSidebar() {
                 ...(access?.users ? [{ title: 'Users', href: 'user.index', icon: CircleChevronRight }] : []),
                 ...(access?.roles ? [{ title: 'Roles', href: 'roles.index', icon: CircleChevronRight }] : []),
                 ...(access?.permissions ? [{ title: 'Permissions', href: 'permission.index', icon: CircleChevronRight }] : []),
+                ...(access?.databaseMaintenance ? [{ title: 'Database Maintenance', href: 'admin.database-maintenance.index', icon: ShieldCheck }] : []),
                 ...(access?.dataEncryption ? [{ title: 'Data Encryption', href: 'admin.data-encryption.index', icon: ShieldCheck }] : []),
                 ...(access?.auditTrail ? [{ title: 'Audit Trail', href: 'admin.audit-trail.index', icon: ScrollText }] : []),
             ],
@@ -102,7 +103,7 @@ export function AppSidebar() {
                 {mainNavItems.length > 0 && <NavMain items={mainNavItems} />}
                 {navReferences.length > 0 && <NavReference items={navReferences} />}
                 {navReports.length > 0 && <NavReports items={navReports} />}
-                {hasAdminRole && adminNavItems[0].submenu!.length > 0 && <NavAdministrator items={adminNavItems} />}
+                {(hasAdminRole || access?.dataEncryption || access?.auditTrail) && adminNavItems[0].submenu!.length > 0 && <NavAdministrator items={adminNavItems} />}
             </SidebarContent>
 
             <SidebarFooter>

@@ -1,7 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import Swal from 'sweetalert2';
 import {
     Activity,
     Ambulance,
@@ -11,18 +9,20 @@ import {
     CalendarDays,
     ClipboardList,
     Clock3,
+    Download,
     FileStack,
     FileText,
     Hash,
     Home,
     MapPinned,
     Mars,
-    Download,
     SquarePen,
     Stethoscope,
     UserRound,
     Venus,
 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import Swal from 'sweetalert2';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -95,6 +95,7 @@ type IncomingProfileProps = {
     id: string;
     is_include?: boolean | null;
     canEdit?: boolean;
+    canJourney?: boolean;
 };
 
 type TabKey = 'overview' | 'clinical' | 'activity' | 'attachments';
@@ -106,7 +107,7 @@ const tabs: Array<{ key: TabKey; label: string; icon: typeof Activity }> = [
     { key: 'attachments', label: 'Attachments', icon: FileStack },
 ];
 
-export default function IncomingProfile({ id: logID, canEdit = false }: IncomingProfileProps) {
+export default function IncomingProfile({ id: logID, canEdit = false, canJourney = false }: IncomingProfileProps) {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [demographics, setDemographics] = useState<Demographics | null>(null);
     const [referralOrigin, setReferralOrigin] = useState<ReferralFacility | null>(null);
@@ -156,12 +157,7 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
     }, [profile]);
 
     const patientAddress = useMemo(() => {
-        return [
-            demographics?.streetaddress || demographics?.street,
-            demographics?.barangay,
-            demographics?.city,
-            demographics?.province,
-        ]
+        return [demographics?.streetaddress || demographics?.street, demographics?.barangay, demographics?.city, demographics?.province]
             .filter(Boolean)
             .join(', ');
     }, [demographics]);
@@ -202,6 +198,15 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
             <Head title="Incoming Referral Profile" />
 
             <div className="flex flex-1 flex-col gap-3 p-3 md:p-4">
+                {canJourney && referral?.LogID && (
+                    <div>
+                        <Button asChild variant="outline">
+                            <Link href={`/referrals/pathway/view?LogID=${encodeURIComponent(referral.LogID)}`}>
+                                Referral journey / Forward referral
+                            </Link>
+                        </Button>
+                    </div>
+                )}
                 <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-950 via-teal-950 to-emerald-900 p-4 text-white shadow-lg shadow-teal-950/10">
                     <div className="absolute top-0 -left-10 h-36 w-36 rounded-full bg-cyan-300/10 blur-3xl" />
                     <div className="absolute right-0 bottom-0 h-44 w-44 rounded-full bg-emerald-200/10 blur-3xl" />
@@ -246,7 +251,11 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
 
                                 <div className="flex flex-wrap gap-2">
                                     {canEdit && (
-                                        <Button asChild variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white">
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            className="border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white"
+                                        >
                                             <Link href={`/referrals/edit/${logID}`}>
                                                 <SquarePen className="size-4" />
                                                 Edit referral
@@ -254,7 +263,11 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                         </Button>
                                     )}
 
-                                    <Button asChild variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white">
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        className="border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white"
+                                    >
                                         <Link href="/incoming">
                                             <ArrowLeft className="size-4" />
                                             Back to queue
@@ -324,19 +337,19 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
 
                                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-teal-50/80">
                                             <div>
-                                                <p className="text-[11px] uppercase tracking-[0.18em] text-teal-100/55">Region</p>
+                                                <p className="text-[11px] tracking-[0.18em] text-teal-100/55 uppercase">Region</p>
                                                 <p className="mt-1 truncate text-white">{demographics?.region || 'N/A'}</p>
                                             </div>
                                             <div>
-                                                <p className="text-[11px] uppercase tracking-[0.18em] text-teal-100/55">Province</p>
+                                                <p className="text-[11px] tracking-[0.18em] text-teal-100/55 uppercase">Province</p>
                                                 <p className="mt-1 truncate text-white">{demographics?.province || 'N/A'}</p>
                                             </div>
                                             <div>
-                                                <p className="text-[11px] uppercase tracking-[0.18em] text-teal-100/55">City</p>
+                                                <p className="text-[11px] tracking-[0.18em] text-teal-100/55 uppercase">City</p>
                                                 <p className="mt-1 truncate text-white">{demographics?.city || 'N/A'}</p>
                                             </div>
                                             <div>
-                                                <p className="text-[11px] uppercase tracking-[0.18em] text-teal-100/55">Barangay</p>
+                                                <p className="text-[11px] tracking-[0.18em] text-teal-100/55 uppercase">Barangay</p>
                                                 <p className="mt-1 truncate text-white">{demographics?.barangay || 'N/A'}</p>
                                             </div>
                                         </div>
@@ -351,7 +364,7 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                         <div className="mt-2 space-y-2 text-xs leading-5 text-teal-50/80">
                                             <p className="text-white/90">{patientAddress || 'No address details available.'}</p>
                                             <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
-                                                <span className="text-[11px] uppercase tracking-[0.18em] text-teal-100/55">Zipcode</span>
+                                                <span className="text-[11px] tracking-[0.18em] text-teal-100/55 uppercase">Zipcode</span>
                                                 <span className="font-medium text-white">{demographics?.zipcode || 'N/A'}</span>
                                             </div>
                                         </div>
@@ -401,7 +414,7 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
 
                                     <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
                                         <div className="min-w-0 rounded-xl border border-white/10 bg-slate-950/20 px-3 py-2">
-                                            <p className="text-[11px] uppercase tracking-[0.24em] text-teal-100/55">Origin</p>
+                                            <p className="text-[11px] tracking-[0.24em] text-teal-100/55 uppercase">Origin</p>
                                             <p className="mt-2 truncate text-sm font-medium text-white">{referralOrigin?.facility_name || 'N/A'}</p>
                                             <p className="mt-1 text-xs text-teal-50/65">{referralOrigin?.hfhudcode || 'No facility code'}</p>
                                         </div>
@@ -411,8 +424,10 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                         </div>
 
                                         <div className="min-w-0 rounded-xl border border-white/10 bg-slate-950/20 px-3 py-2">
-                                            <p className="text-[11px] uppercase tracking-[0.24em] text-teal-100/55">Destination</p>
-                                            <p className="mt-2 truncate text-sm font-medium text-white">{referralDestination?.facility_name || 'N/A'}</p>
+                                            <p className="text-[11px] tracking-[0.24em] text-teal-100/55 uppercase">Destination</p>
+                                            <p className="mt-2 truncate text-sm font-medium text-white">
+                                                {referralDestination?.facility_name || 'N/A'}
+                                            </p>
                                             <p className="mt-1 text-xs text-teal-50/65">{referralDestination?.hfhudcode || 'No facility code'}</p>
                                         </div>
                                     </div>
@@ -465,7 +480,8 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                             <div>
                                                 <h2 className="text-lg font-semibold text-slate-900">Overview</h2>
                                                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                                                    Core patient identity and referral routing are now summarized in the header above. Use this section for intake posture and coordination notes.
+                                                    Core patient identity and referral routing are now summarized in the header above. Use this
+                                                    section for intake posture and coordination notes.
                                                 </p>
                                             </div>
 
@@ -492,7 +508,8 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                             <div className="rounded-xl border border-teal-100 bg-teal-50/70 p-3">
                                                 <p className="text-sm font-semibold text-slate-900">Next receiving step</p>
                                                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                                                    Review the clinical tab, confirm destination readiness, and proceed with receiving-side triage based on the referral category and handoff reason.
+                                                    Review the clinical tab, confirm destination readiness, and proceed with receiving-side triage
+                                                    based on the referral category and handoff reason.
                                                 </p>
                                             </div>
                                         </CardContent>
@@ -529,7 +546,10 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                                     const Icon = item.icon;
 
                                                     return (
-                                                        <div key={item.title} className="flex gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
+                                                        <div
+                                                            key={item.title}
+                                                            className="flex gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3"
+                                                        >
                                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-teal-700 shadow-sm">
                                                                 <Icon className="size-4" />
                                                             </div>
@@ -537,7 +557,10 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                                                 <div className="flex items-center gap-2">
                                                                     <p className="font-medium text-slate-900">{item.title}</p>
                                                                     {index === activityItems.length - 1 && (
-                                                                        <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-700">
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className="rounded-full border-amber-200 bg-amber-50 text-amber-700"
+                                                                        >
                                                                             Current
                                                                         </Badge>
                                                                     )}
@@ -574,7 +597,10 @@ export default function IncomingProfile({ id: logID, canEdit = false }: Incoming
                                                                     <FileText className="size-5" />
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <p className="truncate text-sm font-semibold text-slate-900" title={attachment.name}>
+                                                                    <p
+                                                                        className="truncate text-sm font-semibold text-slate-900"
+                                                                        title={attachment.name}
+                                                                    >
                                                                         {attachment.name}
                                                                     </p>
                                                                     <p className="mt-1 text-xs text-slate-500">

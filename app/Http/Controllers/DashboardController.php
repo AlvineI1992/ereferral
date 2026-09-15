@@ -523,6 +523,10 @@ class DashboardController extends Controller
 
     private function normalizedRole(?Authenticatable $user): string
     {
+        if ($user instanceof \App\Models\User && $user->isSuperAdministrator()) {
+            return 'system';
+        }
+
         if (! $user || ! method_exists($user, 'getRoleNames')) {
             return 'system';
         }

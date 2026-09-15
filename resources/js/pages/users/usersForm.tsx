@@ -20,7 +20,8 @@ import { type HospitalOption, type ProviderOption, type RegionOption, type Regis
 type AccessTypeValue = 'NONE' | 'EMR' | 'CHD' | 'HOSP';
 
 type UserFormProps = {
-    onUserCreated: () => void;
+    onUserCreated: (user: UserRecord) => void;
+    provider?: ProviderOption;
     onCancel: () => void;
     user: UserRecord | null;
     canCreate: boolean;
@@ -55,7 +56,7 @@ const mapUserToForm = (user: UserRecord): RegisterForm => ({
     status: user.status === 'A',
 });
 
-export default function UsersForm({ onUserCreated, onCancel, user, canCreate, canEdit }: UserFormProps) {
+export default function UsersForm({ onUserCreated, onCancel, user, canCreate, canEdit, provider }: UserFormProps) {
     const isEditing = Boolean(user?.id);
     const canSubmit = isEditing ? canEdit : canCreate;
 
@@ -91,6 +92,10 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
     }, [accessType]);
 
     useEffect(() => {
+        if (provider) {
+            setProviders([provider]);
+            return;
+        }
         const loadReferences = async () => {
             setLoadingReferences(true);
 
@@ -113,12 +118,14 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
         };
 
         void loadReferences();
-    }, []);
+    }, [provider]);
 
     useEffect(() => {
-        const nextForm = user ? mapUserToForm(user) : EMPTY_FORM;
-        const nextAccessType = resolveAccessType(user?.access_type);
-        const nextAccessId = user?.access_id ?? '';
+        const nextForm = user
+            ? mapUserToForm(user)
+            : { ...EMPTY_FORM, access_type: provider ? ('EMR' as const) : ('' as const), access_id: provider?.emr_id ?? '' };
+        const nextAccessType = resolveAccessType(user?.access_type ?? (provider ? 'EMR' : ''));
+        const nextAccessId = user?.access_id ?? provider?.emr_id ?? '';
 
         setData(nextForm);
         clearErrors();
@@ -130,13 +137,13 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
         requestAnimationFrame(() => {
             nameInputRef.current?.focus();
         });
-    }, [clearErrors, setData, user]);
+    }, [clearErrors, setData, user, provider]);
 
     const resetToBlank = () => {
-        setData(EMPTY_FORM);
+        setData({ ...EMPTY_FORM, access_type: provider ? 'EMR' : '', access_id: provider?.emr_id ?? '' });
         clearErrors();
-        setAccessType('NONE');
-        setSelectedProvider('');
+        setAccessType(provider ? 'EMR' : 'NONE');
+        setSelectedProvider(provider?.emr_id ?? '');
         setSelectedRegion('');
         setSelectedHospital('');
     };
@@ -181,7 +188,7 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!canSubmit) {
+        if (!canSubmit || isSubmitting) {
             return;
         }
 
@@ -198,17 +205,15 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
         };
 
         try {
-            if (isEditing && user) {
-                await axios.put(route('user.update', user.id), payload);
-            } else {
-                await axios.post(route('user.store'), payload);
-            }
+            const response =
+                isEditing && user ? await axios.put(route('user.update', user.id), payload) : await axios.post(route('user.store'), payload);
 
             resetToBlank();
-            onUserCreated();
+            onUserCreated(response.data.data);
             toast.success(isEditing ? 'User updated.' : 'User created.');
-        } catch (error: any) {
-            const fieldErrors = error.response?.data?.errors;
+        } catch (error: unknown) {
+            const responseData = axios.isAxiosError(error) ? error.response?.data : undefined;
+            const fieldErrors = responseData?.errors;
 
             if (fieldErrors) {
                 Object.entries(fieldErrors).forEach(([field, messages]) => {
@@ -217,7 +222,7 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
                 });
             }
 
-            toast.error(error.response?.data?.message ?? 'Unable to save this user right now.');
+            toast.error(responseData?.message ?? 'Unable to save this user right now.');
             console.error(error);
         } finally {
             setIsSubmitting(false);
@@ -240,7 +245,7 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
                         role="combobox"
                         aria-expanded={providerOpen}
                         className="w-full justify-between"
-                        disabled={!canSubmit || loadingReferences}
+                        disabled={!!provider || !canSubmit || loadingReferences}
                     >
                         {providers.find((provider) => provider.emr_id === selectedProvider)?.emr_name || 'Select provider...'}
                         <ChevronsUpDown className="ml-2 size-4 opacity-50" />
@@ -285,7 +290,7 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
                         role="combobox"
                         aria-expanded={regionOpen}
                         className="w-full justify-between"
-                        disabled={!canSubmit || loadingReferences}
+                        disabled={!!provider || !canSubmit || loadingReferences}
                     >
                         {regions.find((region) => region.regcode === selectedRegion)?.regname || 'Select region...'}
                         <ChevronsUpDown className="ml-2 size-4 opacity-50" />
@@ -330,7 +335,7 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
                         role="combobox"
                         aria-expanded={hospitalOpen}
                         className="w-full justify-between"
-                        disabled={!canSubmit || loadingReferences}
+                        disabled={!!provider || !canSubmit || loadingReferences}
                     >
                         {hospitals.find((hospital) => hospital.hfhudcode === selectedHospital)?.facility_name || 'Select hospital...'}
                         <ChevronsUpDown className="ml-2 size-4 opacity-50" />
@@ -490,7 +495,11 @@ export default function UsersForm({ onUserCreated, onCancel, user, canCreate, ca
                     <div className="space-y-3">
                         <div className="space-y-2">
                             <Label htmlFor="access_type">Access Scope</Label>
-                            <Select value={accessType} onValueChange={(value: AccessTypeValue) => handleAccessTypeChange(value)}>
+                            <Select
+                                disabled={!!provider || isSubmitting}
+                                value={accessType}
+                                onValueChange={(value: AccessTypeValue) => handleAccessTypeChange(value)}
+                            >
                                 <SelectTrigger disabled={!canSubmit || isSubmitting}>
                                     <SelectValue placeholder="Select access scope" />
                                 </SelectTrigger>

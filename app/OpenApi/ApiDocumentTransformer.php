@@ -37,7 +37,9 @@ The default recommendation is the source facility's immediate configured parent.
 
 - `POST /login` is public.
 - All other documented operations require a valid Sanctum bearer token.
-- The deployed API middleware does not apply endpoint-specific Spatie roles or permissions. The authenticated account's configured facility/access scope still governs application behavior where implemented.
+- Each protected operation lists its required permission under guard `api` and its token ability when applicable. Assign the API permissions to an API role, then assign that role to the user.
+- Each endpoint has its own API permission, including separate list, read, create, update, delete, and workflow operations. Grant only the operations each EMR account needs. Web-guard permissions do not grant API access.
+- Missing API permission returns HTTP 403. The active administrator exception and existing facility/access-scope checks remain in effect.
 - Write operations use live application data. Use dedicated test records and confirm identifiers before sending requests.
 MARKDOWN);
 

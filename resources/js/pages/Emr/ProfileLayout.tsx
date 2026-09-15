@@ -121,7 +121,7 @@ export default function ProfileLayout({ id, children }: ProfileLayoutProps) {
     </Button>
   </div>
 
-  <Reference_List refreshKey={refreshKey} id={id} />
+  <Reference_List key={id} refreshKey={refreshKey} id={id} />
 </div>
 
 

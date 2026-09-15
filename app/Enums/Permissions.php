@@ -147,6 +147,9 @@ class Permissions
             ['incoming list'],
             ['incoming edit'],
             ['incoming delete'],
+            ['incoming cancel'],
+            ['incoming journey'],
+            ['incoming forward'],
             ['incoming print']
         ];
     }

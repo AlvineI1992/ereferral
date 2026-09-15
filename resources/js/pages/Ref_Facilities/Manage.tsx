@@ -12,7 +12,7 @@ const Manage = ({ canCreate, canEdit, canDelete, canView }: FacilityPermissionPr
     const [selectedFacility, setSelectedFacility] = useState<FacilityRecord | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const hasFormAccess = canCreate || canEdit;
-    const [isFormOpen, setIsFormOpen] = useState(hasFormAccess && canCreate);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const handleEdit = (facility: FacilityRecord) => {
         if (!canEdit) {

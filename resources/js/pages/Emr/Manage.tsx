@@ -2,16 +2,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Link } from '@inertiajs/react';
 import { PanelLeftClose, PanelLeftOpen, Plus, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import Form from './Form';
 import Lists from './List';
 import { type EmrPermissionProps, type EmrRecord } from './types';
 
-const Manage = ({ canCreate, canEdit, canDelete, canView }: EmrPermissionProps) => {
+const Manage = ({ canCreate, canEdit, canDelete, canView, canSetup }: EmrPermissionProps) => {
     const [selectedEmr, setSelectedEmr] = useState<EmrRecord | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(canCreate);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const hasFormAccess = canCreate || canEdit;
 
@@ -56,6 +57,13 @@ const Manage = ({ canCreate, canEdit, canDelete, canView }: EmrPermissionProps) 
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                        <>
+                            {canSetup && (
+                                <Button asChild>
+                                    <Link href="/provider-setup">Setup Wizard</Link>
+                                </Button>
+                            )}
+                        </>
                         <Badge variant={canCreate ? 'default' : 'outline'}>Create</Badge>
                         <Badge variant={canEdit ? 'default' : 'outline'}>Edit</Badge>
                         <Badge variant={canDelete ? 'default' : 'outline'}>Delete</Badge>

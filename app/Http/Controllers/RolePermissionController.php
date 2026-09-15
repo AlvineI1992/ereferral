@@ -24,7 +24,8 @@ class RolePermissionController extends Controller
             'per_page' => ['nullable', 'integer', Rule::in([10, 25, 50])],
         ]);
 
-        $query = PermissionModel::query();
+        $role = \App\Models\RoleModel::findOrFail($validated['role_id']);
+        $query = PermissionModel::query()->where('guard_name', $role->guard_name);
 
         $query->when($validated['search'] ?? null, function ($query, $search) {
             $query->where(fn ($nested) => $nested
@@ -41,10 +42,12 @@ class RolePermissionController extends Controller
         $permissions = $query->orderBy('name')->paginate($validated['per_page'] ?? 10);
         $permissions->getCollection()->transform(function ($permission) {
             [$permission->module, $permission->action] = $this->parts($permission->name);
+            $permission->endpoint = $permission->guard_name === 'api'
+                ? \App\Services\ApiPermissionService::endpointFor($permission->name) : null;
 
             return $permission;
         });
-        $all = PermissionModel::query()->get(['name', 'guard_name']);
+        $all = PermissionModel::query()->where('guard_name', $role->guard_name)->get(['name', 'guard_name']);
 
         return response()->json([
             'data' => $permissions->items(),

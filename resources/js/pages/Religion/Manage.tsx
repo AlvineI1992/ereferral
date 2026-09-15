@@ -10,7 +10,7 @@ import { type ReligionRecord } from './types';
 export default function Manage() {
     const [selectedReligion, setSelectedReligion] = useState<ReligionRecord | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(true);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const handleEdit = (record: ReligionRecord) => {
         setSelectedReligion(record);

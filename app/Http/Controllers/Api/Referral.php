@@ -378,6 +378,8 @@ class Referral extends Controller
             'demographics',
             'clinical',
         ])->where('LogID', $LogID)
+            ->whereNotExists(fn ($cancelled) => $cancelled->selectRaw('1')->from('referral_cancellations')->whereColumn('referral_cancellations.LogID', 'referral_information.LogID'))
+            ->whereNotExists(fn ($forwarded) => $forwarded->selectRaw('1')->from('referral_pathway_steps')->whereColumn('referral_pathway_steps.parent_log_id', 'referral_information.LogID'))
             ->whereDoesntHave('track')
             ->first();
 
@@ -1390,16 +1392,22 @@ class Referral extends Controller
             return $this->unauthenticated($request, new AuthenticationException);
         }
 
-        $emr_id = app(\App\Services\EmrCredentialService::class)->resolve($request->user(), $request->header('X-EMR-Token'));
+        $isSuperAdministrator = $request->user()->isSuperAdministrator();
+        $emr_id = $isSuperAdministrator ? null
+            : app(\App\Services\EmrCredentialService::class)->resolve($request->user(), $request->header('X-EMR-Token'));
 
         $this->referralAccessService->authorizeFacility($request->user(), (string) $fhudcode);
-        app(\App\Services\EmrCredentialService::class)->authorizeFacility($emr_id, (string) $fhudcode);
+        if (! $isSuperAdministrator) {
+            app(\App\Services\EmrCredentialService::class)->authorizeFacility($emr_id, (string) $fhudcode);
+        }
 
         $referrals = ReferralModel::with(['facility_from', 'facility_to', 'track'])
-            ->whereHas('facility_to', function ($query) use ($emr_id, $fhudcode) {
-                $query->where('emr_id', $emr_id)
-                    ->where('hfhudcode', $fhudcode);
+            ->whereHas('facility_to', function ($query) use ($emr_id, $fhudcode, $isSuperAdministrator) {
+                $query->where('hfhudcode', $fhudcode)
+                    ->when(! $isSuperAdministrator, fn ($facility) => $facility->where('emr_id', $emr_id));
             })
+            ->whereNotExists(fn ($cancelled) => $cancelled->selectRaw('1')->from('referral_cancellations')->whereColumn('referral_cancellations.LogID', 'referral_information.LogID'))
+            ->whereNotExists(fn ($forwarded) => $forwarded->selectRaw('1')->from('referral_pathway_steps')->whereColumn('referral_pathway_steps.parent_log_id', 'referral_information.LogID'))
             ->whereDoesntHave('track'); // This excludes referrals with any related track
 
         $this->referralAccessService->scopeReferrals($referrals, $request->user());

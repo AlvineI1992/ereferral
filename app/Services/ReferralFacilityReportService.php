@@ -252,6 +252,10 @@ class ReferralFacilityReportService
 
     private function applyScope(Builder $query, ?Authenticatable $user): void
     {
+        if ($user instanceof \App\Models\User && $user->isSuperAdministrator()) {
+            return;
+        }
+
         $accessType = strtoupper(trim((string) ($user?->access_type ?? '')));
         $accessId = trim((string) ($user?->access_id ?? ''));
 

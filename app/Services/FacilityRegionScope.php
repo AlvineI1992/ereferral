@@ -28,7 +28,8 @@ class FacilityRegionScope
 
     private function isRegional(?User $user): bool
     {
-        return strtoupper(trim((string) $user?->access_type)) === 'CHD';
+        return ! ($user?->isSuperAdministrator() ?? false)
+            && strtoupper(trim((string) $user?->access_type)) === 'CHD';
     }
 
     private function codes(mixed $value): array

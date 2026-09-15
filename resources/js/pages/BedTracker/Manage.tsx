@@ -10,7 +10,7 @@ import { type BedTrackerPermissionProps } from './types';
 export default function Manage({ canCreate, canEdit, canDelete, canView }: BedTrackerPermissionProps) {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(canCreate || canEdit);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const badges = useMemo(
         () => [canCreate ? 'Create' : null, canEdit ? 'Edit' : null, canDelete ? 'Delete' : null, canView ? 'View' : null].filter(Boolean) as string[],
@@ -107,7 +107,10 @@ export default function Manage({ canCreate, canEdit, canDelete, canView }: BedTr
                         </div>
                     </div>
 
-                    <List canEdit={canEdit} canDelete={canDelete} refreshKey={refreshKey} onEdit={setSelectedId} />
+                    <List canEdit={canEdit} canDelete={canDelete} refreshKey={refreshKey} onEdit={(id) => {
+                        setSelectedId(id);
+                        setIsFormOpen(true);
+                    }} />
                 </div>
             </div>
         </div>

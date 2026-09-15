@@ -287,6 +287,10 @@ class BedTrackerController extends Controller
 
     private function isAdmin($user): bool
     {
+        if ($user instanceof \App\Models\User && $user->isSuperAdministrator()) {
+            return true;
+        }
+
         $roles = method_exists($user, 'getRoleNames')
             ? $user->getRoleNames()->map(fn ($role) => strtolower((string) $role))->all()
             : [];

@@ -26,14 +26,31 @@ class ApiOperationTransformer
             $operation->summary($this->summaryFor($path, strtoupper($operation->method)));
         }
 
-        $access = $isLogin
-            ? '**Access:** Public. Use this operation to obtain the bearer token for testing.'
-            : '**Access:** Authenticated API user with a valid Sanctum bearer token. No endpoint-specific Spatie role or permission middleware is applied.';
+        $middleware = collect($routeInfo->route->gatherMiddleware());
+        $permission = $middleware->first(fn ($name) => str_starts_with($name, 'api.permission:'));
+        $abilities = $middleware->filter(fn ($name) => str_starts_with($name, 'abilities:'))
+            ->map(fn ($name) => substr($name, strlen('abilities:')))->implode(', ');
+        $access = '**Access:** Public. No API permission is required. Use this operation to obtain the bearer token for testing.';
+        if (! $isLogin) {
+            if (! $permission) {
+                throw new \LogicException('Missing API permission for documented endpoint: '.$path);
+            }
+            $required = substr($permission, strlen('api.permission:'));
+            $access = '**Access:** Active authenticated API user with a valid Sanctum bearer token.'
+                ."\n\n**Required permission:** `{$required}` under guard `api`. Assign it directly or through an API role."
+                .($abilities !== '' ? "\n\n**Required token ability:** `{$abilities}`." : '')
+                ."\n\nThe active administrator exception remains in effect. Facility and EMR credential checks still apply where required. Missing API permission returns HTTP 403.";
+        }
 
         $operation->description(trim($operation->description."\n\n".$access));
 
         if ($isLogin) {
             $operation->security = [new SecurityRequirement([])];
+        }
+
+        if ($path === 'cancel-referral') {
+            $operation->summary('Cancel an unreceived referral');
+            $operation->description($operation->description."\n\nOnly the originating facility or its EMR provider may cancel an unreceived referral. Supply LogID and a reason. A retry returns the original cancellation; a received referral returns HTTP 409.");
         }
 
         if ($path === 'refer_patient' && $operation->requestBodyObject !== null) {
@@ -133,7 +150,7 @@ class ApiOperationTransformer
             return 'Bed Tracking';
         }
 
-        if (in_array($path, ['received', 'admit', 'referral-status', 'referral-status/update'], true)
+        if (in_array($path, ['referrals/journey', 'referrals/forward', 'received', 'admit', 'cancel-referral', 'referral-status', 'referral-status/update'], true)
             || str_starts_with($path, 'get-discharged-data')) {
             return 'Referral Workflow';
         }

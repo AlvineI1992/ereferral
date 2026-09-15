@@ -11,13 +11,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index({ canCreate, canEdit, canDelete, canView }: EmrPermissionProps) {
+export default function Index({ canCreate, canEdit, canDelete, canView, canSetup }: EmrPermissionProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Providers" />
 
             <div className="lg:col-span-1">
-                <Manage canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} canView={canView} />
+                <Manage canSetup={canSetup} canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} canView={canView} />
             </div>
         </AppLayout>
     );

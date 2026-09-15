@@ -170,8 +170,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/permission/info/{id}', [PermissionController::class, 'show'])->middleware('can:permission list')->name('permission.info');
 });
 
+Route::get('/provider-setup', fn () => Inertia::render('Emr/SetupWizard'))
+    ->middleware(['auth:sanctum', 'verified', 'can:provider create', 'can:user create', 'can:user assign', 'can:user edit'])
+    ->name('provider.setup');
+
 Route::get('emr', function (Request $request) {
     $permissions = [
+        'canSetup' => $request->user()->can('provider create') && $request->user()->can('user create') && $request->user()->can('user assign') && $request->user()->can('user edit'),
         'canCreate' => $request->user()->can('provider create'),
         'canEdit' => $request->user()->can('provider edit'),
         'canDelete' => $request->user()->can('provider delete'),
@@ -382,7 +387,9 @@ Route::get('/incoming', function (Request $request) {
 
     $permissions = [
         'canCreate' => $request->user()->can('incoming create'),
-        'canEdit' => $request->user()->can('incoming edit'),
+        'canJourney' => $request->user()->can('incoming journey'),
+            'canEdit' => $request->user()->can('incoming edit'),
+        'canCancel' => $request->user()->can('incoming cancel'),
         'canDelete' => $request->user()->can('incoming delete'),
         'canView' => $request->user()->can('incoming list'),
     ];
@@ -405,7 +412,9 @@ Route::get('/referrals/create', function (Request $request) {
 
     $permissions = [
         'canCreate' => $request->user()->can('incoming create'),
-        'canEdit' => $request->user()->can('incoming edit'),
+        'canJourney' => $request->user()->can('incoming journey'),
+            'canEdit' => $request->user()->can('incoming edit'),
+        'canCancel' => $request->user()->can('incoming cancel'),
         'canDelete' => $request->user()->can('incoming delete'),
         'canView' => $request->user()->can('incoming list'),
     ];
@@ -417,7 +426,9 @@ Route::get('/referrals/edit/{id}', function (Request $request, $id) {
 
     $permissions = [
         'canCreate' => $request->user()->can('incoming create'),
-        'canEdit' => $request->user()->can('incoming edit'),
+        'canJourney' => $request->user()->can('incoming journey'),
+            'canEdit' => $request->user()->can('incoming edit'),
+        'canCancel' => $request->user()->can('incoming cancel'),
         'canDelete' => $request->user()->can('incoming delete'),
         'canView' => $request->user()->can('incoming list'),
         'mode' => 'edit',
@@ -452,6 +463,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'user' => $request->user()->load('roles'),
             'id' => $id,
             'is_include' => true,
+            'canJourney' => $request->user()->can('incoming journey'),
             'canEdit' => $request->user()->can('incoming edit'),
         ];
 
@@ -495,7 +507,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::get('/patient', function (Request $request) {
     $permissions = [
         'canCreate' => $request->user()->can('incoming create'),
-        'canEdit' => $request->user()->can('incoming edit'),
+        'canJourney' => $request->user()->can('incoming journey'),
+            'canEdit' => $request->user()->can('incoming edit'),
+        'canCancel' => $request->user()->can('incoming cancel'),
         'canDelete' => $request->user()->can('incoming delete'),
         'canVie' => $request->user()->can('incoming list'),
     ];
@@ -555,3 +569,20 @@ Route::get('/admin/audit-trail', [AuditTrailController::class, 'index'])
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth', 'verified'])->prefix('admin/database-maintenance')->group(function () {
+    Route::get('/', [\App\Http\Controllers\DatabaseMaintenanceController::class, 'index'])->name('admin.database-maintenance.index');
+    Route::get('/status', [\App\Http\Controllers\DatabaseMaintenanceController::class, 'status'])->name('admin.database-maintenance.status');
+    Route::post('/', [\App\Http\Controllers\DatabaseMaintenanceController::class, 'store'])->middleware('throttle:6,1')->name('admin.database-maintenance.store');
+});
+
+Route::post('/referrals/cancel', \App\Http\Controllers\Api\CancelReferralController::class)
+    ->middleware(['auth', 'verified', 'can:incoming cancel'])
+    ->name('incoming.cancel');
+
+Route::middleware(['auth', 'verified'])->prefix('referrals/pathway')->group(function () {
+    Route::get('/view', [\App\Http\Controllers\ReferralPathwayController::class, 'index'])->middleware('can:incoming journey')->name('incoming.pathway');
+    Route::get('/', [\App\Http\Controllers\ReferralPathwayController::class, 'show'])->middleware('can:incoming journey');
+    Route::post('/', [\App\Http\Controllers\ReferralPathwayController::class, 'store'])->middleware('can:incoming forward');
+    Route::get('/options', [\App\Http\Controllers\ReferralPathwayController::class, 'options'])->middleware('can:incoming forward');
+});

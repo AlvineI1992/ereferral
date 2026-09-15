@@ -34,10 +34,9 @@ export default function Profileinfo({ profile }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-start gap-5">
           {/* Avatar */}
           <Avatar className="w-12 h-12 ring-1 ring-primary shadow-sm">
-            <AvatarImage
-              src={profile?.avatar || '/default-avatar.jpg'}
-              alt={`${profile.emr_name}'s avatar`}
-            />
+            {profile.avatar && (
+              <AvatarImage src={profile.avatar} alt={`${profile.emr_name}'s avatar`} />
+            )}
             <AvatarFallback>{initial}</AvatarFallback>
           </Avatar>
 

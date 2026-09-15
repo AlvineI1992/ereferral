@@ -13,7 +13,7 @@ class UserAccessLabelService
     {
         $roles = $user->getRoleNames()->map(fn ($role) => strtolower($role));
 
-        if ($roles->contains('admin') || $roles->contains('super-admin')) {
+        if ($user->isSuperAdministrator() || $roles->contains('admin') || $roles->contains('super-admin')) {
             return 'Administrator';
         }
 

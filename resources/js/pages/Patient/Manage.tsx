@@ -10,7 +10,7 @@ import { type PatientPermissionProps } from './types';
 export default function Manage({ canCreate, canEdit, canDelete, canView }: PatientPermissionProps) {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(canCreate || canEdit);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const permissionBadges = useMemo(
         () => [
@@ -124,7 +124,10 @@ export default function Manage({ canCreate, canEdit, canDelete, canView }: Patie
                         </div>
                     </div>
 
-                    <List canEdit={canEdit} canDelete={canDelete} refreshKey={refreshKey} onEdit={setSelectedId} />
+                    <List canEdit={canEdit} canDelete={canDelete} refreshKey={refreshKey} onEdit={(id) => {
+                        setSelectedId(id);
+                        setIsFormOpen(true);
+                    }} />
                 </div>
             </div>
 

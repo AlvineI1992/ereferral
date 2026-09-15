@@ -11,7 +11,7 @@ import UsersForm from './usersForm';
 const UsersManagement = ({ canCreate, canEdit, canDelete, canView, canAssign }: PermissionProps) => {
     const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(canCreate);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
     const hasFormAccess = canCreate || canEdit;
 

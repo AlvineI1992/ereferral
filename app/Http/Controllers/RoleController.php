@@ -13,26 +13,11 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, \App\Services\AccessDirectoryService $directory)
     {
-        $query = RoleModel::query();
-
-        if ($search = $request->input('search')) {
-            $query->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('guard_name', 'LIKE', "%{$search}%")
-                  ->orderBy('id', 'desc');
-        }
-    
-        $roles = $query->paginate(10); // Paginate results
-    
-       return response()->json([
-            'data' => $roles->items(),
-            'total' => $roles->total(),
-        ]); 
-        
+        return response()->json($directory->list($request, true));
     }
 
-   
     public function create()
     {
         $permissions = Permission::all();
@@ -42,8 +27,8 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:roles,name',
-            'guard_name' => 'required',
+            'name' => 'required|string|max:255|unique:roles,name',
+            'guard_name' => 'required|string|max:50',
         ]);
      
         $role = RoleModel::create([
@@ -51,6 +36,7 @@ class RoleController extends Controller
             'guard_name' => $request->input('guard_name'),
         ]);
         
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         return redirect()->route('roles.index')->with('success', 'Role created successfully.');
     }
 
@@ -66,16 +52,18 @@ class RoleController extends Controller
     public function update(Request $request, RoleModel $role)
     {
         $request->validate([
-            'name' => 'required|unique:roles,name,' . $role->id,
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'guard_name' => 'required|string|max:50',
             'permissions' => 'array'
         ]);
 
         $role->update(
         ['name' => $request->name,
-         'guard_names' => $request->guard_name,  
+         'guard_name' => $request->guard_name,
         ]);
         //$role->syncPermissions($request->permissions);
 
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
     }
 

@@ -7,13 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
+import axios from 'axios';
 import { Edit3, LoaderCircle, Plus, Save, X } from 'lucide-react';
-import { FormEventHandler, useEffect, useRef } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { type EmrRecord } from './types';
 
 type Props = {
     onCreated: () => void;
+    saveProvider?: (values: FormValues) => Promise<void>;
     onCancel: () => void;
     emr: EmrRecord | null;
     canCreate: boolean;
@@ -38,11 +40,14 @@ const mapEmrToForm = (emr: EmrRecord): FormValues => ({
     remarks: emr.remarks ?? '',
 });
 
-export default function Form({ onCreated, onCancel, emr, canCreate, canEdit }: Props) {
+export default function Form({ onCreated, onCancel, emr, canCreate, canEdit, saveProvider }: Props) {
+    const [saving, setSaving] = useState(false);
     const isEditing = Boolean(emr?.emr_id);
     const canSubmit = isEditing ? canEdit : canCreate;
     const nameInputRef = useRef<HTMLInputElement>(null);
-    const { data, setData, post, put, processing, errors, clearErrors, transform } = useForm<FormValues>(EMPTY_FORM);
+    const { data, setData, post, put, processing: inertiaProcessing, errors, setError, clearErrors, transform } = useForm<FormValues>(EMPTY_FORM);
+
+    const processing = inertiaProcessing || saving;
 
     useEffect(() => {
         setData(emr ? mapEmrToForm(emr) : EMPTY_FORM);
@@ -65,7 +70,24 @@ export default function Form({ onCreated, onCancel, emr, canCreate, canEdit }: P
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
 
-        if (!canSubmit) {
+        if (!canSubmit || processing) {
+            return;
+        }
+
+        if (saveProvider) {
+            setSaving(true);
+            clearErrors();
+            void saveProvider({ ...data, emr_name: data.emr_name.trim(), remarks: data.remarks.trim() })
+                .catch((error: unknown) => {
+                    if (axios.isAxiosError(error)) {
+                        const fields = error.response?.data?.errors ?? {};
+                        Object.entries(fields).forEach(([field, messages]) => {
+                            setError(field as keyof FormValues, Array.isArray(messages) ? String(messages[0]) : String(messages));
+                        });
+                    }
+                    toast.error('Unable to save provider. Please review the form and retry.');
+                })
+                .finally(() => setSaving(false));
             return;
         }
 

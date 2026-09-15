@@ -46,7 +46,7 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
         $user = $request->user();
         $roles = $user?->getRoleNames()->map(fn ($role) => strtolower($role)) ?? collect();
-        $isAdministrator = $roles->contains('admin') || $roles->contains('super-admin');
+        $isAdministrator = ($user?->isSuperAdministrator() ?? false) || $roles->contains('admin') || $roles->contains('super-admin');
 
         return [
             ...parent::share($request),
@@ -82,6 +82,7 @@ class HandleInertiaRequests extends Middleware
                         'users' => $user->can('user list'),
                         'roles' => $user->can('role list'),
                         'permissions' => $user->can('permission list'),
+                        'databaseMaintenance' => $isAdministrator && $user->status === 'A',
                         'dataEncryption' => $isAdministrator,
                         'auditTrail' => $isAdministrator,
                     ],

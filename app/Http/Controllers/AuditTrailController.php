@@ -125,7 +125,6 @@ class AuditTrailController extends Controller
 
     private function authorizeAdministrator(Request $request): void
     {
-        $roles = $request->user()?->getRoleNames()->map(fn ($role) => strtolower($role))->all() ?? [];
-        abort_unless(in_array('admin', $roles, true) || in_array('super-admin', $roles, true), 403);
+        abort_unless(app(\App\Services\ReferralAccessService::class)->isAdministrator($request->user()), 403);
     }
 }

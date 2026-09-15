@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import {
-  Pencil, Trash2, TableOfContents, Eye
+  TableOfContents, Eye
 } from "lucide-react";
 import {
   Table,
@@ -22,13 +22,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { getFacilities, revokeProviderFacilities, type FacilityListItem } from '@/services/facility-service';
+
 type ListProps = {
-  refreshKey: any;
+  refreshKey: number;
   id: string | null;
 };
 
 const Reference_List = ({ refreshKey, id }: ListProps) => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<FacilityListItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -36,7 +38,7 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
   const [totalRows, setTotalRows] = useState(0);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [lastCheckedIndex, setLastCheckedIndex] = useState<number | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof FacilityListItem; direction: 'asc' | 'desc' } | null>(null);
 
   const [visibleColumns, setVisibleColumns] = useState({
     id: true,
@@ -47,36 +49,34 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
     checkbox: true,
   });
 
-  const getAbbreviation = (name: string) =>
-    name.split(' ').map(word => word[0]).join('').toUpperCase();
+  const getAbbreviation = (name: string | null) =>
+    (name ?? '').split(' ').map(word => word[0]).join('').toUpperCase();
 
-  const fetchData = async (pageNumber = 1, search = "", emr_id = id) => {
+  const fetchData = useCallback(async (pageNumber: number, search: string, signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const params: any = { page: pageNumber, search, perPage };
-      if (emr_id) params.emr_id = emr_id;
-      const res = await axios.get("/facility/list/", { params });
-      setData(res.data.data);
-      setTotalRows(res.data.total);
+      const result = await getFacilities({ page: pageNumber, search, perPage, ...(id ? { emr_id: id } : {}) }, signal);
+      if (signal?.aborted) return;
+      setData(result.data);
+      setTotalRows(result.total);
     } catch (err) {
+      if (axios.isCancel(err) || signal?.aborted) return;
       console.error("Fetch error:", err);
       Swal.fire("Error", "Failed to fetch facilities.", "error");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  };
+  }, [id, perPage]);
 
   useEffect(() => {
-    fetchData(page, searchTerm);
+    const controller = new AbortController();
+    void fetchData(page, searchTerm, controller.signal);
     setSelectedRows([]);
-  }, [refreshKey, page, searchTerm, perPage]);
+    setLastCheckedIndex(null);
+    return () => controller.abort();
+  }, [fetchData, refreshKey, page, searchTerm]);
 
-  // Sync parent id filter when id changes
-  useEffect(() => {
-    fetchData(1, searchTerm, id);
-  }, [id]);
-
-  const handleSort = (key: string) => {
+  const handleSort = (key: keyof FacilityListItem) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig?.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
@@ -84,8 +84,8 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
 
   const sortedData = [...data].sort((a, b) => {
     if (!sortConfig) return 0;
-    const aVal = a[sortConfig.key];
-    const bVal = b[sortConfig.key];
+    const aVal = String(a[sortConfig.key] ?? '');
+    const bVal = String(b[sortConfig.key] ?? '');
     return sortConfig.direction === 'asc'
       ? aVal.localeCompare(bVal)
       : bVal.localeCompare(aVal);
@@ -93,7 +93,7 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
 
   const handleCheckboxChange = (hfhudcode: string, index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     let newSelected = [...selectedRows];
-    if (event.shiftKey && lastCheckedIndex !== null) {
+    if ((event.nativeEvent as MouseEvent).shiftKey && lastCheckedIndex !== null) {
       const start = Math.min(lastCheckedIndex, index);
       const end = Math.max(lastCheckedIndex, index);
       const range = data.slice(start, end + 1).map(r => r.hfhudcode);
@@ -121,9 +121,9 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
   const handleBulkDelete = async () => {
     if (!id) return;
     try {
-      await axios.post("/emr/revoke", {  emr_id: id, facilities: selectedRows  });
+      await revokeProviderFacilities(id, selectedRows);
       Swal.fire("Removed", `${selectedRows.length} facility(ies) removed.`, "success");
-      fetchData(page, searchTerm, id);
+      void fetchData(page, searchTerm);
       setSelectedRows([]);
     } catch (err) {
       console.error("Error removing facilities:", err);
@@ -131,7 +131,7 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
     }
   };
 
-  const toggleColumn = (col: string) => {
+  const toggleColumn = (col: keyof typeof visibleColumns) => {
     setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
   };
 
@@ -147,7 +147,7 @@ const Reference_List = ({ refreshKey, id }: ListProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {Object.keys(visibleColumns).map(key => (
+            {(Object.keys(visibleColumns) as (keyof typeof visibleColumns)[]).map(key => (
               <DropdownMenuCheckboxItem
                 key={key}
                 checked={visibleColumns[key]}

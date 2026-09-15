@@ -60,6 +60,7 @@ export interface User {
         users: boolean;
         roles: boolean;
         permissions: boolean;
+        databaseMaintenance?: boolean;
         dataEncryption: boolean;
         auditTrail: boolean;
     };

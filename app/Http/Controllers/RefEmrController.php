@@ -206,6 +206,10 @@ class RefEmrController extends Controller
             ? 'Provider created successfully.'
             : 'Provider updated successfully.';
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message, 'data' => $provider], $provider->wasRecentlyCreated ? 201 : 200);
+        }
+
         return redirect()->route('emr.index')->with('success', $message);
     }
 }

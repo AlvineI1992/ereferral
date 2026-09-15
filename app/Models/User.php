@@ -32,7 +32,19 @@ class User extends Authenticatable implements
         HasApiTokens,
         UsesCipherSweet; // ✅ REQUIRED
 
-    protected $guard_name = 'web';
+    public function isSuperAdministrator(): bool
+    {
+        return $this->status === 'A'
+            && ! $this->trashed()
+            && strtolower(trim((string) $this->email)) === 'admin@referral.doh.gov.ph';
+    }
+
+    protected $guard_name = ['web', 'api'];
+
+    protected function getDefaultGuardName(): string
+    {
+        return 'web';
+    }
 
     protected $dates = ['deleted_at'];
 

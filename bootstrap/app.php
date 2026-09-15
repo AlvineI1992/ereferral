@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'json.headers' => EnsureJsonHeaders::class, // ✅ Add this line
             'auth.sanctum.custom' => CustomSanctumAuth::class,
             'active.api.user' => EnsureActiveApiUser::class,
+            'api.permission' => \App\Http\Middleware\EnsureApiPermission::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
         ]);

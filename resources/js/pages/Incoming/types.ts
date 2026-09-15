@@ -7,6 +7,7 @@ export type PermissionProps = {
     canCreate: boolean;
     canEdit: boolean;
     canDelete: boolean;
+    canCancel?: boolean;
     canView: boolean;
     refreshKey?: number;
     onEdit?: (value: IncomingReferralRow) => void;
@@ -41,6 +42,7 @@ export type IncomingSummary = {
 export type IncomingReferralRow = {
     index: number;
     LogID: string;
+    can_cancel?: boolean;
     avatar?: string;
     patient_name: string;
     patient_sex: string;

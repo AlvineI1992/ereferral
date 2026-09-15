@@ -1,18 +1,8 @@
+import AccessDirectory from '@/components/access-directory';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import Manage from './Manage';
-import { BreadcrumbItem } from './types';
 
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Permissions',
-        href: '/permission',
-    },
-];
-
-export default function Permission({
+export default function Index({
     canCreatePermission,
     canEditPermission,
     canDeletePermission,
@@ -23,32 +13,16 @@ export default function Permission({
     canDeletePermission: boolean;
     canViewPermission: boolean;
 }) {
-   
-
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const handleCreated = () => {
-        setRefreshKey((prev) => prev + 1); 
-    };
-    useEffect(() => {
-       
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-        }, 2000); 
-    }, [refreshKey]);
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Roles" />
-            <div className="lg:col-span-1">
-                <Manage onCreated={() => {}}
-                canCreate={canCreatePermission} 
-                canEdit={canEditPermission} 
-                canDelete={canDeletePermission} 
-                canView={canViewPermission} 
-                />
-            </div>
-        
+        <AppLayout breadcrumbs={[{ title: 'Permissions', href: '/permission' }]}>
+            <Head title="Permissions" />
+            <AccessDirectory
+                kind="permission"
+                canCreate={canCreatePermission}
+                canEdit={canEditPermission}
+                canDelete={canDeletePermission}
+                canView={canViewPermission}
+            />
         </AppLayout>
     );
 }

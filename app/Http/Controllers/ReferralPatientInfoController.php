@@ -15,7 +15,7 @@ class ReferralPatientInfoController extends Controller
     {
         $user = auth()->user();
   
-        $role = $user?->getRoleNames()->first() ?? 'guest'; 
+        $role = $user?->isSuperAdministrator() ? 'admin' : ($user?->getRoleNames()->first() ?? 'guest');
         $query = ReferralPatientInfoModel::query();
     
         if ($search = $request->input('search')) {

@@ -75,6 +75,10 @@ class ReferralAccessService
             return false;
         }
 
+        if ($user->isSuperAdministrator()) {
+            return true;
+        }
+
         $roles = $user->getRoleNames()->map(fn ($role) => strtolower((string) $role));
 
         return $roles->contains('admin') || $roles->contains('super-admin');

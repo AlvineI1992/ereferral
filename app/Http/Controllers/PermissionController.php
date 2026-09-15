@@ -13,23 +13,11 @@ class PermissionController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request, \App\Services\AccessDirectoryService $directory)
     {
-        $query = PermissionModel::query();
-
-        if ($search = $request->input('search')) {
-            $query->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('guard_name', 'LIKE', "%{$search}%")
-                  ->orderBy('id', 'desc');
-        }
-    
-        $data = $query->paginate(10); // Paginate results
-    
-       return response()->json([
-            'data' => $data->items(),
-            'total' => $data->total(),
-        ]); 
+        return response()->json($directory->list($request, false));
     }
+
 
     public function permission_has_role(Request $request)
     {
@@ -99,11 +87,13 @@ class PermissionController extends Controller
         $request->validate(
             [
             'name' => 'required|string|max:255|unique:'.config('permission.table_names.permissions', 
-            'permissions').',name'
+            'permissions').',name',
+            'guard_name' => 'required|string|max:50'
           ]);
        
-        PermissionModel::create(['name' => $request->name , 'guard_name'=> 'web' ]);
+        PermissionModel::create(['name' => $request->name , 'guard_name'=> $request->guard_name ]);
         
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
         return redirect()->route('permission.index')->with('message','Permission created successfully.');
     }
 
@@ -143,7 +133,7 @@ class PermissionController extends Controller
     
         $request->validate([
             'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
-            'guard_name' => 'required'
+            'guard_name' => 'required|string|max:50'
         ]);
     
         $permission->update([
@@ -151,7 +141,8 @@ class PermissionController extends Controller
             'guard_name' => $request->guard_name,
         ]);
     
-        // Return success
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        return redirect()->route('permission.index')->with('success', 'Permission updated successfully.');
     }
 
     /**

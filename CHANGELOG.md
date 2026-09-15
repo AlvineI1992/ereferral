@@ -1,5 +1,28 @@
 # Changelog
 
+## AEI - 2026-09-15
+- Added linked referral forwarding and a chronological referral journey for web/API, with separate transaction IDs, immutable prior-leg snapshots, current-receiver ownership, endpoint permissions, and duplicate-forward protection.
+- Added web Incoming cancellation with a required reason, independent incoming cancel permission, source-ownership visibility, and refresh after cancellation; reuses the API cancellation service and preserves history.
+- Added POST /api/cancel-referral with independent API permission, source-facility ownership, required reason, idempotent cancellation history, pending-list exclusion, and receive/admit protection. Received referrals cannot be cancelled.
+
+## AEI - 2026-09-14
+- Added administrator Database Maintenance with pending-migration preview, approved permission seeders, confirmation, exclusive execution locking, and recent execution results. No reset, rollback, or arbitrary command execution is exposed.
+- Limited classification cells to five badges followed by an ellipsis; remaining classifications are available in the hover text to keep the table compact.
+- Replaced broad API grants with individual endpoint permissions, displayed method/path in permission assignment, and migrated existing API grants to equivalent endpoint grants. Login stays public; individual EMR operations can now be granted or revoked independently.
+- Audited documented API permission coverage and updated live OpenAPI access descriptions to show required API permissions and token abilities. Login remains public; documentation generation now rejects protected operations missing a permission guard.
+- Added API-guard permission checks to protected API endpoints, seeded reference/referral/bed API permissions, and enabled API role assignment alongside existing web roles. Preserves Sanctum token abilities and the exact administrator exception; ordinary accounts require assigned API permissions.
+- Enhanced Roles and Permissions with a shared compact directory, module/action classification, server-side search, guard and assignment filters, sorting, pagination, and reusable forms; fixed guard saving and permission update responses.
+- Added EMR token generation as the fourth provider setup step, with copy/reveal controls, saved credential confirmation, and the existing user-edit permission requirement.
+- Added a permission-protected provider setup wizard: add provider, create a linked user, and assign roles using existing validated endpoints and reusable forms. Saves each step independently and displays completion after role assignment.
+
+## AEI - 2026-09-13
+- Resolved stalled email encryption caused by an absent queue worker: verified the encrypted backup, processed the pending conversion, and confirmed encrypted storage, blind-index lookup, and administrator access.
+- Fixed the provider profile first-load facilities error by restoring missing facility, region, and facility-type reference tables from the verified backup; consolidated the list into one cancellable request through a reusable facility API service handled nullable facility names, and used initials when no provider avatar exists.
+- Granted the active `admin@referral.doh.gov.ph` account all application permissions and administrator pages, with unrestricted referral, facility, patient, bed, dashboard, and report access regardless of assigned roles or scope. Other accounts retain existing restrictions.
+- Reset operational and account data in `referral_2022` after a verified backup, reseeded `admin@referral.doh.gov.ph`, and verified demographics, facilities, roles, permissions, and role-permission assignments remained unchanged.
+- Made sidebar permission seeding explicitly use the web guard and clear cached permissions before and after seeding; preserves existing permissions and role assignments.
+- Upgraded Laravel to 13.31.0 and raised the PHP requirement to 8.3; updated the Composer lockfile and compatible Scramble, TCPDF Laravel, Tinker, and Pest 4 dependencies.
+
 ## AEI - 2026-09-11
 - Added independent `referral report list` and `diagnosis heatmap list` permissions to report pages, data/drill-down/export routes, validation requests, and sidebar links; migration preserves existing Incoming-based role and direct-user report grants while enabling separate assignment/revocation.
 - Restricted regional (CHD) accounts to facilities inside their assigned region across directory pagination/search, facility options, direct details, and create/update/delete; accepts legacy padded/unpadded region codes and denies access when regional assignment is missing.
@@ -29,7 +52,6 @@
 - Normalized CipherSweet key/provider configuration and expanded the user email column for encrypted payload storage.
 
 ## AEI - 2026-09-10
-- Prevented web and API login when either the user access type or access ID is missing, except for `admin@referral.doh.gov.ph`.
 - Fixed case-sensitive Inertia page resolution for user and role administration pages in production builds.
 - Hid appointment navigation when the application has no registered appointment page, preventing Inertia prefetch 404 responses.
 - Corrected role create and update redirects to use the registered `roles.index` route name.

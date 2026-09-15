@@ -13,6 +13,7 @@ export type EmrRecord = {
 };
 
 export type EmrPermissionProps = {
+    canSetup?: boolean;
     canCreate: boolean;
     canEdit: boolean;
     canDelete: boolean;

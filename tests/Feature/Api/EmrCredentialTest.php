@@ -40,6 +40,7 @@ test('valid credentials return only untracked referrals for the requested provid
     DB::table('referral_track')->insert(['LogID' => 'tracked']);
     $user = User::factory()->create(['status' => 'A', 'access_type' => 'EMR', 'access_id' => '1']);
     $token = app(EmrCredentialService::class)->generate($user);
+    $user->givePermissionTo(Permission::findOrCreate('referral list read', 'api'));
     Sanctum::actingAs($user, ['referrals:read']);
     $response = $this->getJson('/api/get-referral-list/FAC-1', ['X-EMR-Token' => $token])->assertOk()->assertJsonCount(1)->assertJsonPath('0.LogID', 'pending');
     $schema = \App\OpenApi\Examples\ReferralListResponse::schema()->toArray();
@@ -50,6 +51,11 @@ test('valid credentials return only untracked referrals for the requested provid
     $this->getJson('/api/get-referral-list/FAC-1', ['X-EMR-Token' => ' '.$token.' '])->assertOk()->assertJsonCount(1);
     $user->assignRole(\Spatie\Permission\Models\Role::findOrCreate('admin', 'web'));
     $this->getJson('/api/get-referral-list/FAC-2', ['X-EMR-Token' => $token])->assertForbidden();
+    $administrator = User::factory()->create(['email' => 'admin@referral.doh.gov.ph', 'status' => 'A', 'access_type' => null, 'access_id' => null]);
+    Sanctum::actingAs($administrator, ['referrals:read']);
+    $this->getJson('/api/get-referral-list/FAC-2')->assertOk()->assertJsonCount(1)->assertJsonPath('0.LogID', 'foreign');
+    $user->givePermissionTo(Permission::findOrCreate('referral list read', 'api'));
+    Sanctum::actingAs($user, ['referrals:read']);
     DB::table('ref_facilities')->where('hfhudcode', 'FAC-1')->update(['emr_id' => '2']);
     $this->getJson('/api/get-referral-list/FAC-1', ['X-EMR-Token' => $token])->assertForbidden();
 });
@@ -104,6 +110,7 @@ test('credential management requires edit permission and an active provider acco
 
 test('referral list rejects absent numeric and foreign credentials before accessing patient data', function () {
     $user = User::factory()->create(['status' => 'A', 'access_type' => 'EMR', 'access_id' => '1']);
+    $user->givePermissionTo(Permission::findOrCreate('referral list read', 'api'));
     Sanctum::actingAs($user, ['referrals:read']);
     $this->getJson('/api/get-referral-list/FAC-1')->assertForbidden();
     $this->getJson('/api/get-referral-list/FAC-1', ['X-EMR-Token' => '1'])->assertForbidden();
@@ -117,8 +124,10 @@ test('referral list rejects absent numeric and foreign credentials before access
 test('valid EMR credentials still require facility authorization and bearer abilities', function () {
     $user = User::factory()->create(['status' => 'A', 'access_type' => 'EMR', 'access_id' => '1']);
     $token = app(EmrCredentialService::class)->generate($user);
+    $user->givePermissionTo(Permission::findOrCreate('referral list read', 'api'));
     Sanctum::actingAs($user, []);
     $this->getJson('/api/get-referral-list/FAC-1', ['X-EMR-Token' => $token])->assertForbidden();
+    $user->givePermissionTo(Permission::findOrCreate('referral list read', 'api'));
     Sanctum::actingAs($user, ['referrals:read']);
     $this->mock(ReferralAccessService::class, function ($mock) {
         $mock->shouldReceive('authorizeFacility')->once()->andThrow(new AccessDeniedHttpException);
@@ -129,6 +138,7 @@ test('valid EMR credentials still require facility authorization and bearer abil
 test('credential failures return actionable JSON without debug traces', function () {
     config(['app.debug' => true]);
     $user = User::factory()->create(['status' => 'A', 'access_type' => 'EMR', 'access_id' => '1']);
+    $user->givePermissionTo(Permission::findOrCreate('referral list read', 'api'));
     Sanctum::actingAs($user, ['referrals:read']);
     $this->getJson('/api/get-referral-list/FAC-1')->assertForbidden()->assertExactJson([
         'message' => 'Missing X-EMR-Token header. Generate an EMR token on Users and paste it into X-EMR-Token.',

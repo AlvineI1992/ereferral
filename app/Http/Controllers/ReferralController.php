@@ -58,6 +58,8 @@ class ReferralController extends Controller
         $page = max(1, (int) $request->input('page', 1));
 
         $query = ReferralInformationModel::with(['patientinformation', 'facility_from', 'facility_to'])
+            ->whereNotExists(fn ($cancelled) => $cancelled->selectRaw('1')->from('referral_cancellations')->whereColumn('referral_cancellations.LogID', 'referral_information.LogID'))
+            ->whereNotExists(fn ($forwarded) => $forwarded->selectRaw('1')->from('referral_pathway_steps')->whereColumn('referral_pathway_steps.parent_log_id', 'referral_information.LogID'))
             ->whereDoesntHave('track'); // This ensures you get referrals without a track
 
         $this->applyIncomingScope($query, $user);
@@ -142,7 +144,7 @@ class ReferralController extends Controller
         $rowOffset = ($paginated->currentPage() - 1) * $paginated->perPage();
 
         // Transform the data for response
-        $transformedList = $paginated->getCollection()->values()->map(function ($referral, $index) use ($rowOffset) {
+        $transformedList = $paginated->getCollection()->values()->map(function ($referral, $index) use ($rowOffset, $user) {
             $referral_reason_desc = ReferralHelper::getReferralReasonbyCode($referral->referralReason);
             $referral_type_desc = ReferralHelper::getReferralTypebyCode($referral->typeOfReferral);
             $patientInformation = $referral->patientinformation;
@@ -154,6 +156,9 @@ class ReferralController extends Controller
 
             return [
                 'index' => $rowOffset + $index + 1,
+                'can_cancel' => $user->can('incoming cancel') && ($user->isSuperAdministrator()
+                    || ($user->access_type === 'HOSP' && filled($user->access_id) && (string) $user->access_id === (string) $referral->fhudFrom)
+                    || ($user->access_type === 'EMR' && filled($user->access_id) && (string) $user->access_id === (string) $referral->facility_from?->emr_id)),
                 'LogID' => $referral->LogID,
                 'patient_name' => $patientName,
                 'patient_sex' => $patientInformation?->patientSex === 'M'
@@ -190,7 +195,9 @@ class ReferralController extends Controller
 
     public function dashboard(Request $request)
     {
-        $query = ReferralInformationModel::query()->whereDoesntHave('track');
+        $query = ReferralInformationModel::query()->whereNotExists(fn ($cancelled) => $cancelled->selectRaw('1')->from('referral_cancellations')->whereColumn('referral_cancellations.LogID', 'referral_information.LogID'))
+            ->whereNotExists(fn ($forwarded) => $forwarded->selectRaw('1')->from('referral_pathway_steps')->whereColumn('referral_pathway_steps.parent_log_id', 'referral_information.LogID'))
+            ->whereDoesntHave('track');
         $this->applyIncomingScope($query, $request->user());
 
         return response()->json($this->incomingDashboardService->summarize($query));
@@ -731,6 +738,10 @@ class ReferralController extends Controller
 
     private function resolveIncomingScopeType(?Authenticatable $user): ?string
     {
+        if ($user instanceof \App\Models\User && $user->isSuperAdministrator()) {
+            return null;
+        }
+
         if (! $user) {
             return null;
         }

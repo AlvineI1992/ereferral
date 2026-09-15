@@ -18,7 +18,7 @@ export default function Manage() {
     const [level, setLevel] = useState<DemographicLevel>('region');
     const [selectedRecord, setSelectedRecord] = useState<DemographicRecord | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [isFormOpen, setIsFormOpen] = useState(true);
+    const [isFormOpen, setIsFormOpen] = useState(false);
     const [scope, setScope] = useState<DemographicScope>({
         regionCode: '',
         provinceCode: '',

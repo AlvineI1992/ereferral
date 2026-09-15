@@ -2,10 +2,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { cancelWebReferral } from '@/services/referral-cancellation';
 import { Link, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ArrowRightIcon, BarChart3, ChevronDown, Hospital, List, Mars, Plus, Printer, SlidersHorizontal, Trash2, Venus, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Swal from 'sweetalert2';
 import IncomingDashboard from './IncomingDashboard';
 import type { IncomingAdvancedFilters, IncomingFilterOptions, IncomingReferralRow, IncomingSummary, PermissionProps } from './types';
 
@@ -39,7 +41,7 @@ const emptyAdvancedFilters: IncomingAdvancedFilters = {
     reason: '',
 };
 
-const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) => {
+const Lists = ({ canCreate, canDelete, canCancel, refreshKey, onEdit }: PermissionProps) => {
     const [data, setData] = useState<IncomingReferralRow[]>([]);
     const [summary, setSummary] = useState<IncomingSummary>(emptySummary);
     const [dashboardOpen, setDashboardOpen] = useState(false);
@@ -58,6 +60,38 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [filterError, setFilterError] = useState('');
     const [refreshTick, setRefreshTick] = useState(0);
+    const [cancelling, setCancelling] = useState(false);
+    const cancelReferral = async (row: IncomingReferralRow) => {
+        if (!canCancel || cancelling) return;
+        const result = await Swal.fire({
+            title: 'Cancel referral?',
+            text: `Referral ${row.LogID}. The referral will be retained in history and removed from pending referrals.`,
+            input: 'textarea',
+            inputLabel: 'Cancellation reason',
+            inputAttributes: { maxlength: '1000' },
+            showCancelButton: true,
+            confirmButtonText: 'Cancel referral',
+            cancelButtonText: 'Keep referral',
+            inputValidator: (value) => (!value.trim() ? 'Enter a cancellation reason.' : undefined),
+        });
+        if (!result.isConfirmed) return;
+        setCancelling(true);
+        try {
+            await cancelWebReferral(row.LogID, String(result.value).trim());
+            setPage((current) => (data.length === 1 && current > 1 ? current - 1 : current));
+            setRefreshTick((current) => current + 1);
+            setDashboardLoaded(false);
+            await Swal.fire('Cancelled', 'The referral has been cancelled.', 'success');
+        } catch (error: unknown) {
+            await Swal.fire(
+                'Unable to cancel',
+                axios.isAxiosError(error) ? (error.response?.data?.message ?? 'Please try again.') : 'Please try again.',
+                'error',
+            );
+        } finally {
+            setCancelling(false);
+        }
+    };
     const [deleteTarget, setDeleteTarget] = useState<IncomingReferralRow | null>(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
     const [deleting, setDeleting] = useState(false);
@@ -71,36 +105,39 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
 
     useEffect(() => {
         const controller = new AbortController();
-        const delayDebounce = setTimeout(() => {
-            const fetchData = async () => {
-                setLoading(true);
-                try {
-                    const response = await axios.get('/incoming/list', {
-                        params: {
-                            page,
-                            per_page: perPage,
-                            search: searchTerm || undefined,
-                            include_filter_options: !filterOptionsLoaded.current,
-                            ...Object.fromEntries(Object.entries(appliedFilters).filter(([, value]) => value !== '')),
-                        },
-                        signal: controller.signal,
-                    });
-                    setData(response.data.data ?? []);
-                    setTotalRows(response.data.total ?? 0);
-                    if (response.data.filter_options) {
-                        setFilterOptions(response.data.filter_options);
-                        filterOptionsLoaded.current = true;
+        const delayDebounce = setTimeout(
+            () => {
+                const fetchData = async () => {
+                    setLoading(true);
+                    try {
+                        const response = await axios.get('/incoming/list', {
+                            params: {
+                                page,
+                                per_page: perPage,
+                                search: searchTerm || undefined,
+                                include_filter_options: !filterOptionsLoaded.current,
+                                ...Object.fromEntries(Object.entries(appliedFilters).filter(([, value]) => value !== '')),
+                            },
+                            signal: controller.signal,
+                        });
+                        setData(response.data.data ?? []);
+                        setTotalRows(response.data.total ?? 0);
+                        if (response.data.filter_options) {
+                            setFilterOptions(response.data.filter_options);
+                            filterOptionsLoaded.current = true;
+                        }
+                    } catch (error) {
+                        if (axios.isCancel(error)) return;
+                        console.error('Error fetching referrals:', error);
+                    } finally {
+                        setLoading(false);
                     }
-                } catch (error) {
-                    if (axios.isCancel(error)) return;
-                    console.error('Error fetching referrals:', error);
-                } finally {
-                    setLoading(false);
-                }
-            };
+                };
 
-            void fetchData();
-        }, searchTerm ? 300 : 0);
+                void fetchData();
+            },
+            searchTerm ? 300 : 0,
+        );
 
         return () => {
             clearTimeout(delayDebounce);
@@ -475,6 +512,19 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
                                                     >
                                                         <ArrowRightIcon size={16} className="text-blue-700 group-hover:text-white" />
                                                     </Button>
+                                                    {canCancel && row.can_cancel && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            disabled={cancelling}
+                                                            title="Cancel referral"
+                                                            aria-label={`Cancel referral ${row.LogID}`}
+                                                            onClick={() => void cancelReferral(row)}
+                                                        >
+                                                            <X size={16} />
+                                                        </Button>
+                                                    )}
                                                     {canDelete && (
                                                         <Button
                                                             type="button"
@@ -546,7 +596,8 @@ const Lists = ({ canCreate, canDelete, refreshKey, onEdit }: PermissionProps) =>
                     <DialogHeader>
                         <DialogTitle>Delete referral transaction</DialogTitle>
                         <DialogDescription>
-                            This permanently deletes the referral and its clinical, patient, tracking, status, provider, medicine, follow-up, and attachment records.
+                            This permanently deletes the referral and its clinical, patient, tracking, status, provider, medicine, follow-up, and
+                            attachment records.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2">

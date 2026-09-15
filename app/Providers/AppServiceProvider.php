@@ -40,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Gate::before(
+            fn (\App\Models\User $user, string $ability) => $user->isSuperAdministrator() ? true : null
+        );
+
         Auth::provider('ciphersweet-eloquent', function ($app, array $config) {
             return new CipherSweetUserProvider($app['hash'], $config['model']);
         });
