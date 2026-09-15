@@ -9,6 +9,7 @@ use Spatie\Permission\Traits\HasRoles;
 class ReferralPatientInfoModel extends Model
 {
     use HasFactory; use HasRoles;
+    use \App\Models\Concerns\EncryptsPatientPii;
     
     protected $table = 'referral_patientinfo';
     protected $primaryKey = 'LogID';

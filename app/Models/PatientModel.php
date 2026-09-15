@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PatientModel extends Model
 {
     use HasFactory;
+    use \App\Models\Concerns\EncryptsPatientPii;
     use SoftDeletes;
 
     protected $table = 'patient_master_list';
