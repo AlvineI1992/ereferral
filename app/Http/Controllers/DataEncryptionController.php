@@ -21,6 +21,7 @@ class DataEncryptionController extends Controller
 
         return Inertia::render('Admin/DataEncryption', [
             'encryption' => $this->payload($setting),
+            'patientEncryption' => app(PatientEncryptionController::class)->payload(),
         ]);
     }
 

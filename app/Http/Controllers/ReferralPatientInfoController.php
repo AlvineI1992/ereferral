@@ -19,8 +19,7 @@ class ReferralPatientInfoController extends Controller
         $query = ReferralPatientInfoModel::query();
     
         if ($search = $request->input('search')) {
-            $query->where('patientLastname', 'LIKE', "%{$search}%")
-                  ->orWhere('patientFirstName', 'LIKE', "%{$search}%");
+            app(\App\Services\PatientPiiEncryption::class)->search($query, $search);
         }
     
         // Handle role-based query adjustments
@@ -52,7 +51,7 @@ class ReferralPatientInfoController extends Controller
         $transformedList = $paginated->getCollection()->map(function ($patient) {
             return [
                 'LogID' => $patient->LogID,
-                'patient_name' => $patient->patientFirstName.' '.$patient->patientMiddlename.' '.$patient->patientLastname,
+                'patient_name' => $patient->patientFirstName.' '.$patient->patientMiddlename.' '.$patient->patientLastName,
                 'sex' => ($patient->patientSex === 'M')? 'Male' : 'Female',
                 'birthdate' => date('m/d/Y',strtotime($patient->patientBirthDate)),
                 'civil_status' => ReferralHelper::getCivilStatusDescription($patient->patientCivilStatus) ?? $patient->patientCivilStatus,

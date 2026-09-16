@@ -38,11 +38,11 @@ class ReferralPathwayService
             $snapshot = $this->snapshot($parent);
             if (! $step) {
                 DB::table('referral_pathway_steps')->insert(['log_id' => $parent->LogID, 'root_log_id' => $root,
-                    'sequence' => 1, 'snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR), 'created_at' => now()]);
+                    'sequence' => 1, 'snapshot' => app(PatientPiiEncryption::class)->snapshot($snapshot, $parent->LogID), 'created_at' => now()]);
             }
             // Freeze the clinical and workflow state of this leg before creating the next one.
             DB::table('referral_pathway_steps')->where('log_id', $parent->LogID)
-                ->update(['forwarded_at' => now(), 'snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR)]);
+                ->update(['forwarded_at' => now(), 'snapshot' => app(PatientPiiEncryption::class)->snapshot($snapshot, $parent->LogID)]);
             $logId = 'FWD-'.Str::ulid();
             $next = (array) $parent;
             $next = array_replace($next, ['LogID' => $logId, 'fhudFrom' => $parent->fhudTo, 'fhudTo' => $destination->hfhudcode,
@@ -63,7 +63,14 @@ class ReferralPathwayService
                     if ($table === 'referral_clinical' && filled($data['clinical_update'] ?? null)) {
                         $copy['findings'] = $data['clinical_update'];
                     }
-                    DB::table($table)->insert($copy);
+                    if (isset(PatientPiiEncryption::FIELDS[$table])) {
+                        $class = $table === 'referral_patientinfo' ? \App\Models\ReferralPatientInfoModel::class : \App\Models\ReferralPatientDemoModel::class;
+                        $plain = app(PatientPiiEncryption::class)->decryptRecord($table, (object) $copy);
+                        $model = new $class;
+                        $model->forceFill((array) $plain)->save();
+                    } else {
+                        DB::table($table)->insert($copy);
+                    }
                 }
                 if ($table === 'referral_clinical' && $rows->isEmpty() && filled($data['clinical_update'] ?? null)) {
                     DB::table($table)->insert(['LogID' => $logId, 'findings' => $data['clinical_update']]);
@@ -71,7 +78,7 @@ class ReferralPathwayService
             }
             DB::table('referral_pathway_steps')->insert(['log_id' => $logId, 'root_log_id' => $root,
                 'parent_log_id' => $parent->LogID, 'sequence' => $sequence + 1, 'request_id' => $data['request_id'], 'request_hash' => $requestHash,
-                'created_by' => $user->id, 'snapshot' => json_encode($this->snapshot((object) $next), JSON_THROW_ON_ERROR), 'created_at' => now()]);
+                'created_by' => $user->id, 'snapshot' => app(PatientPiiEncryption::class)->snapshot($this->snapshot((object) $next), $logId), 'created_at' => now()]);
             return ['LogID' => $logId, 'root_LogID' => $root, 'parent_LogID' => $parent->LogID];
         });
     }
@@ -88,7 +95,7 @@ class ReferralPathwayService
         $records = DB::table('referral_information')->whereIn('LogID', $steps->pluck('log_id'))->get()->keyBy('LogID');
         $transactions = $steps->map(function ($step) use ($records) {
             $snapshot = $step->forwarded_at || !isset($records[$step->log_id])
-                ? json_decode($step->snapshot, true, 512, JSON_THROW_ON_ERROR)
+                ? app(PatientPiiEncryption::class)->readSnapshot($step->snapshot, $step->log_id)
                 : $this->snapshot($records[$step->log_id]);
             return array_merge($snapshot, ['LogID' => $step->log_id, 'parent_LogID' => $step->parent_log_id,
                 'sequence' => $step->sequence, 'created_by' => $step->created_by,
@@ -124,8 +131,8 @@ class ReferralPathwayService
             'status' => $cancelled ? 'CANCELLED' : (filled($track?->dischDate) ? 'DISCHARGED' : (filled($track?->admDate) ? 'ADMITTED' : ($track ? 'RECEIVED' : 'PENDING'))),
             'received_at' => $track?->receivedDate, 'admitted_at' => $track?->admDate, 'discharged_at' => $track?->dischDate,
             'cancellation' => $cancelled, 'details' => $referral,
-            'patient' => DB::table('referral_patientinfo')->where('LogID', $referral->LogID)->first(),
-            'demographics' => DB::table('referral_patientdemo')->where('LogID', $referral->LogID)->first(),
+            'patient' => \App\Models\ReferralPatientInfoModel::find($referral->LogID)?->toArray(),
+            'demographics' => \App\Models\ReferralPatientDemoModel::find($referral->LogID)?->toArray(),
             'clinical' => DB::table('referral_clinical')->where('LogID', $referral->LogID)->first(),
             'providers' => Schema::hasTable('referral_provider') ? DB::table('referral_provider')->where('LogID', $referral->LogID)->get()->all() : [],
             'medications' => Schema::hasTable('referral_medicine') ? DB::table('referral_medicine')->where('LogID', $referral->LogID)->get()->all() : [],

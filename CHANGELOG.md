@@ -1,5 +1,9 @@
 # Changelog
 
+## AEI - 2026-09-16
+- Completed administrator-controlled patient PII encryption with verified encrypted backups, queued conversion and retry, protected writes after conversion failure, and encryption of immutable referral journey snapshots. Covers names, birth dates, patient identifiers, contact numbers, street addresses, and ZIP codes; preserves geographic reporting codes and clinical source storage.
+- Connected encrypted patient records to referral forwarding, dashboard/report display, exact blind-index search, and duplicate matching. Encrypted patient lists use newest-first ordering; added conversion, access, integrity, and forwarding regression coverage.
+
 ## AEI - 2026-09-15
 - Corrected API referral journey forwarding availability to require the token's write ability as well as endpoint permission and receiver ownership; added API retry, permission, EMR ownership, and immutable snapshot regression coverage.
 - Added linked referral forwarding and a chronological referral journey for web/API, with separate transaction IDs, immutable prior-leg snapshots, current-receiver ownership, endpoint permissions, and duplicate-forward protection.

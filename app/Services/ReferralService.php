@@ -50,6 +50,9 @@ class ReferralService
             ] as $table) {
                 if (Schema::hasTable($table)) {
                     DB::table($table)->where('LogID', $logId)->delete();
+                    if (isset(PatientPiiEncryption::FIELDS[$table]) && Schema::hasTable('patient_pii_indexes')) {
+                        DB::table('patient_pii_indexes')->where('table_name', $table)->where('record_id', $logId)->delete();
+                    }
                 }
             }
 
@@ -220,14 +223,14 @@ class ReferralService
 
     public function check(array $data, ?string $ignoreLogId = null)
     {
-        $existingPatient = ReferralPatientInfoModel::where([
-            ['patientLastName', $data['patient']['last_name']],
-            ['patientFirstName', $data['patient']['first_name']],
-            ['patientMiddlename', $data['patient']['middle_name']],
-            ['patientSuffix', ($data['patient']['suffix']) ? $data['patient']['suffix'] : '.'],
-            ['patientBirthDate', $data['patient']['birthdate']],
-            ['patientSex', $data['patient']['sex']],
-            ['patientCivilStatus', $data['patient']['civil_status']],
+        $existingPatient = app(PatientPiiEncryption::class)->whereIdentity(ReferralPatientInfoModel::query(), [
+            'patientLastName' => $data['patient']['last_name'],
+            'patientFirstName' => $data['patient']['first_name'],
+            'patientMiddlename' => $data['patient']['middle_name'],
+            'patientSuffix' => $data['patient']['suffix'] ?: '.',
+            'patientBirthDate' => $data['patient']['birthdate'],
+            'patientSex' => $data['patient']['sex'],
+            'patientCivilStatus' => $data['patient']['civil_status'],
         ]);
 
         $existingReferral = ReferralInformationModel::where([
@@ -596,20 +599,7 @@ class ReferralService
 
         $query = PatientModel::withTrashed()->newQuery();
 
-        foreach ([
-            'first_name' => $identity['first_name'] ?? null,
-            'middle_name' => $identity['middle_name'] ?? null,
-            'last_name' => $identity['last_name'] ?? null,
-            'suffix' => $identity['suffix'] ?? null,
-            'civil_status' => $identity['civil_status'] ?? null,
-        ] as $column => $value) {
-            $normalized = $this->normalizeMasterValue($value) ?? '';
-            $query->whereRaw("UPPER(TRIM(COALESCE({$column}, ''))) = ?", [$normalized]);
-        }
-
-        return $query
-            ->whereDate('birth_date', $birthDate)
-            ->first();
+        return app(PatientPiiEncryption::class)->whereIdentity($query, [...$identity, 'birth_date' => $birthDate])->first();
     }
 
     private function normalizeMasterValue(mixed $value): ?string

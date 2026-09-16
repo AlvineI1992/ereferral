@@ -558,6 +558,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'verified'])->prefix('admin/data-encryption')->group(function () {
+    Route::get('/patients/status', [\App\Http\Controllers\PatientEncryptionController::class, 'status'])->name('admin.data-encryption.patients.status');
+    Route::put('/patients', [\App\Http\Controllers\PatientEncryptionController::class, 'update'])->name('admin.data-encryption.patients.update');
     Route::get('/', [DataEncryptionController::class, 'index'])->name('admin.data-encryption.index');
     Route::get('/status', [DataEncryptionController::class, 'status'])->name('admin.data-encryption.status');
     Route::put('/', [DataEncryptionController::class, 'update'])->name('admin.data-encryption.update');

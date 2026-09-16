@@ -132,9 +132,7 @@ class ReferralController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('patientinformation', function ($subQuery) use ($search) {
-                    $subQuery->where('patientFirstName', 'LIKE', "%{$search}%")
-                        ->orWhere('patientMiddlename', 'LIKE', "%{$search}%")
-                        ->orWhere('patientLastname', 'LIKE', "%{$search}%");
+                    app(\App\Services\PatientPiiEncryption::class)->search($subQuery, $search);
                 });
             });
         }

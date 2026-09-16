@@ -60,6 +60,7 @@ class ReferralFacilityReportService
             ->orderByDesc('referral.refferalTime')
             ->get()
             ->map(function ($row) {
+                $row = app(PatientPiiEncryption::class)->decryptRecord('referral_patientinfo', $row);
                 $patientName = trim(implode(' ', array_filter([
                     $row->patientFirstName,
                     $row->patientMiddlename,

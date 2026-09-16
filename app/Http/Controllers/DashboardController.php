@@ -536,6 +536,7 @@ class DashboardController extends Controller
 
     private function patientName(object $row): string
     {
+        $row = app(\App\Services\PatientPiiEncryption::class)->decryptRecord('referral_patientinfo', $row);
         $name = trim(implode(' ', array_filter([
             $row->patientFirstName ?? null,
             $row->patientMiddlename ?? null,

@@ -13,6 +13,8 @@ use ParagonIE\CipherSweet\EncryptedField;
 
 class PatientPiiEncryption
 {
+    private ?string $status = null;
+
     public const FIELDS = [
         'patient_master_list' => ['family_id', 'phic_number', 'case_number', 'last_name', 'first_name', 'middle_name', 'suffix', 'birth_date', 'contact_number', 'street_address', 'zip_code'],
         'referral_patientinfo' => ['FamilyID', 'phicNum', 'caseNum', 'patientLastName', 'patientFirstName', 'patientMiddlename', 'patientSuffix', 'patientBirthDate', 'patientContactNumber'],
@@ -31,8 +33,19 @@ class PatientPiiEncryption
 
     public function enabled(): bool
     {
-        return Schema::hasTable('patient_encryption_settings')
-            && in_array(PatientEncryptionSetting::query()->value('status'), ['converting', 'active', 'failed'], true);
+        return in_array($this->status(), ['converting', 'active', 'failed'], true);
+    }
+
+    private function status(): string
+    {
+        return $this->status ??= Schema::hasTable('patient_encryption_settings')
+            ? (PatientEncryptionSetting::query()->value('status') ?? 'inactive')
+            : 'inactive';
+    }
+
+    public function forget(): void
+    {
+        $this->status = null;
     }
 
     public function encrypted(mixed $value): bool
@@ -67,6 +80,7 @@ class PatientPiiEncryption
             foreach (self::FIELDS[$table] ?? [] as $field) {
                 if (strcasecmp($column, $field) === 0) {
                     $result->{$column} = $this->decrypt($table, $field, $value);
+                    $result->{$field} = $result->{$column};
                 }
             }
         }
@@ -132,9 +146,13 @@ class PatientPiiEncryption
     public function whereIdentity(Builder $query, array $values): Builder
     {
         $table = $query->getModel()->getTable();
+
         return $query->where(function (Builder $match) use ($table, $values) {
             if ($this->enabled()) {
                 $this->indexed($match, 'identity', $this->identity($table, $values));
+            }
+            if ($this->status() === 'active') {
+                return;
             }
             $method = $this->enabled() ? 'orWhere' : 'where';
             $match->{$method}(function (Builder $plain) use ($table, $values) {
@@ -149,6 +167,7 @@ class PatientPiiEncryption
     {
         $table = $query->getModel()->getTable();
         $columns ??= self::SEARCH_FIELDS[$table];
+
         return $query->where(function (Builder $match) use ($table, $search, $columns) {
             foreach ($columns as $column) {
                 if (! in_array($column, self::SEARCH_FIELDS[$table], true)) {
@@ -156,7 +175,9 @@ class PatientPiiEncryption
                 }
                 if ($this->enabled()) {
                     $match->orWhere(fn (Builder $index) => $this->indexed($index, $column, $this->normalize($search)));
-                    $match->orWhereRaw("UPPER(TRIM({$table}.{$column})) = ?", [$this->normalize($search)]);
+                    if ($this->status() !== 'active') {
+                        $match->orWhereRaw("UPPER(TRIM({$table}.{$column})) = ?", [$this->normalize($search)]);
+                    }
                 } else {
                     $match->orWhereRaw("UPPER({$table}.{$column}) LIKE ?", ['%'.$this->normalize($search).'%']);
                 }

@@ -37,6 +37,27 @@ function pathwayPayload(string $logId = 'ORIGINAL', string $destination = 'C'): 
         'referring_provider' => 'Test Clinician', 'contact_number' => '09123456789', 'clinical_update' => 'Current findings'];
 }
 
+test('forwarding keeps patient fields and frozen journey snapshots encrypted and searchable', function () {
+    config()->set('ciphersweet.providers.string.key', random_bytes(32));
+    Schema::table('referral_patientinfo', function ($table) {
+        $table->text('patientFirstName')->nullable();
+        $table->text('patientLastName')->nullable();
+        $table->text('patientMiddlename')->nullable();
+    });
+    \App\Models\PatientEncryptionSetting::current()->update(['status' => 'active', 'enabled' => true]);
+    \App\Models\ReferralPatientInfoModel::find('ORIGINAL')->update(['patientFirstName' => 'ANA', 'patientLastName' => 'SANTOS']);
+    $service = app(ReferralPathwayService::class);
+    $next = $service->forward(pathwayUser('B'), pathwayPayload());
+    $encryption = app(\App\Services\PatientPiiEncryption::class);
+    expect($encryption->encrypted(DB::table('referral_patientinfo')->where('LogID', $next['LogID'])->value('patientFirstName')))->toBeTrue();
+    expect($encryption->encrypted(DB::table('referral_pathway_steps')->where('log_id', 'ORIGINAL')->value('snapshot')))->toBeTrue();
+    expect($encryption->search(\App\Models\ReferralPatientInfoModel::query(), 'ANA')->count())->toBe(2);
+    \App\Models\ReferralPatientInfoModel::find('ORIGINAL')->update(['patientFirstName' => 'EDITED']);
+    $journey = $service->journey(pathwayUser('C'), $next['LogID']);
+    expect($journey['transactions'][0]['patient']['patientFirstName'])->toBe('ANA')
+        ->and($journey['transactions'][1]['patient']['patientFirstName'])->toBe('ANA');
+});
+
 function pathwayUser(string $facility): User
 {
     return User::factory()->create(['status' => 'A', 'access_type' => 'HOSP', 'access_id' => $facility]);

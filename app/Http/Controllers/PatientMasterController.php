@@ -34,21 +34,15 @@ class PatientMasterController extends Controller
             ->whereNull('patient_master_list.deleted_at');
 
         if ($search !== '') {
-            $searchLike = '%' . strtoupper($search) . '%';
-            $query->where(function ($builder) use ($searchLike) {
-                $builder
-                    ->whereRaw('UPPER(patient_master_list.last_name) LIKE ?', [$searchLike])
-                    ->orWhereRaw('UPPER(patient_master_list.first_name) LIKE ?', [$searchLike])
-                    ->orWhereRaw('UPPER(patient_master_list.middle_name) LIKE ?', [$searchLike])
-                    ->orWhereRaw('UPPER(patient_master_list.phic_number) LIKE ?', [$searchLike])
-                    ->orWhereRaw('UPPER(patient_master_list.family_id) LIKE ?', [$searchLike])
-                    ->orWhereRaw('UPPER(patient_master_list.case_number) LIKE ?', [$searchLike]);
-            });
+            app(\App\Services\PatientPiiEncryption::class)->search($query, $search);
         }
 
+        if (app(\App\Services\PatientPiiEncryption::class)->enabled()) {
+            $query->orderByDesc('patient_master_list.id');
+        } else {
+            $query->orderBy('patient_master_list.last_name')->orderBy('patient_master_list.first_name');
+        }
         $paginator = $query
-            ->orderBy('patient_master_list.last_name')
-            ->orderBy('patient_master_list.first_name')
             ->paginate($perPage)
             ->through(fn ($patient) => $this->transformListRow($patient));
 
@@ -192,16 +186,7 @@ class PatientMasterController extends Controller
             $query->where('id', '!=', $ignoreId);
         }
 
-        foreach ($identity as $column => $value) {
-            $normalized = $this->normalizeValue($value) ?? '';
-            $query->whereRaw("COALESCE(UPPER({$column}), '') = ?", [$normalized]);
-        }
-
-        if ($birthDate !== null) {
-            $query->whereDate('birth_date', $birthDate);
-        } else {
-            $query->whereNull('birth_date');
-        }
+        app(\App\Services\PatientPiiEncryption::class)->whereIdentity($query, [...$identity, 'birth_date' => $birthDate]);
 
         if ($query->exists()) {
             throw ValidationException::withMessages([

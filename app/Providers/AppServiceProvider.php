@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // CipherSweet is registered by the package service provider.
         $this->app->scoped(DataEncryptionManager::class);
+        $this->app->scoped(\App\Services\PatientPiiEncryption::class);
     }
 
     /**
